@@ -1014,6 +1014,9 @@ function applyUpdate() {
 }
 
 if ("serviceWorker" in navigator) {
+  // Se não havia controller ao carregar, é primeira instalação — não mostrar banner
+  const hadController = !!navigator.serviceWorker.controller;
+
   navigator.serviceWorker.register("sw.js").then(reg => {
     // Verifica atualizações a cada 60 segundos
     setInterval(() => reg.update(), 60000);
@@ -1022,24 +1025,32 @@ if ("serviceWorker" in navigator) {
     reg.addEventListener("updatefound", () => {
       const newWorker = reg.installing;
       newWorker.addEventListener("statechange", () => {
-        if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-          // Nova versão pronta — mostra banner
-          waitingWorker = newWorker;
-          document.getElementById("update-banner").style.display = "block";
+        if (newWorker.state === "installed") {
+          if (hadController) {
+            // Atualização real — mostra banner
+            waitingWorker = newWorker;
+            document.getElementById("update-banner").style.display = "block";
+          } else {
+            // Primeira instalação — ativa direto sem banner
+            newWorker.postMessage("SKIP_WAITING");
+          }
         }
       });
     });
 
     // Se já existe um worker esperando
-    if (reg.waiting) {
+    if (reg.waiting && hadController) {
       waitingWorker = reg.waiting;
       document.getElementById("update-banner").style.display = "block";
     }
   }).catch(err => console.log("SW:", err));
 
-  // Quando o novo SW assume, recarrega a página
+  // Quando o novo SW assume, recarrega a página (só se já tinha controller)
+  let refreshing = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    window.location.reload();
+    if (refreshing) return;
+    refreshing = true;
+    if (hadController) window.location.reload();
   });
 }
 

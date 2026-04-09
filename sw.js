@@ -1,10 +1,12 @@
-const CACHE_NAME = "overlabs-v11";
+const CACHE_NAME = "overlabs-v12";
 const URLS_TO_CACHE = [
   "./aluno.html",
   "./manifest.json",
   "./logo.png",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  "./icon-maskable-192.png",
+  "./icon-maskable-512.png"
 ];
 
 // Instala e cacheia os arquivos base
