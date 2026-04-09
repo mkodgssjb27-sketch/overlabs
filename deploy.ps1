@@ -9,6 +9,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 $swFile = Join-Path $PSScriptRoot "sw.js"
 
 $content = Get-Content $swFile -Raw
