@@ -1,4 +1,4 @@
-const CACHE_NAME = "overlabs-v9";
+const CACHE_NAME = "overlabs-v10";
 const URLS_TO_CACHE = [
   "./aluno.html",
   "./manifest.json",
@@ -29,6 +29,19 @@ self.addEventListener("message", event => {
   if (event.data === "SKIP_WAITING") {
     self.skipWaiting();
   }
+});
+
+// Clique na notificação abre o app
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes("aluno.html") && "focus" in client) return client.focus();
+      }
+      return clients.openWindow("./aluno.html");
+    })
+  );
 });
 
 // Network first, fallback to cache

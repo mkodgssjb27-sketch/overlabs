@@ -493,6 +493,7 @@ function enterStudentApp() {
   if (st) st.textContent = `Olá, ${name}!`;
   showScreen("student-home");
   startStudentListeners();
+  requestNotifPermission();
 }
 
 function studentLogout() {
@@ -816,6 +817,37 @@ function showAlertPopup(message) {
   popup.classList.add("show");
   if (alertPopupTimeout) clearTimeout(alertPopupTimeout);
   alertPopupTimeout = setTimeout(() => hideAlertPopup(), 8000);
+  // Notificação nativa do sistema (som, vibração, banner)
+  showNativeNotification(message);
+}
+
+// ── Notificação nativa do sistema ──
+function requestNotifPermission() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+function showNativeNotification(message) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  const options = {
+    body: message,
+    icon: "icon-192.png",
+    badge: "icon-192.png",
+    vibrate: [200, 100, 200],
+    tag: "overlabs-alert-" + Date.now(),
+    renotify: true,
+    requireInteraction: false,
+    silent: false
+  };
+  // Usar SW para notificação persistente (funciona em background)
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification("🔔 OVER LABS — Alerta", options);
+    });
+  } else {
+    new Notification("🔔 OVER LABS — Alerta", options);
+  }
 }
 
 function hideAlertPopup() {
@@ -853,11 +885,21 @@ function renderNotifications(notifs) {
     isAlert: true
   }));
 
-  const allNotifs = [...notifs, ...alertNotifs].sort((a, b) => {
-    const ta = a.at ? (a.at.toDate ? a.at.toDate() : new Date(a.at)) : new Date(0);
-    const tb = b.at ? (b.at.toDate ? b.at.toDate() : new Date(b.at)) : new Date(0);
-    return tb - ta;
-  });
+  // Filtrar apenas últimos 7 dias
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const allNotifs = [...notifs, ...alertNotifs]
+    .filter(n => {
+      const t = n.at ? (n.at.toDate ? n.at.toDate() : new Date(n.at)) : new Date(0);
+      return t > sevenDaysAgo;
+    })
+    .sort((a, b) => {
+      const ta = a.at ? (a.at.toDate ? a.at.toDate() : new Date(a.at)) : new Date(0);
+      const tb = b.at ? (b.at.toDate ? b.at.toDate() : new Date(b.at)) : new Date(0);
+      return tb - ta;
+    });
+
+  // Limpar notificações antigas do Firestore (>7 dias)
+  cleanOldNotifications(notifs, sevenDaysAgo);
 
   if (allNotifs.length === 0) {
     list.innerHTML = `<div class="empty"><div class="icon">🔔</div><p>Nenhuma notificação</p></div>`;
@@ -870,6 +912,23 @@ function renderNotifications(notifs) {
       <p style="font-size:14px;font-weight:600;color:#e2e8f0;line-height:1.5">${n.isAlert ? n.msg : n.msg}</p>
       <p style="color:#64748b;font-size:11px;margin-top:8px">${n.isAlert?'Alerta do Professor · ':''}${fmtTs(n.at)}</p>
     </div>`).join("");
+}
+
+async function cleanOldNotifications(notifs, cutoff) {
+  if (!currentUser || !firebaseOk) return;
+  const old = notifs.filter(n => {
+    const t = n.at ? (n.at.toDate ? n.at.toDate() : new Date(n.at)) : new Date(0);
+    return t <= cutoff;
+  });
+  if (old.length === 0) return;
+  try {
+    const batch = db.batch();
+    old.forEach(n => {
+      batch.delete(db.collection("notifications").doc(currentUser.id).collection("items").doc(n.id));
+    });
+    await batch.commit();
+    console.log(`Limpou ${old.length} notificações antigas`);
+  } catch(e) { console.error("Erro ao limpar notificações antigas:", e); }
 }
 
 async function clearNotifications() {
@@ -906,6 +965,7 @@ if (currentUser && firebaseOk) {
   if (st) st.textContent = `Olá, ${currentUser.firstName}!`;
   showScreen("student-home");
   startStudentListeners();
+  requestNotifPermission();
 }
 
 // Criar/atualizar usuário de teste automaticamente
