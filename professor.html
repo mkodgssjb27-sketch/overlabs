@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>OVER LABS — Professor</title>
+<meta name="theme-color" content="#0d9488">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CAROLAMPRA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e2e8f0;min-height:100vh}
+.screen{display:none}
+.screen.active{display:flex;flex-direction:column;min-height:100vh}
+button{cursor:pointer;border:none;font-family:inherit}
+input,select,textarea{font-family:inherit;outline:none}
+
+/* Dark inputs */
+.inp{width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.06);transition:.15s border-color}
+.inp:focus{border-color:#f59e0b}
+.inp.err{border-color:#f87171}
+.lbl{display:block;font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;letter-spacing:.4px}
+.err-txt{color:#f87171;font-size:12px;margin-top:5px}
+.btn-main{width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:16px;font-family:inherit;box-shadow:0 4px 20px rgba(245,158,11,.25)}
+.btn-main:active{opacity:.85}
+.btn-ghost{padding:10px 18px;border-radius:12px;border:1.5px solid rgba(255,255,255,.12);color:#e2e8f0;font-weight:700;font-size:14px;background:transparent}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,.95);color:#fff;padding:12px 22px;border-radius:14px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;flex-shrink:0}
+
+/* Top bar */
+.top-bar{background:rgba(15,15,20,.95);backdrop-filter:blur(20px);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:50}
+.top-bar-brand{display:flex;align-items:center;gap:12px}
+.top-bar-brand img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+.top-bar-brand h1{font-size:18px;font-weight:900;color:#fff;letter-spacing:1.5px}
+.top-bar-actions{display:flex;gap:10px;align-items:center}
+.btn-topbar{padding:8px 16px;border-radius:10px;font-weight:700;font-size:13px;background:transparent;color:#94a3b8;border:1px solid rgba(255,255,255,.1);transition:.2s}
+.btn-topbar:hover{color:#f59e0b;border-color:#f59e0b}
+
+/* Inner header for sub-screens */
+.t-header{background:rgba(15,15,20,.95);backdrop-filter:blur(20px);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)}
+.t-title{font-size:18px;font-weight:800;color:#fff}
+.t-sub{font-size:13px;color:#64748b;margin-top:2px}
+.t-content{padding:24px 28px;flex:1}
+
+/* Menu grid */
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:32px}
+.menu-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:28px 20px;text-align:center;cursor:pointer;transition:.25s;position:relative;overflow:hidden}
+.menu-card:hover{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.06);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.menu-card .mc-icon{font-size:36px;margin-bottom:12px;display:block}
+.menu-card .mc-title{font-size:15px;font-weight:800;color:#fff}
+.menu-card .mc-desc{font-size:12px;color:#64748b;margin-top:4px}
+.menu-card .mc-badge{position:absolute;top:14px;right:14px;background:#f59e0b;color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:10px}
+
+/* Stat cards dark */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+.stat-card{background:rgba(255,255,255,.04);border-radius:16px;padding:18px 16px;border:1px solid rgba(255,255,255,.08);text-align:center}
+.stat-val{font-size:30px;font-weight:900;line-height:1}
+.stat-lbl{font-size:11px;font-weight:700;color:#64748b;margin-top:4px}
+
+/* Ride cards dark */
+.ride-card{background:rgba(255,255,255,.04);border-radius:18px;border:1px solid rgba(255,255,255,.08);padding:18px;margin-bottom:12px;cursor:pointer;transition:.2s}
+.ride-card:hover{border-color:rgba(245,158,11,.3);box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.ride-title{font-weight:800;font-size:15px;color:#fff;flex:1;margin-right:10px}
+.ride-info{color:#64748b;font-size:13px;margin:8px 0 10px}
+.seg-bar{display:flex;gap:4px;margin-bottom:5px}
+.seg{height:6px;border-radius:3px;flex:1}
+
+/* Forms dark */
+.t-form{background:rgba(255,255,255,.04);border-radius:20px;padding:28px;border:1px solid rgba(255,255,255,.08)}
+.seats-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.seat-icon{height:36px;border-radius:10px;background:rgba(245,158,11,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex:1;min-width:32px}
+.t-detail-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px}
+.person-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.person-row:last-child{border-bottom:none}
+
+.loading{display:flex;align-items:center;justify-content:center;padding:60px 0;flex-direction:column;gap:12px;color:#64748b;font-weight:600}
+.spin{width:32px;height:32px;border:3px solid rgba(255,255,255,.1);border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:60px 16px}
+.empty .icon{font-size:40px;margin-bottom:12px}
+.empty p{color:#94a3b8;font-weight:700;font-size:15px}
+.empty small{color:#64748b;font-size:13px;display:block;margin-top:4px}
+
+/* Alert cards */
+.alert-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;margin-bottom:12px}
+.alert-card .alert-msg{color:#e2e8f0;font-size:14px;font-weight:600;margin-bottom:8px}
+.alert-card .alert-time{color:#64748b;font-size:12px}
+.alert-card .alert-del{color:#f87171;font-size:12px;font-weight:700;cursor:pointer;background:none;border:none;padding:4px 10px}
+
+/* Section titles */
+.section-title{font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* Toggle switch */
+.toggle-wrap{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle-wrap input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.12);border-radius:24px;cursor:pointer;transition:.3s}
+.toggle-wrap input:checked+.toggle-track{background:#f59e0b}
+.toggle-dot{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.3s;pointer-events:none}
+.toggle-wrap input:checked~.toggle-dot{left:22px}
+</style>
+</head>
+<body>
+
+<!-- ══ PROFESSOR — LOGIN ════════════════════════════════════════════ -->
+<div class="screen active" id="screen-teacher-login">
+  <div style="min-height:100vh;background:#0a0a0f;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden">
+    <!-- Canvas de partículas parallax -->
+    <canvas id="particles-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0"></canvas>
+    <div style="background:rgba(255,255,255,.04);backdrop-filter:blur(24px);border-radius:28px;padding:48px 36px;width:100%;max-width:400px;border:1px solid rgba(255,255,255,.08);text-align:center;position:relative;z-index:1;box-shadow:0 8px 60px rgba(0,0,0,.5)">
+      <img src="logo.png" alt="Over Point" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:16px;box-shadow:0 0 30px rgba(245,158,11,.25)">
+      <h1 style="font-size:26px;font-weight:900;color:#fff;margin-bottom:4px;letter-spacing:2px">OVER LABS</h1>
+      <p style="color:#64748b;font-size:13px;margin-bottom:32px">Painel do Professor — Digite seu PIN de acesso</p>
+      <label class="lbl" style="color:#94a3b8;text-align:left">PIN</label>
+      <input type="password" id="t-pin" placeholder="••••" maxlength="10" oninput="clearErr('t-pin-err')" onkeydown="if(event.key==='Enter')teacherLogin()"
+        style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#fff;font-size:22px;letter-spacing:10px;text-align:center;margin-bottom:6px">
+      <p class="err-txt" id="t-pin-err" style="margin-bottom:10px"></p>
+      <button onclick="teacherLogin()" style="width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:16px;margin-top:4px;box-shadow:0 4px 20px rgba(245,158,11,.3)">Entrar →</button>
+      <p style="color:#334155;font-size:11px;margin-top:20px">PIN padrão: <strong style="color:#64748b">1234</strong> (mude no código)</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — DASHBOARD ════════════════════════════════════════ -->
+<div class="screen" id="screen-teacher-dashboard">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <img src="logo.png" alt="Logo">
+      <h1>OVER LABS</h1>
+    </div>
+    <div class="top-bar-actions">
+      <button class="btn-topbar" onclick="teacherLogout()">Sair</button>
+    </div>
+  </div>
+  <div class="t-content">
+    <!-- Stats resumo -->
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="stat-rides" style="color:#f59e0b">0</div><div class="stat-lbl">Caronas</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-conf" style="color:#22c55e">0</div><div class="stat-lbl">Confirmados</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-wait" style="color:#f97316">0</div><div class="stat-lbl">Na Fila</div></div>
+    </div>
+
+    <!-- Menu de funções -->
+    <div class="section-title">Funções</div>
+    <div class="menu-grid">
+      <div class="menu-card" onclick="showScreen('teacher-rides')">
+        <span class="mc-icon">🚗</span>
+        <div class="mc-title">Caronas</div>
+        <div class="mc-desc">Gerenciar, criar e editar</div>
+      </div>
+      <div class="menu-card" onclick="showScreen('teacher-alerts')">
+        <span class="mc-icon">🔔</span>
+        <div class="mc-title">Alertas</div>
+        <div class="mc-desc">Enviar avisos aos alunos</div>
+      </div>
+      <div class="menu-card" onclick="showScreen('teacher-presence')">
+        <span class="mc-icon">📋</span>
+        <div class="mc-title">Presenças</div>
+        <div class="mc-desc">Controle de presença</div>
+        <span class="mc-badge">Em breve</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — CARONAS (lista) ════════════════════════════════ -->
+<div class="screen" id="screen-teacher-rides">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">Caronas</h1>
+    </div>
+    <div class="top-bar-actions">
+      <button onclick="showScreen('teacher-create');resetRideForm()" style="padding:10px 20px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:13px">+ Nova Carona</button>
+    </div>
+  </div>
+  <div class="t-content">
+    <div id="t-rides-loading" class="loading"><div class="spin"></div>Carregando...</div>
+    <div id="t-rides-empty" class="empty" style="display:none"><div class="icon">🚗</div><p>Nenhuma carona criada</p><small>Clique em "+ Nova Carona" para começar</small></div>
+    <div id="t-rides-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — CRIAR CARONA ════════════════════════════════════ -->
+<div class="screen" id="screen-teacher-create">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-rides')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" style="font-size:16px">Nova Carona</div></div>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <div class="t-form">
+      <div style="margin-bottom:18px">
+        <label class="lbl">TÍTULO DA CARONA</label>
+        <input class="inp" id="r-title" placeholder="Ex: Carona para a faculdade — Sexta" oninput="clearErr('r-title-err')">
+        <p class="err-txt" id="r-title-err"></p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+        <div>
+          <label class="lbl">DATA</label>
+          <input type="date" class="inp" id="r-date" oninput="clearErr('r-date-err')" style="color-scheme:dark">
+          <p class="err-txt" id="r-date-err"></p>
+        </div>
+        <div>
+          <label class="lbl">HORÁRIO</label>
+          <input type="time" class="inp" id="r-time" oninput="clearErr('r-time-err')" style="color-scheme:dark">
+          <p class="err-txt" id="r-time-err"></p>
+        </div>
+      </div>
+      <div style="margin-bottom:26px">
+        <label class="lbl">VAGAS DISPONÍVEIS: <span id="seats-val" style="color:#f59e0b;font-size:17px;font-weight:900">4</span></label>
+        <input type="range" min="1" max="8" value="4" id="r-seats" oninput="updateSeats(this.value)" style="width:100%;accent-color:#f59e0b;margin:8px 0">
+        <div class="seats-row" id="seats-icons"></div>
+      </div>
+      <div style="margin-bottom:22px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
+        <label class="toggle-wrap">
+          <input type="checkbox" id="r-visible" checked>
+          <span class="toggle-track"></span>
+          <span class="toggle-dot"></span>
+        </label>
+        <div>
+          <div style="font-weight:700;font-size:14px;color:#e2e8f0">👁 Visível para alunos</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Aparecerá no app e no feed dos alunos</div>
+        </div>
+      </div>
+      <button onclick="createRide()" class="btn-main">✓ Criar Carona</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — EDITAR CARONA ══════════════════════════════════ -->
+<div class="screen" id="screen-teacher-edit">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="openTeacherDetail(currentDetailRideId)" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" style="font-size:16px">Editar Carona</div></div>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <div class="t-form">
+      <div style="margin-bottom:18px">
+        <label class="lbl">TÍTULO DA CARONA</label>
+        <input class="inp" id="e-title" oninput="clearErr('e-title-err')">
+        <p class="err-txt" id="e-title-err"></p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+        <div>
+          <label class="lbl">DATA</label>
+          <input type="date" class="inp" id="e-date" oninput="clearErr('e-date-err')" style="color-scheme:dark">
+          <p class="err-txt" id="e-date-err"></p>
+        </div>
+        <div>
+          <label class="lbl">HORÁRIO</label>
+          <input type="time" class="inp" id="e-time" oninput="clearErr('e-time-err')" style="color-scheme:dark">
+          <p class="err-txt" id="e-time-err"></p>
+        </div>
+      </div>
+      <div style="margin-bottom:26px">
+        <label class="lbl">VAGAS DISPONÍVEIS: <span id="e-seats-val" style="color:#f59e0b;font-size:17px;font-weight:900">4</span></label>
+        <input type="range" min="1" max="8" value="4" id="e-seats" oninput="document.getElementById('e-seats-val').textContent=this.value" style="width:100%;accent-color:#f59e0b;margin:8px 0">
+      </div>
+      <div style="margin-bottom:22px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
+        <label class="toggle-wrap">
+          <input type="checkbox" id="e-visible" checked>
+          <span class="toggle-track"></span>
+          <span class="toggle-dot"></span>
+        </label>
+        <div>
+          <div style="font-weight:700;font-size:14px;color:#e2e8f0">👁 Visível para alunos</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Aparecerá no app e no feed dos alunos</div>
+        </div>
+      </div>
+      <button onclick="saveEditRide()" class="btn-main">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — DETALHE DA CARONA ═══════════════════════════════ -->
+<div class="screen" id="screen-teacher-detail">
+  <div class="top-bar" style="justify-content:space-between">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-rides')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" id="td-title" style="font-size:16px">—</div><div class="t-sub" id="td-sub">—</div></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="openEditRide()" style="background:rgba(245,158,11,.15);color:#f59e0b;padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px;border:none">✏️ Editar</button>
+      <button onclick="deleteRide()" style="background:rgba(248,113,113,.1);color:#f87171;padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px;border:none">🗑 Excluir</button>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:660px">
+    <div class="t-detail-stats">
+      <div class="stat-card"><div class="stat-val" id="td-stat-conf" style="color:#22c55e">0</div><div class="stat-lbl">Confirmados</div></div>
+      <div class="stat-card"><div class="stat-val" id="td-stat-wait" style="color:#f97316">0</div><div class="stat-lbl">Lista de espera</div></div>
+      <div class="stat-card"><div class="stat-val" id="td-stat-free" style="color:#38bdf8">0</div><div class="stat-lbl">Vagas livres</div></div>
+    </div>
+    <div style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(255,255,255,.08);padding:22px;margin-bottom:16px">
+      <h3 style="font-weight:800;font-size:15px;margin-bottom:14px;color:#22c55e">✅ Confirmados</h3>
+      <div id="td-booked"></div>
+    </div>
+    <div id="td-waitlist-wrap" style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(245,158,11,.2);padding:22px;display:none">
+      <h3 style="font-weight:800;font-size:15px;margin-bottom:14px;color:#f59e0b">⏳ Lista de Espera</h3>
+      <div id="td-waitlist"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — ALERTAS ════════════════════════════════════════ -->
+<div class="screen" id="screen-teacher-alerts">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">Alertas</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:600px">
+    <div class="t-form" style="margin-bottom:24px">
+      <div class="section-title">🔔 Novo Alerta</div>
+      <p style="color:#64748b;font-size:13px;margin-bottom:16px">Envie uma mensagem que aparecerá como notificação para todos os alunos.</p>
+      <label class="lbl">MENSAGEM DO ALERTA</label>
+      <textarea id="alert-msg" rows="4" placeholder="Ex: Treino cancelado amanhã por causa da chuva..." style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#e2e8f0;font-size:15px;resize:vertical;font-family:inherit"></textarea>
+      <p class="err-txt" id="alert-msg-err" style="margin-bottom:12px"></p>
+      <div style="margin-bottom:18px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
+        <label class="toggle-wrap">
+          <input type="checkbox" id="alert-visible" checked>
+          <span class="toggle-track"></span>
+          <span class="toggle-dot"></span>
+        </label>
+        <div>
+          <div style="font-weight:700;font-size:14px;color:#e2e8f0">👁 Visível para alunos</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Aparecerá no feed dos alunos</div>
+        </div>
+      </div>
+      <button onclick="sendAlert()" class="btn-main" id="btn-send-alert">📤 Enviar Alerta</button>
+    </div>
+    <div class="section-title">Alertas enviados</div>
+    <div id="alerts-loading" class="loading" style="display:none"><div class="spin"></div>Carregando...</div>
+    <div id="alerts-empty" class="empty" style="display:none"><div class="icon">🔕</div><p>Nenhum alerta enviado</p></div>
+    <div id="alerts-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — PRESENÇAS ══════════════════════════════════════ -->
+<div class="screen" id="screen-teacher-presence">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">Presenças</h1>
+    </div>
+  </div>
+  <div class="t-content">
+    <div style="text-align:center;padding:80px 20px">
+      <div style="font-size:60px;margin-bottom:20px">📋</div>
+      <h2 style="color:#fff;font-weight:800;font-size:22px;margin-bottom:8px">Em Desenvolvimento</h2>
+      <p style="color:#64748b;font-size:15px;max-width:360px;margin:0 auto">Esta função estará disponível em breve. Aqui você poderá controlar a presença dos alunos.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const TEACHER_PIN = "1234";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyAc9Ews7WVz6GSBp9vzXF4sFI1SMwzklX0",
+  authDomain:        "carolampra.firebaseapp.com",
+  projectId:         "carolampra",
+  storageBucket:     "carolampra.firebasestorage.app",
+  messagingSenderId: "821388549140",
+  appId:             "1:821388549140:web:3f60aa294f6f67949adb01"
+};
+
+let db = null;
+let firebaseOk = false;
+
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  firebaseOk = true;
+} catch(e) {
+  console.error("Firebase error:", e);
+}
+
+let unsubRides = null;
+let allRides = [];
+let currentDetailRideId = null;
+
+// ── Navegação ──
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + name).classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+// ── Helpers ──
+function clearErr(id) { const el = document.getElementById(id); if(el) el.textContent = ""; }
+function setErr(id, msg) { const el = document.getElementById(id); if(el) el.textContent = msg; }
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3000);
+}
+function fmtDate(d) {
+  if (!d) return "";
+  return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+}
+function fmtShort(d) {
+  if (!d) return "";
+  return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" });
+}
+function isPast(date, time) {
+  return new Date(date + "T" + time) < new Date();
+}
+function requireFirebase() {
+  if (!firebaseOk) { alert("Firebase não configurado!"); return false; }
+  return true;
+}
+
+// ── Auth ──
+function teacherLogin() {
+  const pin = document.getElementById("t-pin").value;
+  if (pin === TEACHER_PIN) {
+    document.getElementById("t-pin").value = "";
+    setErr("t-pin-err", "");
+    showScreen("teacher-dashboard");
+    startTeacherListener();
+    loadAlerts();
+  } else {
+    setErr("t-pin-err", "PIN incorreto");
+  }
+}
+
+function teacherLogout() {
+  if (unsubRides) { unsubRides(); unsubRides = null; }
+  showScreen("teacher-login");
+}
+
+// ── Listener em tempo real ──
+function startTeacherListener() {
+  if (!requireFirebase()) { renderTeacherRides([]); return; }
+  document.getElementById("t-rides-loading").style.display = "flex";
+  document.getElementById("t-rides-list").innerHTML = "";
+  document.getElementById("t-rides-empty").style.display = "none";
+
+  if (unsubRides) unsubRides();
+  unsubRides = db.collection("rides")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snap => {
+      allRides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderTeacherRides(allRides);
+      if (currentDetailRideId) {
+        const r = allRides.find(r => r.id === currentDetailRideId);
+        if (r) renderTeacherDetail(r);
+      }
+    }, err => {
+      console.error(err);
+      showToast("Erro ao carregar caronas");
+    });
+}
+
+function renderTeacherRides(rides) {
+  document.getElementById("t-rides-loading").style.display = "none";
+  const list = document.getElementById("t-rides-list");
+  const up = rides.filter(r => !isPast(r.date, r.time)).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  const past = rides.filter(r => isPast(r.date, r.time));
+
+  document.getElementById("t-rides-empty").style.display = rides.length === 0 ? "block" : "none";
+  document.getElementById("stat-rides").textContent = rides.length;
+  document.getElementById("stat-conf").textContent = rides.reduce((s,r) => s + (r.booked||[]).length, 0);
+  document.getElementById("stat-wait").textContent = rides.reduce((s,r) => s + (r.waitlist||[]).length, 0);
+
+  function rideCard(r, dim) {
+    const booked = r.booked || [], wl = r.waitlist || [];
+    const full = booked.length >= r.seats;
+    return `
+      <div class="ride-card" onclick="openTeacherDetail('${r.id}')" style="${dim?'opacity:.5':''}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
+          <span class="ride-title">${r.title}</span>
+          <span class="badge" style="background:${full?'rgba(248,113,113,.15)':'rgba(34,197,94,.15)'};color:${full?'#f87171':'#22c55e'};white-space:nowrap">
+            ${full ? 'LOTADO' : (r.seats - booked.length) + ' VAGAS'}
+          </span>
+        </div>
+        <p class="ride-info">📅 ${fmtShort(r.date)} · ⏰ ${r.time}</p>
+        <div class="seg-bar">${Array.from({length:r.seats}).map((_,i)=>`<div class="seg" style="background:${i<booked.length?'#f59e0b':'rgba(255,255,255,.1)'}"></div>`).join('')}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <span style="color:#64748b;font-size:12px">${booked.length}/${r.seats} confirmados · ${wl.length} na fila</span>
+          <div style="display:flex;gap:3px">${booked.slice(0,4).map(b=>`<div class="avatar" title="${b.firstName}" style="background:linear-gradient(135deg,#f59e0b,#e85d04);width:28px;height:28px;font-size:11px">${b.firstName[0]}</div>`).join('')}${booked.length>4?`<div class="avatar" style="background:rgba(255,255,255,.1);color:#94a3b8;width:28px;height:28px;font-size:11px">+${booked.length-4}</div>`:''}</div>
+        </div>
+      </div>`;
+  }
+
+  let html = "";
+  if (up.length) html += `<div class="section-title">Próximas caronas</div>` + up.map(r => rideCard(r)).join("") + `<div style="margin-bottom:24px"></div>`;
+  if (past.length) html += `<div class="section-title" style="color:#64748b">Anteriores</div>` + past.map(r => rideCard(r, true)).join("");
+  list.innerHTML = html;
+}
+
+// ── Criar Carona ──
+function resetRideForm() {
+  document.getElementById("r-title").value = "";
+  document.getElementById("r-date").value = "";
+  document.getElementById("r-time").value = "";
+  document.getElementById("r-seats").value = 4;
+  document.getElementById("r-visible").checked = true;
+  updateSeats(4);
+  ["r-title-err","r-date-err","r-time-err"].forEach(id => setErr(id,""));
+}
+
+function updateSeats(n) {
+  document.getElementById("seats-val").textContent = n;
+  document.getElementById("seats-icons").innerHTML = Array.from({length:Number(n)}).map(()=>`<div class="seat-icon">💺</div>`).join("");
+}
+
+async function createRide() {
+  if (!requireFirebase()) return;
+  const title = document.getElementById("r-title").value.trim();
+  const date  = document.getElementById("r-date").value;
+  const time  = document.getElementById("r-time").value;
+  const seats = Number(document.getElementById("r-seats").value);
+  const visible = document.getElementById("r-visible").checked;
+
+  let ok = true;
+  if (!title) { setErr("r-title-err","Informe o título"); ok=false; }
+  if (!date)  { setErr("r-date-err","Informe a data"); ok=false; }
+  if (!time)  { setErr("r-time-err","Informe o horário"); ok=false; }
+  if (!ok) return;
+
+  const btn = event.target; btn.disabled = true; btn.textContent = "Criando...";
+  try {
+    const docRef = await db.collection("rides").add({ title, date, time, seats, visible, booked: [], waitlist: [], createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    if (visible) {
+      await db.collection("feed").add({
+        type: "ride_created",
+        icon: "🚗",
+        text: `Nova carona: ${title}`,
+        detail: `📅 ${date} · ⏰ ${time} · ${seats} vagas`,
+        refId: docRef.id,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    showToast("✅ Carona criada!");
+    showScreen("teacher-rides");
+  } catch(e) {
+    showToast("Erro ao criar carona");
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = "✓ Criar Carona";
+}
+
+// ── Detalhe da Carona ──
+function openTeacherDetail(rideId) {
+  currentDetailRideId = rideId;
+  const ride = allRides.find(r => r.id === rideId);
+  if (!ride) return;
+  renderTeacherDetail(ride);
+  showScreen("teacher-detail");
+}
+
+function renderTeacherDetail(ride) {
+  const booked = ride.booked || [], wl = ride.waitlist || [];
+  document.getElementById("td-title").textContent = ride.title;
+  document.getElementById("td-sub").textContent = `${fmtShort(ride.date)} · ${ride.time}`;
+  document.getElementById("td-stat-conf").textContent = `${booked.length}/${ride.seats}`;
+  document.getElementById("td-stat-wait").textContent = `${wl.length}/5`;
+  document.getElementById("td-stat-free").textContent = Math.max(0, ride.seats - booked.length);
+
+  document.getElementById("td-booked").innerHTML = booked.length === 0
+    ? `<p style="color:#64748b;font-size:14px">Nenhum aluno confirmado ainda</p>`
+    : booked.map((b,i) => `
+        <div class="person-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#e85d04)">${b.firstName[0]}</div>
+          <div style="flex:1"><p style="font-weight:700;font-size:14px;color:#e2e8f0">${b.firstName}</p><p style="color:#64748b;font-size:12px">@${b.username}</p></div>
+          <span class="badge" style="background:rgba(34,197,94,.15);color:#22c55e">Vaga ${i+1}</span>
+        </div>`).join("");
+
+  const wlWrap = document.getElementById("td-waitlist-wrap");
+  if (wl.length > 0) {
+    wlWrap.style.display = "block";
+    document.getElementById("td-waitlist").innerHTML = wl.map((w,i) => `
+        <div class="person-row">
+          <div style="width:26px;height:26px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px">#${i+1}</div>
+          <div class="avatar" style="background:linear-gradient(135deg,#f97316,#ef4444)">${w.firstName[0]}</div>
+          <div><p style="font-weight:700;font-size:14px;color:#e2e8f0">${w.firstName}</p><p style="color:#64748b;font-size:12px">@${w.username}</p></div>
+        </div>`).join("");
+  } else {
+    wlWrap.style.display = "none";
+  }
+}
+
+async function deleteRide() {
+  if (!confirm("Excluir esta carona? Esta ação não pode ser desfeita.")) return;
+  try {
+    const ride = allRides.find(r => r.id === currentDetailRideId);
+    await db.collection("rides").doc(currentDetailRideId).delete();
+    if (ride && ride.visible !== false) {
+      await db.collection("feed").add({
+        type: "ride_deleted",
+        icon: "❌",
+        text: `Carona cancelada: ${ride.title}`,
+        detail: `📅 ${ride.date} · ⏰ ${ride.time}`,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    showToast("Carona excluída");
+    currentDetailRideId = null;
+    showScreen("teacher-rides");
+  } catch(e) { showToast("Erro ao excluir"); }
+}
+
+// ── Editar Carona ──
+function openEditRide() {
+  const ride = allRides.find(r => r.id === currentDetailRideId);
+  if (!ride) return;
+  document.getElementById("e-title").value = ride.title;
+  document.getElementById("e-date").value = ride.date;
+  document.getElementById("e-time").value = ride.time;
+  document.getElementById("e-seats").value = ride.seats;
+  document.getElementById("e-seats-val").textContent = ride.seats;
+  document.getElementById("e-visible").checked = ride.visible !== false;
+  showScreen("teacher-edit");
+}
+
+async function saveEditRide() {
+  if (!requireFirebase()) return;
+  const title = document.getElementById("e-title").value.trim();
+  const date  = document.getElementById("e-date").value;
+  const time  = document.getElementById("e-time").value;
+  const seats = Number(document.getElementById("e-seats").value);
+  const visible = document.getElementById("e-visible").checked;
+
+  let ok = true;
+  if (!title) { setErr("e-title-err","Informe o título"); ok=false; }
+  if (!date)  { setErr("e-date-err","Informe a data"); ok=false; }
+  if (!time)  { setErr("e-time-err","Informe o horário"); ok=false; }
+  if (!ok) return;
+
+  const btn = event.target; btn.disabled = true; btn.textContent = "Salvando...";
+  try {
+    await db.collection("rides").doc(currentDetailRideId).update({ title, date, time, seats, visible });
+    if (visible) {
+      await db.collection("feed").add({
+        type: "ride_updated",
+        icon: "✏️",
+        text: `Carona atualizada: ${title}`,
+        detail: `📅 ${date} · ⏰ ${time} · ${seats} vagas`,
+        refId: currentDetailRideId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    showToast("✅ Carona atualizada!");
+    openTeacherDetail(currentDetailRideId);
+  } catch(e) {
+    showToast("Erro ao salvar");
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = "💾 Salvar Alterações";
+}
+
+// ── Alertas ──
+let unsubAlerts = null;
+
+function loadAlerts() {
+  if (!firebaseOk) return;
+  const list = document.getElementById("alerts-list");
+  const loading = document.getElementById("alerts-loading");
+  const empty = document.getElementById("alerts-empty");
+  loading.style.display = "flex";
+
+  if (unsubAlerts) unsubAlerts();
+  unsubAlerts = db.collection("alerts")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snap => {
+      loading.style.display = "none";
+      const alerts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      empty.style.display = alerts.length === 0 ? "block" : "none";
+      list.innerHTML = alerts.map(a => `
+        <div class="alert-card">
+          <div class="alert-msg">${escapeHtml(a.message)}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="alert-time">📅 ${a.createdAt ? new Date(a.createdAt.toDate()).toLocaleString("pt-BR") : "agora"}</span>
+            <button class="alert-del" onclick="deleteAlert('${a.id}')">✕ Remover</button>
+          </div>
+        </div>`).join("");
+    }, err => {
+      loading.style.display = "none";
+      console.error(err);
+    });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+async function sendAlert() {
+  if (!requireFirebase()) return;
+  const msg = document.getElementById("alert-msg").value.trim();
+  const visible = document.getElementById("alert-visible").checked;
+  if (!msg) { setErr("alert-msg-err", "Digite uma mensagem"); return; }
+
+  const btn = document.getElementById("btn-send-alert");
+  btn.disabled = true; btn.textContent = "Enviando...";
+  try {
+    // Salvar na coleção de alertas
+    await db.collection("alerts").add({
+      message: msg,
+      visible,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      read: false
+    });
+
+    // Enviar como notificação individual para cada aluno
+    const usersSnap = await db.collection("users").get();
+    const batch = db.batch();
+    usersSnap.docs.forEach(userDoc => {
+      const notifRef = db.collection("notifications").doc(userDoc.id).collection("items").doc();
+      batch.set(notifRef, {
+        msg: "🔔 Alerta do Professor: " + msg,
+        read: false,
+        at: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+    await batch.commit();
+
+    // Feed item para o Home dos alunos
+    if (visible) {
+      await db.collection("feed").add({
+        type: "alert",
+        icon: "🔔",
+        text: `Alerta: ${msg}`,
+        detail: "",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    document.getElementById("alert-msg").value = "";
+    document.getElementById("alert-visible").checked = true;
+    setErr("alert-msg-err", "");
+    showToast("🔔 Alerta enviado para " + usersSnap.size + " aluno(s)!");
+  } catch(e) {
+    showToast("Erro ao enviar alerta");
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = "📤 Enviar Alerta";
+}
+
+async function deleteAlert(id) {
+  if (!confirm("Remover este alerta?")) return;
+  try {
+    await db.collection("alerts").doc(id).delete();
+    showToast("Alerta removido");
+  } catch(e) { showToast("Erro ao remover"); }
+}
+
+updateSeats(4);
+
+// ── Partículas Parallax ──
+(function() {
+  const canvas = document.getElementById('particles-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let w, h, particles = [], mouseX = 0, mouseY = 0;
+
+  function resize() {
+    w = canvas.width = canvas.offsetWidth;
+    h = canvas.height = canvas.offsetHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const COLORS = ['rgba(245,158,11,', 'rgba(232,93,4,', 'rgba(14,165,233,', 'rgba(139,92,246,', 'rgba(255,255,255,'];
+  const COUNT = 80;
+
+  for (let i = 0; i < COUNT; i++) {
+    particles.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 2.5 + 0.5,
+      dx: (Math.random() - 0.5) * 0.4,
+      dy: (Math.random() - 0.5) * 0.4,
+      depth: Math.random() * 0.8 + 0.2,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)]
+    });
+  }
+
+  document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+  document.addEventListener('touchmove', e => {
+    if (e.touches.length) { mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; }
+  }, { passive: true });
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    const cx = w / 2, cy = h / 2;
+    const offX = (mouseX - cx) / cx, offY = (mouseY - cy) / cy;
+
+    for (const p of particles) {
+      const px = p.x + offX * 30 * p.depth;
+      const py = p.y + offY * 30 * p.depth;
+      ctx.beginPath();
+      ctx.arc(px, py, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + (0.3 + p.depth * 0.5) + ')';
+      ctx.fill();
+
+      p.x += p.dx;
+      p.y += p.dy;
+      if (p.x < -10) p.x = w + 10;
+      if (p.x > w + 10) p.x = -10;
+      if (p.y < -10) p.y = h + 10;
+      if (p.y > h + 10) p.y = -10;
+    }
+
+    // Linhas entre partículas próximas
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const a = particles[i], b = particles[j];
+        const ax = a.x + offX * 30 * a.depth, ay = a.y + offY * 30 * a.depth;
+        const bx = b.x + offX * 30 * b.depth, by = b.y + offY * 30 * b.depth;
+        const dist = Math.hypot(ax - bx, ay - by);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(bx, by);
+          ctx.strokeStyle = 'rgba(255,255,255,' + (0.06 * (1 - dist / 120)) + ')';
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

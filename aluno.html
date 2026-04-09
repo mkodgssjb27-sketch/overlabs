@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>OVER LABS — Aluno</title>
+<meta name="theme-color" content="#0a0a0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="OVER LABS">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e2e8f0;min-height:100vh}
+.screen{display:none}
+.screen.active{display:flex;flex-direction:column;min-height:100vh}
+button{cursor:pointer;border:none;font-family:inherit}
+input,select{font-family:inherit;outline:none}
+
+.inp{width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.06);transition:.15s border-color}
+.inp:focus{border-color:#f59e0b}
+.inp.err{border-color:#f87171}
+.lbl{display:block;font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;letter-spacing:.4px}
+.err-txt{color:#f87171;font-size:12px;margin-top:5px}
+.btn-main{width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:16px;font-family:inherit;box-shadow:0 4px 20px rgba(245,158,11,.25)}
+.btn-main:active{opacity:.85}
+.btn-ghost{padding:10px 18px;border-radius:12px;border:1.5px solid rgba(255,255,255,.12);color:#e2e8f0;font-weight:700;font-size:14px;background:transparent}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,.95);color:#fff;padding:12px 22px;border-radius:14px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;flex-shrink:0}
+
+/* Layout fullscreen (sem phone frame) */
+.app-wrap{display:flex;flex-direction:column;min-height:100vh;background:#0a0a0f}
+
+/* Top bar */
+.s-header{background:rgba(15,15,20,.95);backdrop-filter:blur(20px);padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:50}
+.s-htitle{font-size:18px;font-weight:900;color:#fff;letter-spacing:1.5px}
+.s-hsub{font-size:13px;color:#94a3b8;margin-bottom:2px}
+.s-content{flex:1;overflow-y:auto;padding:16px 20px}
+
+/* Ride cards dark */
+.s-ride-card{background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(255,255,255,.08);padding:16px;margin-bottom:12px;cursor:pointer;transition:.2s}
+.s-ride-card:hover{border-color:rgba(245,158,11,.3)}
+.s-ride-card.confirmed{border-color:#f59e0b;border-width:2px}
+.s-ride-card.waiting{border-color:#f97316;border-width:2px}
+
+/* Bottom nav dark */
+.s-bottom-nav{background:rgba(15,15,20,.95);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);padding:8px 0 4px;display:flex;justify-content:space-around;position:sticky;bottom:0;z-index:50}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;color:#64748b;min-width:56px;position:relative;background:none;border:none;padding:6px 4px;transition:.2s}
+.nav-btn.active{color:#f59e0b}
+.nav-btn span:first-child{font-size:20px}
+.nav-btn span:last-child{font-size:10px;font-weight:700}
+.notif-dot{position:absolute;top:0;right:6px;width:16px;height:16px;border-radius:50%;background:#ef4444;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+/* Seats dark */
+.s-seat-grid{display:grid;gap:10px;margin-bottom:14px}
+.s-seat{border-radius:14px;padding:13px 6px;text-align:center}
+.s-seat.free{background:rgba(255,255,255,.03);border:1.5px dashed rgba(255,255,255,.12)}
+.s-seat.taken{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1)}
+.s-seat.mine{background:rgba(245,158,11,.1);border:1.5px solid #f59e0b}
+.s-seat .seat-name{font-size:10px;font-weight:700;line-height:1.2;margin-top:3px}
+
+/* Notifications dark */
+.notif-item{background:rgba(255,255,255,.04);border-radius:14px;padding:15px;margin-bottom:10px;border:1px solid rgba(255,255,255,.08)}
+.notif-item.unread{border-color:#f59e0b;background:rgba(245,158,11,.06)}
+
+/* Auth tabs dark */
+.tab-bar{display:flex;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06)}
+.tab-btn{flex:1;padding:13px 0;font-size:14px;font-weight:700;color:#64748b;background:none;border:none;border-bottom:2px solid transparent;font-family:inherit}
+.tab-btn.active{color:#f59e0b;border-bottom-color:#f59e0b}
+
+.action-bar{padding:14px 16px;background:rgba(15,15,20,.95);border-top:1px solid rgba(255,255,255,.06)}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px 0;flex-direction:column;gap:12px;color:#64748b;font-weight:600}
+.spin{width:32px;height:32px;border:3px solid rgba(255,255,255,.1);border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:60px 16px}
+.empty .icon{font-size:40px;margin-bottom:12px}
+.empty p{color:#94a3b8;font-weight:700;font-size:15px}
+.empty small{color:#64748b;font-size:13px;display:block;margin-top:4px}
+
+/* Popup flutuante de alerta */
+.alert-popup{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-120px);background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;padding:16px 22px;border-radius:18px;font-size:14px;font-weight:700;z-index:9999;max-width:360px;width:calc(100% - 40px);box-shadow:0 8px 40px rgba(0,0,0,.35);transition:transform .4s cubic-bezier(.4,0,.2,1),opacity .4s;opacity:0;pointer-events:none}
+.alert-popup.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
+.alert-popup .ap-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;opacity:.85}
+.alert-popup .ap-msg{font-size:15px;line-height:1.5}
+.alert-popup .ap-close{position:absolute;top:10px;right:14px;background:none;border:none;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- ══ ALUNO — AUTH ══════════════════════════════════════════════════ -->
+<div class="screen active" id="screen-student-auth">
+  <div class="app-wrap" style="justify-content:center;align-items:center;padding:24px">
+    <div style="background:rgba(255,255,255,.04);backdrop-filter:blur(24px);border-radius:28px;padding:44px 32px;width:100%;max-width:400px;border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 60px rgba(0,0,0,.5)">
+      <div style="text-align:center;margin-bottom:20px">
+        <img src="logo.png" alt="Over Point" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:12px;box-shadow:0 0 30px rgba(245,158,11,.25)">
+        <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:2px">OVER LABS</div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px">Área do Aluno</div>
+      </div>
+      <div class="tab-bar" style="border-radius:12px;overflow:hidden;margin-bottom:20px">
+        <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Entrar</button>
+        <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Criar Conta</button>
+      </div>
+      <!-- LOGIN -->
+      <div id="form-login">
+        <div id="login-err" style="display:none;background:rgba(248,113,113,.1);color:#f87171;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:14px"></div>
+        <div style="margin-bottom:14px">
+          <label class="lbl">USUÁRIO</label>
+          <input class="inp" id="l-username" placeholder="seu_usuario" autocomplete="username" onkeydown="if(event.key==='Enter')studentLogin()">
+        </div>
+        <div style="margin-bottom:14px">
+          <label class="lbl">SENHA</label>
+          <input type="password" class="inp" id="l-password" placeholder="••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')studentLogin()">
+        </div>
+        <button onclick="studentLogin()" class="btn-main">Entrar →</button>
+      </div>
+      <!-- REGISTER -->
+      <div id="form-register" style="display:none">
+        <div id="reg-err" style="display:none;background:rgba(248,113,113,.1);color:#f87171;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:14px"></div>
+        <div style="margin-bottom:13px"><label class="lbl">PRIMEIRO NOME</label><input class="inp" id="r-fn" placeholder="João"><p class="err-txt" id="e-fn"></p></div>
+        <div style="margin-bottom:13px"><label class="lbl">NOME DE USUÁRIO</label><input class="inp" id="r-un" placeholder="joao123"><p class="err-txt" id="e-un"></p></div>
+        <div style="margin-bottom:13px"><label class="lbl">SENHA</label><input type="password" class="inp" id="r-pw" placeholder="mínimo 4 caracteres"><p class="err-txt" id="e-pw"></p></div>
+        <div style="margin-bottom:13px"><label class="lbl">TELEFONE (WHATSAPP)</label><input type="tel" class="inp" id="r-ph" placeholder="(99) 9 9999-9999"><p class="err-txt" id="e-ph"></p></div>
+        <button onclick="studentRegister()" class="btn-main" style="margin-top:4px">Criar Conta →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — LISTA DE CARONAS ════════════════════════════════════ -->
+<div class="screen" id="screen-student-list">
+  <div class="app-wrap">
+    <div class="s-header">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:12px">
+          <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover">
+          <div>
+            <div class="s-hsub" id="sl-greeting">Olá!</div>
+            <div class="s-htitle">OVER LABS</div>
+          </div>
+        </div>
+        <button onclick="showScreen('student-notifs')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;position:relative">
+          <span style="font-size:18px">🔔</span>
+          <span class="notif-dot" id="notif-badge" style="display:none">0</span>
+        </button>
+      </div>
+    </div>
+    <div class="s-content" id="s-rides-content">
+      <!-- Banner instalar app -->
+      <div id="install-banner" style="display:none;background:linear-gradient(135deg,#f59e0b,#e85d04);border-radius:16px;padding:16px;margin-bottom:14px;color:#fff;text-align:center">
+        <p style="font-size:13px;font-weight:700;margin-bottom:10px">📲 Instale o app na sua tela inicial!</p>
+        <button id="install-btn" onclick="installApp()" style="padding:10px 24px;border-radius:12px;background:#fff;color:#e85d04;font-weight:800;font-size:14px;border:none;cursor:pointer">Instalar App</button>
+        <button onclick="dismissInstall()" style="display:block;margin:8px auto 0;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer">Agora não</button>
+      </div>
+      <!-- Modal iOS -->
+      <div id="ios-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px;max-width:340px;width:100%;text-align:center">
+          <div style="font-size:40px;margin-bottom:12px">📲</div>
+          <h3 style="font-size:18px;font-weight:800;margin-bottom:16px;color:#fff">Instalar OVER LABS</h3>
+          <div style="text-align:left;font-size:14px;color:#94a3b8;line-height:1.8">
+            <p><strong style="color:#e2e8f0">1.</strong> Toque no botão <span style="font-size:18px">⬆️</span> <strong style="color:#e2e8f0">Compartilhar</strong></p>
+            <p><strong style="color:#e2e8f0">2.</strong> Role e toque em <strong style="color:#e2e8f0">"Adicionar à Tela de Início"</strong></p>
+            <p><strong style="color:#e2e8f0">3.</strong> Toque em <strong style="color:#e2e8f0">"Adicionar"</strong></p>
+          </div>
+          <button onclick="closeIosModal()" style="margin-top:18px;padding:12px 32px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer">Entendi!</button>
+        </div>
+      </div>
+      <div class="loading" id="s-loading"><div class="spin"></div>Carregando...</div>
+      <div class="empty" id="s-empty" style="display:none"><div class="icon">🛣️</div><p>Nenhuma carona disponível</p><small>O professor ainda não criou caronas</small></div>
+      <div id="s-rides-list"></div>
+    </div>
+    <div class="s-bottom-nav">
+      <button class="nav-btn" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
+      <button class="nav-btn active" onclick="switchStudentTab('list')"><span>🚗</span><span>Caronas</span></button>
+      <button class="nav-btn" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
+      <button class="nav-btn" onclick="switchStudentTab('tournaments')"><span>🏐</span><span>Torneios</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — DETALHE DA CARONA ════════════════════════════════════ -->
+<div class="screen" id="screen-student-detail">
+  <div class="app-wrap">
+    <div class="s-header">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button onclick="showScreen('student-list')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+        <div>
+          <div class="s-htitle" id="sd-title" style="font-size:16px">—</div>
+          <div style="color:#64748b;font-size:13px;margin-top:2px" id="sd-info">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="s-content" id="sd-content"></div>
+    <div class="action-bar" id="sd-action"></div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — NOTIFICAÇÕES ══════════════════════════════════════════ -->
+<div class="screen" id="screen-student-notifs">
+  <div class="app-wrap">
+    <div class="s-header" style="display:flex;align-items:center;gap:14px">
+      <button onclick="showScreen('student-list')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div class="s-htitle" style="flex:1;font-size:16px">Notificações</div>
+      <button id="clear-notifs-btn" onclick="clearNotifications()" style="display:none;background:rgba(255,255,255,.08);padding:7px 12px;border-radius:10px;color:#94a3b8;font-size:12px;font-weight:700;border:none;cursor:pointer">🗑 Limpar</button>
+    </div>
+    <div class="s-content" id="notifs-list"><div class="empty"><div class="icon">🔔</div><p>Nenhuma notificação</p></div></div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — PRESENÇAS (placeholder) ═════════════════════════════ -->
+<div class="screen" id="screen-student-presence">
+  <div class="app-wrap">
+    <div class="s-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover">
+        <div>
+          <div class="s-hsub" id="sp-greeting">Olá!</div>
+          <div class="s-htitle">OVER LABS</div>
+        </div>
+      </div>
+    </div>
+    <div class="s-content">
+      <div style="text-align:center;padding:80px 20px">
+        <div style="font-size:60px;margin-bottom:20px">📋</div>
+        <h2 style="color:#fff;font-weight:800;font-size:22px;margin-bottom:8px">Presenças</h2>
+        <p style="color:#64748b;font-size:15px;max-width:320px;margin:0 auto">Esta função estará disponível em breve. Você poderá consultar sua presença por aqui.</p>
+      </div>
+    </div>
+    <div class="s-bottom-nav">
+      <button class="nav-btn" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
+      <button class="nav-btn" onclick="switchStudentTab('list')"><span>🚗</span><span>Caronas</span></button>
+      <button class="nav-btn active" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
+      <button class="nav-btn" onclick="switchStudentTab('tournaments')"><span>🏐</span><span>Torneios</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — TORNEIOS (placeholder) ══════════════════════════════ -->
+<div class="screen" id="screen-student-tournaments">
+  <div class="app-wrap">
+    <div class="s-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover">
+        <div>
+          <div class="s-hsub" id="st-greeting">Olá!</div>
+          <div class="s-htitle">OVER LABS</div>
+        </div>
+      </div>
+    </div>
+    <div class="s-content">
+      <div style="text-align:center;padding:80px 20px">
+        <div style="font-size:60px;margin-bottom:20px">🏐</div>
+        <h2 style="color:#fff;font-weight:800;font-size:22px;margin-bottom:8px">Torneios</h2>
+        <p style="color:#64748b;font-size:15px;max-width:320px;margin:0 auto">Esta função estará disponível em breve. Aqui você poderá acompanhar todos torneios que você participa, torneios em andamento e os torneios que virão.</p>
+      </div>
+    </div>
+    <div class="s-bottom-nav">
+      <button class="nav-btn" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
+      <button class="nav-btn" onclick="switchStudentTab('list')"><span>🚗</span><span>Caronas</span></button>
+      <button class="nav-btn" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
+      <button class="nav-btn active" onclick="switchStudentTab('tournaments')"><span>🏐</span><span>Torneios</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — HOME (Feed de atualizações) ═════════════════════════ -->
+<div class="screen" id="screen-student-home">
+  <div class="app-wrap">
+    <div class="s-header">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:12px">
+          <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover">
+          <div>
+            <div class="s-hsub" id="sh-greeting">Olá!</div>
+            <div class="s-htitle">OVER LABS</div>
+          </div>
+        </div>
+        <button onclick="showScreen('student-notifs')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;position:relative">
+          <span style="font-size:18px">🔔</span>
+          <span class="notif-dot" id="notif-badge-home" style="display:none">0</span>
+        </button>
+      </div>
+    </div>
+    <div class="s-content">
+      <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">📰 Últimas Atualizações</div>
+      <div class="loading" id="feed-loading"><div class="spin"></div>Carregando...</div>
+      <div class="empty" id="feed-empty" style="display:none"><div class="icon">📭</div><p>Nenhuma atualização</p><small>Aqui você se manterá informado de todas atualizações</small></div>
+      <div id="feed-list"></div>
+    </div>
+    <div class="s-bottom-nav">
+      <button class="nav-btn active" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
+      <button class="nav-btn" onclick="switchStudentTab('list')"><span>🚗</span><span>Caronas</span></button>
+      <button class="nav-btn" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
+      <button class="nav-btn" onclick="switchStudentTab('tournaments')"><span>🏐</span><span>Torneios</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Banner de atualização do app -->
+<div id="update-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;padding:16px 20px;z-index:9999;box-shadow:0 -4px 30px rgba(0,0,0,.5)">
+  <div style="display:flex;align-items:center;gap:14px;max-width:500px;margin:0 auto">
+    <span style="font-size:28px">🔄</span>
+    <div style="flex:1">
+      <div style="font-weight:800;font-size:15px">Nova versão disponível!</div>
+      <div style="font-size:12px;opacity:.85;margin-top:2px">Toque para atualizar o app</div>
+    </div>
+    <button onclick="applyUpdate()" style="padding:10px 20px;border-radius:12px;background:#fff;color:#e85d04;font-weight:800;font-size:14px;border:none;cursor:pointer">Atualizar</button>
+  </div>
+</div>
+
+<!-- Alert Popup flutuante -->
+<div class="alert-popup" id="alert-popup">
+  <button class="ap-close" onclick="hideAlertPopup()">✕</button>
+  <div class="ap-title">🔔 Alerta do Professor</div>
+  <div class="ap-msg" id="alert-popup-msg"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const firebaseConfig = {
+  apiKey:            "AIzaSyAc9Ews7WVz6GSBp9vzXF4sFI1SMwzklX0",
+  authDomain:        "carolampra.firebaseapp.com",
+  projectId:         "carolampra",
+  storageBucket:     "carolampra.firebasestorage.app",
+  messagingSenderId: "821388549140",
+  appId:             "1:821388549140:web:3f60aa294f6f67949adb01"
+};
+
+let db = null;
+let firebaseOk = false;
+
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  firebaseOk = true;
+} catch(e) {
+  console.error("Firebase error:", e);
+}
+
+let unsubRides = null;
+let unsubNotifs = null;
+let unsubAlerts = null;
+let unsubFeed = null;
+let currentUser = JSON.parse(localStorage.getItem("carolampra_user") || "null");
+let allRides = [];
+let currentRideId = null;
+let lastAlertTs = null;
+let alertsReady = false;
+
+// ── Navegação ──
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + name).classList.add("active");
+  window.scrollTo(0, 0);
+  if (name === "student-notifs") markNotifsRead();
+}
+
+function switchTab(tab) {
+  document.getElementById("form-login").style.display = tab === "login" ? "block" : "none";
+  document.getElementById("form-register").style.display = tab === "register" ? "block" : "none";
+  document.getElementById("tab-login").classList.toggle("active", tab === "login");
+  document.getElementById("tab-register").classList.toggle("active", tab === "register");
+}
+
+function switchStudentTab(tab) {
+  const map = { home: "student-home", list: "student-list", presence: "student-presence", tournaments: "student-tournaments" };
+  showScreen(map[tab] || "student-home");
+}
+
+// ── Helpers ──
+function genId() { return Math.random().toString(36).substr(2, 9) + Date.now().toString(36); }
+function clearErr(id) { const el = document.getElementById(id); if(el) el.textContent = ""; }
+function setErr(id, msg) { const el = document.getElementById(id); if(el) el.textContent = msg; }
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3000);
+}
+function fmtDate(d) {
+  if (!d) return "";
+  return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+}
+function fmtShort(d) {
+  if (!d) return "";
+  return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" });
+}
+function fmtTs(ts) {
+  if (!ts) return "";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString("pt-BR");
+}
+function isPast(date, time) {
+  return new Date(date + "T" + time) < new Date();
+}
+function requireFirebase() {
+  if (!firebaseOk) { alert("Firebase não configurado!"); return false; }
+  return true;
+}
+
+// ── Auth ──
+async function studentRegister() {
+  if (!requireFirebase()) return;
+  const fn = document.getElementById("r-fn").value.trim();
+  const un = document.getElementById("r-un").value.trim().toLowerCase();
+  const pw = document.getElementById("r-pw").value;
+  const ph = document.getElementById("r-ph").value.trim();
+
+  let ok = true;
+  ["fn","un","pw","ph"].forEach(id => setErr("e-"+id,""));
+  document.getElementById("reg-err").style.display = "none";
+
+  if (!fn) { setErr("e-fn","Campo obrigatório"); ok=false; }
+  if (!un) { setErr("e-un","Campo obrigatório"); ok=false; }
+  if (!pw || pw.length < 4) { setErr("e-pw","Mínimo 4 caracteres"); ok=false; }
+  if (!ph) { setErr("e-ph","Campo obrigatório"); ok=false; }
+  if (!ok) return;
+
+  const btn = event.target; btn.disabled=true; btn.textContent="Verificando...";
+  try {
+    const snap = await db.collection("users").where("username","==",un).get();
+    if (!snap.empty) { setErr("e-un","Usuário já cadastrado"); btn.disabled=false; btn.textContent="Criar Conta"; return; }
+
+    const uid = genId();
+    await db.collection("users").doc(uid).set({ username:un, firstName:fn, phone:ph, password:pw, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+
+    const user = { id:uid, username:un, firstName:fn, phone:ph };
+    localStorage.setItem("carolampra_user", JSON.stringify(user));
+    currentUser = user;
+    enterStudentApp();
+  } catch(e) {
+    document.getElementById("reg-err").textContent = "Erro ao criar conta. Tente novamente.";
+    document.getElementById("reg-err").style.display = "block";
+    console.error(e);
+  }
+  btn.disabled=false; btn.textContent="Criar Conta";
+}
+
+async function studentLogin() {
+  if (!requireFirebase()) return;
+  const un = document.getElementById("l-username").value.trim().toLowerCase();
+  const pw = document.getElementById("l-password").value;
+  document.getElementById("login-err").style.display = "none";
+
+  if (!un || !pw) { showLoginErr("Preencha todos os campos"); return; }
+
+  try {
+    const snap = await db.collection("users").where("username","==",un).get();
+    console.log("Login: encontrados", snap.size, "docs para username:", un);
+    if (snap.empty) { showLoginErr("Usuário não encontrado"); return; }
+
+    const doc = snap.docs[0];
+    const storedPw = doc.data().password;
+    console.log("Login: senha armazenada:", storedPw, "| digitada:", pw, "| match:", storedPw === pw);
+    if (storedPw !== pw) { showLoginErr("Senha incorreta"); return; }
+
+    const user = { id:doc.id, username:doc.data().username, firstName:doc.data().firstName };
+    localStorage.setItem("carolampra_user", JSON.stringify(user));
+    currentUser = user;
+    enterStudentApp();
+  } catch(e) {
+    showLoginErr("Erro ao conectar: " + e.message);
+    console.error("Login error:", e);
+  }
+}
+
+function showLoginErr(msg) {
+  const el = document.getElementById("login-err");
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+function enterStudentApp() {
+  const name = currentUser.firstName;
+  document.getElementById("sl-greeting").textContent = `Olá, ${name}!`;
+  const sh = document.getElementById("sh-greeting");
+  const sp = document.getElementById("sp-greeting");
+  const st = document.getElementById("st-greeting");
+  if (sh) sh.textContent = `Olá, ${name}!`;
+  if (sp) sp.textContent = `Olá, ${name}!`;
+  if (st) st.textContent = `Olá, ${name}!`;
+  showScreen("student-home");
+  startStudentListeners();
+}
+
+function studentLogout() {
+  if (unsubRides)  { unsubRides();  unsubRides  = null; }
+  if (unsubNotifs) { unsubNotifs(); unsubNotifs = null; }
+  if (unsubAlerts) { unsubAlerts(); unsubAlerts = null; }
+  if (unsubFeed)   { unsubFeed();   unsubFeed   = null; }
+  localStorage.removeItem("carolampra_user");
+  currentUser = null;
+  allRides = [];
+  cachedAlerts = [];
+  showScreen("student-auth");
+}
+
+// ── Listeners em tempo real ──
+function startStudentListeners() {
+  if (!requireFirebase()) return;
+
+  if (unsubRides) unsubRides();
+  document.getElementById("s-loading").style.display = "flex";
+  document.getElementById("s-rides-list").innerHTML = "";
+  document.getElementById("s-empty").style.display = "none";
+
+  unsubRides = db.collection("rides")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snap => {
+      allRides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderStudentRides(allRides);
+      if (currentRideId) {
+        const r = allRides.find(r => r.id === currentRideId);
+        if (r) renderStudentDetail(r);
+      }
+    });
+
+  if (unsubNotifs) unsubNotifs();
+  unsubNotifs = db.collection("notifications").doc(currentUser.id).collection("items")
+    .orderBy("at", "desc")
+    .onSnapshot(snap => {
+      const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderNotifications(notifs);
+      const unread = notifs.filter(n => !n.read).length;
+      updateNotifBadge(unread);
+    });
+
+  // Escutar alertas do professor
+  if (unsubAlerts) unsubAlerts();
+  alertsReady = false;
+  const seenAlerts = JSON.parse(localStorage.getItem("carolampra_seen_alerts") || "[]");
+  unsubAlerts = db.collection("alerts")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snap => {
+      const alerts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      if (alertsReady) {
+        // Detectar novos alertas e mostrar popup
+        alerts.forEach(a => {
+          if (!seenAlerts.includes(a.id)) {
+            showAlertPopup(a.message);
+            seenAlerts.push(a.id);
+            localStorage.setItem("carolampra_seen_alerts", JSON.stringify(seenAlerts));
+          }
+        });
+      } else {
+        // Primeira carga — marcar os existentes como "vistos" (sem popup)
+        alerts.forEach(a => {
+          if (!seenAlerts.includes(a.id)) seenAlerts.push(a.id);
+        });
+        localStorage.setItem("carolampra_seen_alerts", JSON.stringify(seenAlerts));
+        alertsReady = true;
+      }
+
+      // Mesclar alertas nas notificações
+      mergeAlertsToNotifs(alerts);
+    });
+
+  // Escutar feed de atualizações
+  if (unsubFeed) unsubFeed();
+  unsubFeed = db.collection("feed")
+    .orderBy("createdAt", "desc")
+    .limit(30)
+    .onSnapshot(snap => {
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderFeed(items);
+    });
+}
+
+function renderFeed(items) {
+  const loading = document.getElementById("feed-loading");
+  const empty = document.getElementById("feed-empty");
+  const list = document.getElementById("feed-list");
+  if (loading) loading.style.display = "none";
+
+  if (items.length === 0) {
+    if (empty) empty.style.display = "block";
+    if (list) list.innerHTML = "";
+    return;
+  }
+  if (empty) empty.style.display = "none";
+
+  list.innerHTML = items.map(item => {
+    const colors = {
+      ride_created: { bg: "rgba(34,197,94,.08)", border: "rgba(34,197,94,.2)" },
+      ride_updated: { bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.2)" },
+      ride_deleted: { bg: "rgba(239,68,68,.08)", border: "rgba(239,68,68,.2)" },
+      alert:        { bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.2)" }
+    };
+    const c = colors[item.type] || colors.alert;
+    const time = item.createdAt ? fmtTs(item.createdAt) : "agora";
+
+    return `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:16px;padding:16px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:22px">${item.icon || "📌"}</span>
+        <span style="font-weight:800;font-size:14px;color:#fff;flex:1">${escapeHtml(item.text || "")}</span>
+      </div>
+      ${item.detail ? `<p style="color:#94a3b8;font-size:13px;margin-left:32px">${escapeHtml(item.detail)}</p>` : ""}
+      <p style="color:#64748b;font-size:11px;margin-top:8px;margin-left:32px">${time}</p>
+    </div>`;
+  }).join("");
+}
+
+function renderStudentRides(rides) {
+  document.getElementById("s-loading").style.display = "none";
+  const visible = rides.filter(r => r.visible !== false);
+  const up = visible.filter(r => !isPast(r.date, r.time)).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  const list = document.getElementById("s-rides-list");
+
+  if (up.length === 0) { document.getElementById("s-empty").style.display = "block"; list.innerHTML = ""; return; }
+  document.getElementById("s-empty").style.display = "none";
+
+  list.innerHTML = up.map(ride => {
+    const booked = ride.booked || [], wl = ride.waitlist || [];
+    const myBooked  = booked.some(b => b.userId === currentUser.id);
+    const myWaiting = wl.some(w => w.userId === currentUser.id);
+    const full  = booked.length >= ride.seats;
+    const wFull = wl.length >= 5;
+
+    const cls = myBooked ? "confirmed" : myWaiting ? "waiting" : "";
+    const badge = myBooked
+      ? `<span class="badge" style="background:rgba(245,158,11,.15);color:#f59e0b">✓ CONFIRMADO</span>`
+      : myWaiting
+      ? `<span class="badge" style="background:rgba(249,115,22,.15);color:#f97316">⏳ FILA</span>`
+      : !full ? `<span class="badge" style="background:rgba(34,197,94,.12);color:#22c55e">${ride.seats-booked.length} VAGAS</span>`
+      : !wFull ? `<span class="badge" style="background:rgba(249,115,22,.15);color:#f97316">LOTADO</span>`
+      : `<span class="badge" style="background:rgba(239,68,68,.15);color:#ef4444">ESGOTADO</span>`;
+
+    return `
+      <div class="s-ride-card ${cls}" onclick="openStudentDetail('${ride.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <span style="font-weight:800;font-size:15px;color:#fff;flex:1;margin-right:8px">${ride.title}</span>
+          ${badge}
+        </div>
+        <p style="color:#94a3b8;font-size:13px;margin-bottom:10px">📅 ${fmtShort(ride.date)} · ⏰ ${ride.time}</p>
+        <div style="display:flex;gap:4px;margin-bottom:4px">
+          ${Array.from({length:ride.seats}).map((_,i)=>`<div style="flex:1;height:5px;border-radius:3px;background:${i<booked.length?'#f59e0b':'rgba(255,255,255,.1)'}"></div>`).join("")}
+        </div>
+        <p style="color:#64748b;font-size:11px">${booked.length} de ${ride.seats} vagas · ${wl.length} na lista de espera</p>
+      </div>`;
+  }).join("");
+}
+
+// ── Detalhe e Reserva ──
+function openStudentDetail(rideId) {
+  currentRideId = rideId;
+  const ride = allRides.find(r => r.id === rideId);
+  if (!ride) return;
+  renderStudentDetail(ride);
+  showScreen("student-detail");
+}
+
+function renderStudentDetail(ride) {
+  const booked = ride.booked || [], wl = ride.waitlist || [];
+  const myBooked  = booked.some(b => b.userId === currentUser.id);
+  const myWaiting = wl.some(w => w.userId === currentUser.id);
+  const myPos = wl.findIndex(w => w.userId === currentUser.id) + 1;
+  const full  = booked.length >= ride.seats;
+  const wFull = wl.length >= 5;
+
+  document.getElementById("sd-title").textContent = ride.title;
+  document.getElementById("sd-info").innerHTML = `📅 ${fmtDate(ride.date)}&nbsp;&nbsp;⏰ ${ride.time}`;
+
+  const cols = Math.min(ride.seats, 4);
+  let html = "";
+
+  if (myBooked) html += `<div style="background:rgba(245,158,11,.1);border:1.5px solid #f59e0b;border-radius:16px;padding:14px;margin-bottom:14px;text-align:center"><p style="font-size:22px">🎉</p><p style="font-weight:800;color:#f59e0b;font-size:15px">Você está confirmado!</p></div>`;
+  if (myWaiting) html += `<div style="background:rgba(249,115,22,.1);border:1.5px solid #f97316;border-radius:16px;padding:14px;margin-bottom:14px;text-align:center"><p style="font-size:22px">⏳</p><p style="font-weight:800;color:#f97316;font-size:15px">Lista de espera — #${myPos} na fila</p><p style="color:#94a3b8;font-size:12px;margin-top:3px">Você será notificado se uma vaga abrir</p></div>`;
+
+  html += `<div style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(255,255,255,.08);padding:18px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-weight:800;font-size:15px;color:#fff">Vagas</span>
+      <span style="color:#94a3b8;font-size:13px">${booked.length}/${ride.seats}</span>
+    </div>
+    <div class="s-seat-grid" style="grid-template-columns:repeat(${cols},1fr)">
+      ${Array.from({length:ride.seats}).map((_,i) => {
+        const occ = booked[i];
+        const isMe = occ && occ.userId === currentUser.id;
+        const cls = occ ? (isMe?"mine":"taken") : "free";
+        const icon = occ ? (isMe?"😊":"👤") : "💺";
+        const name = occ ? (isMe?"Você":occ.firstName) : "Livre";
+        return `<div class="s-seat ${cls}"><div style="font-size:20px">${icon}</div><div class="seat-name" style="color:${occ?(isMe?'#f59e0b':'#e2e8f0'):'#64748b'}">${name}</div></div>`;
+      }).join("")}
+    </div>`;
+
+  html += `<div style="display:flex;gap:3px;margin-top:10px">${Array.from({length:ride.seats}).map((_,i)=>`<div style="flex:1;height:5px;border-radius:3px;background:${i<booked.length?'#f59e0b':'rgba(255,255,255,.1)'}"></div>`).join("")}</div></div>`;
+
+  if (full || wl.length > 0) {
+    html += `<div style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(249,115,22,.2);padding:18px;margin-bottom:14px">
+      <h3 style="font-weight:800;font-size:15px;margin-bottom:12px;color:#fff">⏳ Lista de Espera (${wl.length}/5)</h3>`;
+    if (wl.length === 0) html += `<p style="color:#64748b;font-size:13px">Ninguém na fila</p>`;
+    else html += wl.map((w,i) => {
+      const isMe = w.userId === currentUser.id;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:${i<wl.length-1?'1px solid rgba(255,255,255,.06)':'none'}">
+        <div style="width:24px;height:24px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px">#${i+1}</div>
+        <span style="font-weight:${isMe?800:600};color:${isMe?'#f59e0b':'#e2e8f0'};font-size:14px">${isMe?'Você':w.firstName}</span>
+        ${isMe?'<span style="margin-left:auto;font-size:11px;color:#f59e0b">← você</span>':''}
+      </div>`;
+    }).join("");
+    html += "</div>";
+  }
+
+  document.getElementById("sd-content").innerHTML = html;
+
+  let action = "";
+  if (!myBooked && !myWaiting && !full) {
+    action = `<button class="btn-main" onclick="bookRide('${ride.id}')">🚗 Reservar Vaga</button>`;
+  } else if (!myBooked && !myWaiting && full && !wFull) {
+    action = `<button class="btn-main" style="background:linear-gradient(135deg,#f59e0b,#ef4444)" onclick="bookRide('${ride.id}')">⏳ Entrar na Lista de Espera</button>`;
+  } else if (!myBooked && !myWaiting && full && wFull) {
+    action = `<div style="padding:15px;border-radius:14px;background:rgba(239,68,68,.1);color:#ef4444;font-weight:800;text-align:center">🔴 Carona e lista de espera lotadas</div>`;
+  } else {
+    action = `<button class="btn-ghost" style="width:100%;text-align:center;color:#dc2626;border-color:#f87171" onclick="cancelRide('${ride.id}')">Cancelar ${myBooked?'Reserva':'da Lista de Espera'}</button>`;
+  }
+  document.getElementById("sd-action").innerHTML = action;
+}
+
+// ── Reservar / Cancelar ──
+async function bookRide(rideId) {
+  if (!requireFirebase()) return;
+  const rideRef = db.collection("rides").doc(rideId);
+
+  try {
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) throw "Carona não encontrada";
+      const ride = doc.data();
+      const booked = ride.booked || [], wl = ride.waitlist || [];
+
+      if (booked.some(b => b.userId === currentUser.id) || wl.some(w => w.userId === currentUser.id)) return;
+
+      const entry = { userId: currentUser.id, firstName: currentUser.firstName, username: currentUser.username };
+
+      if (booked.length < ride.seats) {
+        tx.update(rideRef, { booked: [...booked, entry] });
+        showToast("✅ Vaga reservada!");
+      } else if (wl.length < 5) {
+        tx.update(rideRef, { waitlist: [...wl, entry] });
+        showToast("⏳ Você entrou na lista de espera");
+      }
+    });
+  } catch(e) { showToast("Erro. Tente novamente."); console.error(e); }
+}
+
+async function cancelRide(rideId) {
+  if (!requireFirebase()) return;
+  const rideRef = db.collection("rides").doc(rideId);
+
+  try {
+    let promotedUser = null;
+    let rideTitle = "";
+
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) throw "Carona não encontrada";
+      const ride = doc.data();
+      const booked = ride.booked || [], wl = ride.waitlist || [];
+      rideTitle = ride.title;
+
+      const wasBooked  = booked.some(b => b.userId === currentUser.id);
+      const newBooked  = booked.filter(b => b.userId !== currentUser.id);
+      const newWaitlist = wl.filter(w => w.userId !== currentUser.id);
+
+      if (wasBooked && wl.length > 0) {
+        const promoted = wl[0];
+        promotedUser = promoted;
+        tx.update(rideRef, { booked: [...newBooked, promoted], waitlist: wl.slice(1) });
+      } else {
+        tx.update(rideRef, { booked: newBooked, waitlist: newWaitlist });
+      }
+    });
+
+    if (promotedUser) {
+      await db.collection("notifications").doc(promotedUser.userId).collection("items").add({
+        msg: `🎉 Boa notícia! Uma vaga abriu na carona "${rideTitle}" e você foi confirmado automaticamente!`,
+        read: false,
+        at: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    showToast("Reserva cancelada");
+    showScreen("student-list");
+  } catch(e) { showToast("Erro. Tente novamente."); console.error(e); }
+}
+
+// ── Alertas — Popup e integração ──
+function updateNotifBadge(count) {
+  const badge = document.getElementById("notif-badge");
+  const badgeHome = document.getElementById("notif-badge-home");
+  if (count > 0) {
+    if (badge) { badge.textContent = count; badge.style.display = "flex"; }
+    if (badgeHome) { badgeHome.textContent = count; badgeHome.style.display = "flex"; }
+  } else {
+    if (badge) badge.style.display = "none";
+    if (badgeHome) badgeHome.style.display = "none";
+  }
+}
+
+let alertPopupTimeout = null;
+function showAlertPopup(message) {
+  const popup = document.getElementById("alert-popup");
+  const msgEl = document.getElementById("alert-popup-msg");
+  msgEl.textContent = message;
+  popup.classList.add("show");
+  if (alertPopupTimeout) clearTimeout(alertPopupTimeout);
+  alertPopupTimeout = setTimeout(() => hideAlertPopup(), 8000);
+}
+
+function hideAlertPopup() {
+  document.getElementById("alert-popup").classList.remove("show");
+  if (alertPopupTimeout) { clearTimeout(alertPopupTimeout); alertPopupTimeout = null; }
+}
+
+let cachedAlerts = [];
+function mergeAlertsToNotifs(alerts) {
+  cachedAlerts = alerts;
+  // Re-renderizar notificações se estiver na tela
+  const screen = document.getElementById("screen-student-notifs");
+  if (screen && screen.classList.contains("active")) {
+    // Já será re-renderizado pelo listener de notifs
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ── Notificações ──
+function renderNotifications(notifs) {
+  const list = document.getElementById("notifs-list");
+  const clearBtn = document.getElementById("clear-notifs-btn");
+
+  // Mesclar alertas do professor como notificações
+  const alertNotifs = cachedAlerts.map(a => ({
+    id: "alert-" + a.id,
+    msg: "🔔 " + escapeHtml(a.message),
+    read: true,
+    at: a.createdAt,
+    isAlert: true
+  }));
+
+  const allNotifs = [...notifs, ...alertNotifs].sort((a, b) => {
+    const ta = a.at ? (a.at.toDate ? a.at.toDate() : new Date(a.at)) : new Date(0);
+    const tb = b.at ? (b.at.toDate ? b.at.toDate() : new Date(b.at)) : new Date(0);
+    return tb - ta;
+  });
+
+  if (allNotifs.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="icon">🔔</div><p>Nenhuma notificação</p></div>`;
+    if (clearBtn) clearBtn.style.display = "none";
+    return;
+  }
+  if (clearBtn) clearBtn.style.display = notifs.length > 0 ? "block" : "none";
+  list.innerHTML = allNotifs.map(n => `
+    <div class="notif-item${n.read?'':' unread'}" ${n.isAlert?'style="border-color:#f59e0b;background:rgba(245,158,11,.06)"':''}>
+      <p style="font-size:14px;font-weight:600;color:#e2e8f0;line-height:1.5">${n.isAlert ? n.msg : n.msg}</p>
+      <p style="color:#64748b;font-size:11px;margin-top:8px">${n.isAlert?'Alerta do Professor · ':''}${fmtTs(n.at)}</p>
+    </div>`).join("");
+}
+
+async function clearNotifications() {
+  if (!currentUser || !firebaseOk) return;
+  const btn = document.getElementById("clear-notifs-btn");
+  if (btn) { btn.textContent = "Limpando..."; btn.disabled = true; }
+  try {
+    const snap = await db.collection("notifications").doc(currentUser.id).collection("items").get();
+    const promises = snap.docs.map(d => d.ref.delete());
+    await Promise.all(promises);
+    showToast("Notificações limpas");
+  } catch(e) { showToast("Erro ao limpar"); console.error(e); }
+  if (btn) { btn.textContent = "🗑 Limpar"; btn.disabled = false; }
+}
+
+async function markNotifsRead() {
+  if (!currentUser || !firebaseOk) return;
+  try {
+    const snap = await db.collection("notifications").doc(currentUser.id).collection("items").where("read","==",false).get();
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.update(d.ref, { read: true }));
+    await batch.commit();
+  } catch(e) { console.error(e); }
+}
+
+// ── Inicialização ──
+if (currentUser && firebaseOk) {
+  document.getElementById("sl-greeting").textContent = `Olá, ${currentUser.firstName}!`;
+  const sh = document.getElementById("sh-greeting");
+  const sp = document.getElementById("sp-greeting");
+  const st = document.getElementById("st-greeting");
+  if (sh) sh.textContent = `Olá, ${currentUser.firstName}!`;
+  if (sp) sp.textContent = `Olá, ${currentUser.firstName}!`;
+  if (st) st.textContent = `Olá, ${currentUser.firstName}!`;
+  showScreen("student-home");
+  startStudentListeners();
+}
+
+// Criar/atualizar usuário de teste automaticamente
+if (firebaseOk) {
+  (async () => {
+    try {
+      // Atualizar senha de qualquer "teste" existente
+      const snap = await db.collection("users").where("username","==","teste").get();
+      if (!snap.empty) {
+        const batch = db.batch();
+        snap.docs.forEach(d => batch.update(d.ref, { password: "1234" }));
+        await batch.commit();
+        console.log("Usuário teste atualizado com senha 1234");
+      } else {
+        await db.collection("users").doc("user_teste").set({
+          username: "teste",
+          firstName: "Teste",
+          phone: "(00) 0 0000-0000",
+          password: "1234",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        console.log("Usuário teste criado: teste / 1234");
+      }
+    } catch(e) { console.log("Erro ao criar usuário teste:", e); }
+  })();
+}
+
+// Registrar Service Worker com detecção de atualização
+let waitingWorker = null;
+
+function applyUpdate() {
+  if (waitingWorker) {
+    waitingWorker.postMessage("SKIP_WAITING");
+  }
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").then(reg => {
+    // Verifica atualizações a cada 60 segundos
+    setInterval(() => reg.update(), 60000);
+
+    // Detecta quando uma nova versão está pronta
+    reg.addEventListener("updatefound", () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener("statechange", () => {
+        if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+          // Nova versão pronta — mostra banner
+          waitingWorker = newWorker;
+          document.getElementById("update-banner").style.display = "block";
+        }
+      });
+    });
+
+    // Se já existe um worker esperando
+    if (reg.waiting) {
+      waitingWorker = reg.waiting;
+      document.getElementById("update-banner").style.display = "block";
+    }
+  }).catch(err => console.log("SW:", err));
+
+  // Quando o novo SW assume, recarrega a página
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    window.location.reload();
+  });
+}
+
+// ── Instalar App (A2HS) ──
+let deferredPrompt = null;
+
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  showInstallBanner();
+});
+
+// Esconde o banner se já está instalado como PWA
+window.addEventListener("appinstalled", () => {
+  deferredPrompt = null;
+  hideInstallBanner();
+});
+
+function isStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function showInstallBanner() {
+  if (isStandalone() || localStorage.getItem("carolampra_dismiss_install")) return;
+  const banner = document.getElementById("install-banner");
+  if (banner) banner.style.display = "block";
+}
+
+function hideInstallBanner() {
+  const banner = document.getElementById("install-banner");
+  if (banner) banner.style.display = "none";
+}
+
+function dismissInstall() {
+  localStorage.setItem("carolampra_dismiss_install", "1");
+  hideInstallBanner();
+}
+
+function installApp() {
+  if (deferredPrompt) {
+    // Android / Chrome
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(result => {
+      deferredPrompt = null;
+      hideInstallBanner();
+      if (result.outcome === "accepted") showToast("✅ App instalado!");
+    });
+  } else if (isIOS()) {
+    // iOS — mostra modal com instruções
+    const modal = document.getElementById("ios-modal");
+    if (modal) modal.style.display = "flex";
+  } else {
+    showToast("Use o menu do navegador para instalar");
+  }
+}
+
+function closeIosModal() {
+  const modal = document.getElementById("ios-modal");
+  if (modal) modal.style.display = "none";
+  dismissInstall();
+}
+
+// Mostrar banner ao carregar se for iOS e não instalado
+if (isIOS() && !isStandalone() && !localStorage.getItem("carolampra_dismiss_install")) {
+  showInstallBanner();
+}
+</script>
+</body>
+</html>

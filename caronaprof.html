@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>CAROLAMPRA</title>
+<meta name="theme-color" content="#0d9488">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CAROLAMPRA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- ══════════════════════════════════════════════════════════════════
+  FIREBASE — Banco de dados em tempo real
+  Leia SETUP.md para configurar seu projeto gratuito no Firebase
+════════════════════════════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh}
+.screen{display:none}
+.screen.active{display:flex;flex-direction:column;min-height:100vh}
+button{cursor:pointer;border:none;font-family:inherit}
+input,select{font-family:inherit;outline:none}
+
+/* ── Base Components ── */
+.inp{width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid #e2e8f0;font-size:15px;color:#1e293b;background:#fff;transition:.15s border-color}
+.inp:focus{border-color:#0d9488}
+.inp.err{border-color:#f87171}
+.lbl{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;letter-spacing:.4px}
+.err-txt{color:#dc2626;font-size:12px;margin-top:5px}
+.btn-main{width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#0d9488,#065f46);color:#fff;font-weight:800;font-size:16px;font-family:inherit}
+.btn-main:active{opacity:.85}
+.btn-ghost{padding:10px 18px;border-radius:12px;border:1.5px solid #e2e8f0;color:#374151;font-weight:700;font-size:14px;background:#fff}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:12px 22px;border-radius:14px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;flex-shrink:0}
+
+/* ── Teacher ── */
+.t-header{background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:22px 28px;display:flex;justify-content:space-between;align-items:center}
+.t-title{font-size:20px;font-weight:800;color:#fff}
+.t-sub{font-size:13px;color:#64748b;margin-top:2px}
+.t-content{padding:24px 28px;flex:1}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+.stat-card{background:#fff;border-radius:16px;padding:18px 16px;border:1.5px solid #e2e8f0;text-align:center}
+.stat-val{font-size:30px;font-weight:900;line-height:1}
+.stat-lbl{font-size:11px;font-weight:700;color:#94a3b8;margin-top:4px}
+.ride-card{background:#fff;border-radius:18px;border:1.5px solid #e2e8f0;padding:18px;margin-bottom:12px;cursor:pointer;transition:.2s box-shadow}
+.ride-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.09)}
+.ride-title{font-weight:800;font-size:15px;color:#1e293b;flex:1;margin-right:10px}
+.ride-info{color:#64748b;font-size:13px;margin:8px 0 10px}
+.seg-bar{display:flex;gap:4px;margin-bottom:5px}
+.seg{height:6px;border-radius:3px;flex:1}
+.t-form{background:#fff;border-radius:20px;padding:28px;border:1.5px solid #e2e8f0}
+.seats-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.seat-icon{height:36px;border-radius:10px;background:#ccfbf1;display:flex;align-items:center;justify-content:center;font-size:18px;flex:1;min-width:32px}
+.t-detail-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px}
+.person-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9}
+.person-row:last-child{border-bottom:none}
+
+/* ── Student ── */
+.phone-bg{display:flex;justify-content:center;align-items:flex-start;min-height:100vh;background:linear-gradient(135deg,#f0fdfa,#ecfdf5);padding:16px}
+@media(max-width:420px){.phone-bg{padding:0;background:#f8fafc;align-items:stretch}}
+.phone{width:100%;max-width:400px;background:#f8fafc;border-radius:28px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.18);display:flex;flex-direction:column;min-height:680px}
+@media(max-width:420px){.phone{border-radius:0;box-shadow:none;min-height:100vh}}
+.s-header{background:linear-gradient(135deg,#0d9488,#065f46);padding:22px 20px 18px}
+.s-htitle{font-size:20px;font-weight:800;color:#fff}
+.s-hsub{font-size:13px;color:rgba(255,255,255,.65);margin-bottom:3px}
+.s-content{flex:1;overflow-y:auto;padding:16px}
+.s-ride-card{background:#fff;border-radius:16px;border:1.5px solid #e2e8f0;padding:16px;margin-bottom:12px;cursor:pointer}
+.s-ride-card.confirmed{border-color:#0d9488;border-width:2px}
+.s-ride-card.waiting{border-color:#f59e0b;border-width:2px}
+.s-bottom-nav{background:#fff;border-top:1px solid #e2e8f0;padding:8px 0 4px;display:flex;justify-content:space-around}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;color:#94a3b8;min-width:56px;position:relative;background:none;border:none;padding:4px}
+.nav-btn.active{color:#0d9488}
+.nav-btn span:first-child{font-size:20px}
+.nav-btn span:last-child{font-size:10px;font-weight:700}
+.notif-dot{position:absolute;top:0;right:6px;width:16px;height:16px;border-radius:50%;background:#ef4444;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.s-seat-grid{display:grid;gap:10px;margin-bottom:14px}
+.s-seat{border-radius:14px;padding:13px 6px;text-align:center}
+.s-seat.free{background:#f8fafc;border:1.5px dashed #cbd5e1}
+.s-seat.taken{background:#f1f5f9;border:1.5px solid #e2e8f0}
+.s-seat.mine{background:#ccfbf1;border:1.5px solid #0d9488}
+.s-seat .seat-name{font-size:10px;font-weight:700;line-height:1.2;margin-top:3px}
+.notif-item{background:#fff;border-radius:14px;padding:15px;margin-bottom:10px;border:1.5px solid #e2e8f0}
+.notif-item.unread{border-color:#0d9488;background:#f0fdfa}
+.divider{display:flex;align-items:center;gap:10px;margin:16px 0}
+.divider hr{flex:1;border:none;border-top:1px solid #e2e8f0}
+.divider span{font-size:12px;font-weight:700;color:#94a3b8}
+.google-btn{width:100%;padding:13px;border-radius:14px;border:1.5px solid #e2e8f0;background:#fff;color:#374151;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:10px;font-family:inherit}
+.tab-bar{display:flex;background:#fff;border-bottom:1px solid #e2e8f0}
+.tab-btn{flex:1;padding:13px 0;font-size:14px;font-weight:700;color:#94a3b8;background:none;border:none;border-bottom:2px solid transparent;font-family:inherit}
+.tab-btn.active{color:#0d9488;border-bottom-color:#0d9488}
+.action-bar{padding:14px 16px;background:#fff;border-top:1px solid #e2e8f0}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px 0;flex-direction:column;gap:12px;color:#94a3b8;font-weight:600}
+.spin{width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#0d9488;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:60px 16px}
+.empty .icon{font-size:40px;margin-bottom:12px}
+.empty p{color:#64748b;font-weight:700;font-size:15px}
+.empty small{color:#94a3b8;font-size:13px;display:block;margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- ══ MODO SELEÇÃO (Tela inicial) ══════════════════════════════════ -->
+<div class="screen active" id="screen-mode">
+  <div style="min-height:100vh;background:linear-gradient(135deg,#0f172a,#1e3a5f);display:flex;align-items:center;justify-content:center;padding:24px">
+    <div style="text-align:center;max-width:360px;width:100%">
+      <div style="font-size:56px;margin-bottom:16px">🚗</div>
+      <h1 style="font-size:30px;font-weight:800;color:#fff;margin-bottom:8px">CAROLAMPRA</h1>
+      <p style="color:#64748b;font-size:14px;margin-bottom:48px">Como você quer entrar?</p>
+      <button onclick="showScreen('teacher-login')" style="width:100%;padding:18px;border-radius:16px;background:linear-gradient(135deg,#0d9488,#0ea5e9);color:#fff;font-weight:800;font-size:17px;margin-bottom:14px">
+        👨‍🏫 Entrar como Professor
+      </button>
+      <button onclick="showScreen('student-auth');switchTab('login')" style="width:100%;padding:18px;border-radius:16px;border:1.5px solid rgba(255,255,255,.15);color:#94a3b8;font-weight:700;font-size:17px;background:rgba(255,255,255,.05)">
+        📱 Entrar como Aluno
+      </button>
+      <div id="firebase-status" style="margin-top:28px;padding:12px 16px;border-radius:12px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171;font-size:12px;font-weight:600;display:none">
+        ⚠️ Firebase não configurado — edite o arquivo e adicione suas credenciais
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — LOGIN ════════════════════════════════════════════ -->
+<div class="screen" id="screen-teacher-login">
+  <div style="min-height:100vh;background:linear-gradient(135deg,#0f172a,#1e3a5f);display:flex;align-items:center;justify-content:center;padding:24px">
+    <div style="background:rgba(255,255,255,.06);backdrop-filter:blur(20px);border-radius:24px;padding:44px 36px;width:100%;max-width:400px;border:1px solid rgba(255,255,255,.1);text-align:center">
+      <div style="font-size:48px;margin-bottom:12px">🔐</div>
+      <h1 style="font-size:24px;font-weight:800;color:#fff;margin-bottom:4px">Painel do Professor</h1>
+      <p style="color:#64748b;font-size:13px;margin-bottom:32px">Digite seu PIN de acesso</p>
+      <label class="lbl" style="color:#94a3b8;text-align:left">PIN</label>
+      <input type="password" id="t-pin" placeholder="••••" maxlength="10" oninput="clearErr('t-pin-err')" onkeydown="if(event.key==='Enter')teacherLogin()"
+        style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;font-size:22px;letter-spacing:10px;text-align:center;margin-bottom:6px">
+      <p class="err-txt" id="t-pin-err" style="margin-bottom:10px"></p>
+      <button onclick="teacherLogin()" style="width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#0d9488,#0ea5e9);color:#fff;font-weight:800;font-size:16px;margin-top:4px">Entrar →</button>
+      <button onclick="showScreen('mode')" style="margin-top:14px;color:#475569;font-size:13px;background:none;border:none;width:100%">← Voltar</button>
+      <p style="color:#334155;font-size:11px;margin-top:20px">PIN padrão: <strong style="color:#64748b">1234</strong> (mude no código)</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — DASHBOARD ════════════════════════════════════════ -->
+<div class="screen" id="screen-teacher-dashboard">
+  <div class="t-header">
+    <div>
+      <div class="t-title">🚗 CAROLAMPRA</div>
+      <div class="t-sub">Painel do Professor</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button onclick="showScreen('teacher-create');resetRideForm()" style="padding:10px 20px;border-radius:12px;background:linear-gradient(135deg,#0d9488,#0ea5e9);color:#fff;font-weight:800;font-size:14px">+ Nova Carona</button>
+      <button onclick="teacherLogout()" style="padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.15);color:#64748b;font-size:13px;background:none">Sair</button>
+    </div>
+  </div>
+  <div class="t-content">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="stat-rides" style="color:#0ea5e9">0</div><div class="stat-lbl">Caronas</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-conf" style="color:#0d9488">0</div><div class="stat-lbl">Confirmados</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-wait" style="color:#f59e0b">0</div><div class="stat-lbl">Na Fila</div></div>
+    </div>
+    <div id="t-rides-loading" class="loading"><div class="spin"></div>Carregando...</div>
+    <div id="t-rides-empty" class="empty" style="display:none"><div class="icon">🚗</div><p>Nenhuma carona criada</p><small>Clique em "+ Nova Carona" para começar</small></div>
+    <div id="t-rides-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — CRIAR CARONA ════════════════════════════════════ -->
+<div class="screen" id="screen-teacher-create">
+  <div class="t-header">
+    <div style="display:flex;align-items:center;gap:14px">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.12);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700">←</button>
+      <div><div class="t-title">Nova Carona</div><div class="t-sub">Preencha os dados</div></div>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <div class="t-form">
+      <div style="margin-bottom:18px">
+        <label class="lbl">TÍTULO DA CARONA</label>
+        <input class="inp" id="r-title" placeholder="Ex: Carona para a faculdade — Sexta" oninput="clearErr('r-title-err')">
+        <p class="err-txt" id="r-title-err"></p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+        <div>
+          <label class="lbl">DATA</label>
+          <input type="date" class="inp" id="r-date" oninput="clearErr('r-date-err')">
+          <p class="err-txt" id="r-date-err"></p>
+        </div>
+        <div>
+          <label class="lbl">HORÁRIO</label>
+          <input type="time" class="inp" id="r-time" oninput="clearErr('r-time-err')">
+          <p class="err-txt" id="r-time-err"></p>
+        </div>
+      </div>
+      <div style="margin-bottom:26px">
+        <label class="lbl">VAGAS DISPONÍVEIS: <span id="seats-val" style="color:#0d9488;font-size:17px;font-weight:900">4</span></label>
+        <input type="range" min="1" max="8" value="4" id="r-seats" oninput="updateSeats(this.value)" style="width:100%;accent-color:#0d9488;margin:8px 0">
+        <div class="seats-row" id="seats-icons"></div>
+      </div>
+      <button onclick="createRide()" class="btn-main">✓ Criar Carona</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — DETALHE DA CARONA ═══════════════════════════════ -->
+<div class="screen" id="screen-teacher-detail">
+  <div class="t-header" style="justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:14px">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.12);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700">←</button>
+      <div><div class="t-title" id="td-title">—</div><div class="t-sub" id="td-sub">—</div></div>
+    </div>
+    <button onclick="deleteRide()" style="background:#fee2e2;color:#dc2626;padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px">🗑 Excluir</button>
+  </div>
+  <div class="t-content" style="max-width:660px">
+    <div class="t-detail-stats">
+      <div class="stat-card"><div class="stat-val" id="td-stat-conf" style="color:#0d9488">0</div><div class="stat-lbl">Confirmados</div></div>
+      <div class="stat-card"><div class="stat-val" id="td-stat-wait" style="color:#f59e0b">0</div><div class="stat-lbl">Lista de espera</div></div>
+      <div class="stat-card"><div class="stat-val" id="td-stat-free" style="color:#0ea5e9">0</div><div class="stat-lbl">Vagas livres</div></div>
+    </div>
+    <div style="background:#fff;border-radius:16px;border:1.5px solid #e2e8f0;padding:22px;margin-bottom:16px">
+      <h3 style="font-weight:800;font-size:15px;margin-bottom:14px">✅ Confirmados</h3>
+      <div id="td-booked"></div>
+    </div>
+    <div id="td-waitlist-wrap" style="background:#fff;border-radius:16px;border:1.5px solid #fbbf24;padding:22px;display:none">
+      <h3 style="font-weight:800;font-size:15px;margin-bottom:14px">⏳ Lista de Espera</h3>
+      <div id="td-waitlist"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — AUTH ══════════════════════════════════════════════════ -->
+<div class="screen" id="screen-student-auth">
+  <div class="phone-bg">
+    <div class="phone">
+      <div style="background:linear-gradient(135deg,#0d9488,#065f46);padding:36px 24px 26px;text-align:center">
+        <div style="font-size:46px;margin-bottom:10px">🚗</div>
+        <div style="font-size:24px;font-weight:800;color:#fff">CAROLAMPRA</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.65);margin-top:4px">Caronas do seu professor</div>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Entrar</button>
+        <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Criar Conta</button>
+      </div>
+      <div style="flex:1;padding:20px;background:#fff;overflow-y:auto">
+        <!-- LOGIN -->
+        <div id="form-login">
+          <div id="login-err" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:14px"></div>
+          <div style="margin-bottom:14px">
+            <label class="lbl">USUÁRIO</label>
+            <input class="inp" id="l-username" placeholder="seu_usuario" autocomplete="username" onkeydown="if(event.key==='Enter')studentLogin()">
+          </div>
+          <div style="margin-bottom:14px">
+            <label class="lbl">SENHA</label>
+            <input type="password" class="inp" id="l-password" placeholder="••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')studentLogin()">
+          </div>
+          <button onclick="studentLogin()" class="btn-main">Entrar</button>
+          <div class="divider"><hr><span>ou</span><hr></div>
+          <button class="google-btn" onclick="alert('Login com Google requer configuração Firebase Auth.\nVeja o arquivo SETUP.md para instruções.')">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            Entrar com Google
+          </button>
+        </div>
+        <!-- REGISTER -->
+        <div id="form-register" style="display:none">
+          <div id="reg-err" style="display:none;background:#fee2e2;color:#dc2626;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:14px"></div>
+          <div style="margin-bottom:13px"><label class="lbl">PRIMEIRO NOME</label><input class="inp" id="r-fn" placeholder="João"><p class="err-txt" id="e-fn"></p></div>
+          <div style="margin-bottom:13px"><label class="lbl">NOME DE USUÁRIO</label><input class="inp" id="r-un" placeholder="joao123"><p class="err-txt" id="e-un"></p></div>
+          <div style="margin-bottom:13px"><label class="lbl">SENHA</label><input type="password" class="inp" id="r-pw" placeholder="mínimo 4 caracteres"><p class="err-txt" id="e-pw"></p></div>
+          <div style="margin-bottom:13px"><label class="lbl">TELEFONE (WHATSAPP)</label><input type="tel" class="inp" id="r-ph" placeholder="(99) 9 9999-9999"><p class="err-txt" id="e-ph"></p></div>
+          <button onclick="studentRegister()" class="btn-main" style="margin-top:4px">Criar Conta</button>
+          <div class="divider"><hr><span>ou</span><hr></div>
+          <button class="google-btn" onclick="alert('Criar com Google requer configuração Firebase Auth.\nVeja o arquivo SETUP.md para instruções.')">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            Criar com Google
+          </button>
+        </div>
+      </div>
+      <div style="padding:12px;background:#fff;text-align:center">
+        <button onclick="showScreen('mode')" style="color:#94a3b8;font-size:12px;background:none;border:none">← Voltar à tela inicial</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — LISTA DE CARONAS ════════════════════════════════════ -->
+<div class="screen" id="screen-student-list">
+  <div class="phone-bg">
+    <div class="phone">
+      <div class="s-header">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end">
+          <div>
+            <div class="s-hsub" id="sl-greeting">Olá! 👋</div>
+            <div class="s-htitle">Caronas</div>
+          </div>
+          <button onclick="showScreen('student-notifs')" style="background:rgba(255,255,255,.15);border:none;border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;position:relative">
+            <span style="font-size:18px">🔔</span>
+            <span class="notif-dot" id="notif-badge" style="display:none">0</span>
+          </button>
+        </div>
+      </div>
+      <div class="s-content" id="s-rides-content">
+        <div class="loading" id="s-loading"><div class="spin"></div>Carregando...</div>
+        <div class="empty" id="s-empty" style="display:none"><div class="icon">🛣️</div><p>Nenhuma carona disponível</p><small>O professor ainda não criou caronas</small></div>
+        <div id="s-rides-list"></div>
+      </div>
+      <div class="s-bottom-nav">
+        <button class="nav-btn active" onclick="showScreen('student-list')"><span>🚗</span><span>Caronas</span></button>
+        <button class="nav-btn" onclick="showScreen('student-notifs')" id="nav-notifs"><span>🔔</span><span>Avisos</span><span class="notif-dot" id="nav-notif-badge" style="display:none">0</span></button>
+        <button class="nav-btn" onclick="studentLogout()"><span>👤</span><span>Sair</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — DETALHE DA CARONA ════════════════════════════════════ -->
+<div class="screen" id="screen-student-detail">
+  <div class="phone-bg">
+    <div class="phone">
+      <div style="background:linear-gradient(135deg,#0d9488,#065f46);padding:20px 20px 26px">
+        <button onclick="showScreen('student-list')" style="background:rgba(255,255,255,.2);padding:7px 13px;border-radius:10px;color:#fff;font-weight:700;margin-bottom:14px;font-size:14px">← Voltar</button>
+        <div class="s-htitle" id="sd-title">—</div>
+        <div style="color:rgba(255,255,255,.75);font-size:14px;margin-top:6px" id="sd-info">—</div>
+      </div>
+      <div class="s-content" style="margin-top:-12px;border-radius:20px 20px 0 0;background:#f8fafc" id="sd-content">
+      </div>
+      <div class="action-bar" id="sd-action"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — NOTIFICAÇÕES ══════════════════════════════════════════ -->
+<div class="screen" id="screen-student-notifs">
+  <div class="phone-bg">
+    <div class="phone">
+      <div class="s-header" style="display:flex;flex-direction:row;align-items:center;gap:14px">
+        <button onclick="showScreen('student-list')" style="background:rgba(255,255,255,.2);padding:7px 13px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+        <div class="s-htitle">Notificações</div>
+      </div>
+      <div class="s-content" id="notifs-list"><div class="empty"><div class="icon">🔔</div><p>Nenhuma notificação</p></div></div>
+      <div class="s-bottom-nav">
+        <button class="nav-btn" onclick="showScreen('student-list')"><span>🚗</span><span>Caronas</span></button>
+        <button class="nav-btn active"><span>🔔</span><span>Avisos</span></button>
+        <button class="nav-btn" onclick="studentLogout()"><span>👤</span><span>Sair</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+//  ⚙️  CONFIGURAÇÕES — EDITE AQUI
+// ══════════════════════════════════════════════════════════════════════════
+
+const TEACHER_PIN = "1234"; // ← mude para o PIN que quiser
+
+// Cole aqui as credenciais do seu projeto Firebase:
+const firebaseConfig = {
+  apiKey:            "AIzaSyAc9Ews7WVz6GSBp9vzXF4sFI1SMwzklX0",
+  authDomain:        "carolampra.firebaseapp.com",
+  projectId:         "carolampra",
+  storageBucket:     "carolampra.firebasestorage.app",
+  messagingSenderId: "821388549140",
+  appId:             "1:821388549140:web:3f60aa294f6f67949adb01"
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+//  INICIALIZAÇÃO DO FIREBASE
+// ══════════════════════════════════════════════════════════════════════════
+
+let db = null;
+let firebaseOk = false;
+
+try {
+  if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "COLE_AQUI") {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    firebaseOk = true;
+  } else {
+    document.getElementById("firebase-status").style.display = "block";
+  }
+} catch(e) {
+  console.error("Firebase error:", e);
+  document.getElementById("firebase-status").style.display = "block";
+}
+
+// Listeners Firestore ativos
+let unsubRides = null;
+let unsubNotifs = null;
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ESTADO DA APLICAÇÃO
+// ══════════════════════════════════════════════════════════════════════════
+
+let currentUser = JSON.parse(localStorage.getItem("caronaprof_user") || "null");
+let allRides = [];
+let currentRideId = null;
+let currentDetailRideId = null;
+
+// ══════════════════════════════════════════════════════════════════════════
+//  NAVEGAÇÃO
+// ══════════════════════════════════════════════════════════════════════════
+
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + name).classList.add("active");
+  window.scrollTo(0, 0);
+
+  if (name === "student-notifs") markNotifsRead();
+}
+
+function switchTab(tab) {
+  document.getElementById("form-login").style.display = tab === "login" ? "block" : "none";
+  document.getElementById("form-register").style.display = tab === "register" ? "block" : "none";
+  document.getElementById("tab-login").classList.toggle("active", tab === "login");
+  document.getElementById("tab-register").classList.toggle("active", tab === "register");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════════════════════
+
+function genId() { return Math.random().toString(36).substr(2, 9) + Date.now().toString(36); }
+function clearErr(id) { const el = document.getElementById(id); if(el) el.textContent = ""; }
+function setErr(id, msg) { const el = document.getElementById(id); if(el) el.textContent = msg; }
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+function fmtDate(d) {
+  if (!d) return "";
+  return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+}
+function fmtShort(d) {
+  if (!d) return "";
+  return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" });
+}
+function fmtTs(ts) {
+  if (!ts) return "";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString("pt-BR");
+}
+function isPast(date, time) {
+  return new Date(date + "T" + time) < new Date();
+}
+
+function requireFirebase() {
+  if (!firebaseOk) { alert("Configure o Firebase primeiro!\nEdite o arquivo e preencha as credenciais."); return false; }
+  return true;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PROFESSOR — AUTH
+// ══════════════════════════════════════════════════════════════════════════
+
+function teacherLogin() {
+  const pin = document.getElementById("t-pin").value;
+  if (pin === TEACHER_PIN) {
+    document.getElementById("t-pin").value = "";
+    setErr("t-pin-err", "");
+    showScreen("teacher-dashboard");
+    startTeacherListener();
+  } else {
+    setErr("t-pin-err", "PIN incorreto");
+  }
+}
+
+function teacherLogout() {
+  if (unsubRides) { unsubRides(); unsubRides = null; }
+  showScreen("mode");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PROFESSOR — LISTENER EM TEMPO REAL (FIRESTORE)
+// ══════════════════════════════════════════════════════════════════════════
+
+function startTeacherListener() {
+  if (!requireFirebase()) { renderTeacherRides([]); return; }
+  document.getElementById("t-rides-loading").style.display = "flex";
+  document.getElementById("t-rides-list").innerHTML = "";
+  document.getElementById("t-rides-empty").style.display = "none";
+
+  if (unsubRides) unsubRides();
+  unsubRides = db.collection("rides")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snap => {
+      allRides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderTeacherRides(allRides);
+      // Atualiza detalhe se estiver aberto
+      if (currentDetailRideId) {
+        const r = allRides.find(r => r.id === currentDetailRideId);
+        if (r) renderTeacherDetail(r);
+      }
+    }, err => {
+      console.error(err);
+      showToast("Erro ao carregar caronas");
+    });
+}
+
+function renderTeacherRides(rides) {
+  document.getElementById("t-rides-loading").style.display = "none";
+  const list = document.getElementById("t-rides-list");
+  const now = new Date();
+  const up = rides.filter(r => !isPast(r.date, r.time)).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  const past = rides.filter(r => isPast(r.date, r.time));
+
+  document.getElementById("t-rides-empty").style.display = rides.length === 0 ? "block" : "none";
+  document.getElementById("stat-rides").textContent = rides.length;
+  document.getElementById("stat-conf").textContent = rides.reduce((s,r) => s + (r.booked||[]).length, 0);
+  document.getElementById("stat-wait").textContent = rides.reduce((s,r) => s + (r.waitlist||[]).length, 0);
+
+  function rideCard(r, dim) {
+    const booked = r.booked || [], wl = r.waitlist || [];
+    const full = booked.length >= r.seats;
+    const pct = Math.round((booked.length / r.seats) * 100);
+    return `
+      <div class="ride-card" onclick="openTeacherDetail('${r.id}')" style="${dim?'opacity:.5':''}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
+          <span class="ride-title">${r.title}</span>
+          <span class="badge" style="background:${full?'#fee2e2':'#dcfce7'};color:${full?'#dc2626':'#16a34a'};white-space:nowrap">
+            ${full ? 'LOTADO' : (r.seats - booked.length) + ' VAGAS'}
+          </span>
+        </div>
+        <p class="ride-info">📅 ${fmtShort(r.date)} · ⏰ ${r.time}</p>
+        <div class="seg-bar">${Array.from({length:r.seats}).map((_,i)=>`<div class="seg" style="background:${i<booked.length?'#0d9488':'#e2e8f0'}"></div>`).join('')}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <span style="color:#94a3b8;font-size:12px">${booked.length}/${r.seats} confirmados · ${wl.length} na fila</span>
+          <div style="display:flex;gap:3px">${booked.slice(0,4).map(b=>`<div class="avatar" title="${b.firstName}" style="background:#0d9488;width:28px;height:28px;font-size:11px">${b.firstName[0]}</div>`).join('')}${booked.length>4?`<div class="avatar" style="background:#e2e8f0;color:#64748b;width:28px;height:28px;font-size:11px">+${booked.length-4}</div>`:''}</div>
+        </div>
+      </div>`;
+  }
+
+  let html = "";
+  if (up.length) html += `<h2 style="font-weight:800;font-size:15px;color:#1e293b;margin-bottom:12px">Próximas caronas</h2>` + up.map(r => rideCard(r)).join("") + `<div style="margin-bottom:24px"></div>`;
+  if (past.length) html += `<h2 style="font-weight:800;font-size:15px;color:#94a3b8;margin-bottom:12px">Anteriores</h2>` + past.map(r => rideCard(r, true)).join("");
+  list.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PROFESSOR — CRIAR CARONA
+// ══════════════════════════════════════════════════════════════════════════
+
+function resetRideForm() {
+  document.getElementById("r-title").value = "";
+  document.getElementById("r-date").value = "";
+  document.getElementById("r-time").value = "";
+  document.getElementById("r-seats").value = 4;
+  updateSeats(4);
+  ["r-title-err","r-date-err","r-time-err"].forEach(id => setErr(id,""));
+}
+
+function updateSeats(n) {
+  document.getElementById("seats-val").textContent = n;
+  const icons = document.getElementById("seats-icons");
+  icons.innerHTML = Array.from({length:Number(n)}).map(()=>`<div class="seat-icon">💺</div>`).join("");
+}
+
+async function createRide() {
+  if (!requireFirebase()) return;
+  const title = document.getElementById("r-title").value.trim();
+  const date  = document.getElementById("r-date").value;
+  const time  = document.getElementById("r-time").value;
+  const seats = Number(document.getElementById("r-seats").value);
+
+  let ok = true;
+  if (!title) { setErr("r-title-err","Informe o título"); ok=false; }
+  if (!date)  { setErr("r-date-err","Informe a data"); ok=false; }
+  if (!time)  { setErr("r-time-err","Informe o horário"); ok=false; }
+  if (!ok) return;
+
+  const btn = event.target; btn.disabled = true; btn.textContent = "Criando...";
+  try {
+    await db.collection("rides").add({ title, date, time, seats, booked: [], waitlist: [], createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    showToast("✅ Carona criada!");
+    showScreen("teacher-dashboard");
+  } catch(e) {
+    showToast("Erro ao criar carona");
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = "✓ Criar Carona";
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PROFESSOR — DETALHE DA CARONA
+// ══════════════════════════════════════════════════════════════════════════
+
+function openTeacherDetail(rideId) {
+  currentDetailRideId = rideId;
+  const ride = allRides.find(r => r.id === rideId);
+  if (!ride) return;
+  renderTeacherDetail(ride);
+  showScreen("teacher-detail");
+}
+
+function renderTeacherDetail(ride) {
+  const booked = ride.booked || [], wl = ride.waitlist || [];
+  document.getElementById("td-title").textContent = ride.title;
+  document.getElementById("td-sub").textContent = `${fmtShort(ride.date)} · ${ride.time}`;
+  document.getElementById("td-stat-conf").textContent = `${booked.length}/${ride.seats}`;
+  document.getElementById("td-stat-wait").textContent = `${wl.length}/5`;
+  document.getElementById("td-stat-free").textContent = Math.max(0, ride.seats - booked.length);
+
+  document.getElementById("td-booked").innerHTML = booked.length === 0
+    ? `<p style="color:#94a3b8;font-size:14px">Nenhum aluno confirmado ainda</p>`
+    : booked.map((b,i) => `
+        <div class="person-row">
+          <div class="avatar" style="background:linear-gradient(135deg,#0d9488,#0ea5e9)">${b.firstName[0]}</div>
+          <div style="flex:1"><p style="font-weight:700;font-size:14px">${b.firstName}</p><p style="color:#94a3b8;font-size:12px">@${b.username}</p></div>
+          <span class="badge" style="background:#dcfce7;color:#16a34a">Vaga ${i+1}</span>
+        </div>`).join("");
+
+  const wlWrap = document.getElementById("td-waitlist-wrap");
+  if (wl.length > 0) {
+    wlWrap.style.display = "block";
+    document.getElementById("td-waitlist").innerHTML = wl.map((w,i) => `
+        <div class="person-row">
+          <div style="width:26px;height:26px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px">#${i+1}</div>
+          <div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">${w.firstName[0]}</div>
+          <div><p style="font-weight:700;font-size:14px">${w.firstName}</p><p style="color:#94a3b8;font-size:12px">@${w.username}</p></div>
+        </div>`).join("");
+  } else {
+    wlWrap.style.display = "none";
+  }
+}
+
+async function deleteRide() {
+  if (!confirm("Excluir esta carona? Esta ação não pode ser desfeita.")) return;
+  try {
+    await db.collection("rides").doc(currentDetailRideId).delete();
+    showToast("Carona excluída");
+    currentDetailRideId = null;
+    showScreen("teacher-dashboard");
+  } catch(e) { showToast("Erro ao excluir"); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ALUNO — AUTH
+// ══════════════════════════════════════════════════════════════════════════
+
+async function studentRegister() {
+  if (!requireFirebase()) return;
+  const fn = document.getElementById("r-fn").value.trim();
+  const un = document.getElementById("r-un").value.trim().toLowerCase();
+  const pw = document.getElementById("r-pw").value;
+  const ph = document.getElementById("r-ph").value.trim();
+
+  let ok = true;
+  ["fn","un","pw","ph"].forEach(id => setErr("e-"+id,""));
+  document.getElementById("reg-err").style.display = "none";
+
+  if (!fn) { setErr("e-fn","Campo obrigatório"); ok=false; }
+  if (!un) { setErr("e-un","Campo obrigatório"); ok=false; }
+  if (!pw || pw.length < 4) { setErr("e-pw","Mínimo 4 caracteres"); ok=false; }
+  if (!ph) { setErr("e-ph","Campo obrigatório"); ok=false; }
+  if (!ok) return;
+
+  const btn = event.target; btn.disabled=true; btn.textContent="Verificando...";
+  try {
+    // Verifica username único
+    const snap = await db.collection("users").where("username","==",un).get();
+    if (!snap.empty) { setErr("e-un","Usuário já cadastrado"); btn.disabled=false; btn.textContent="Criar Conta"; return; }
+
+    const uid = genId();
+    await db.collection("users").doc(uid).set({ username:un, firstName:fn, phone:ph, password:pw, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+
+    const user = { id:uid, username:un, firstName:fn, phone:ph };
+    localStorage.setItem("caronaprof_user", JSON.stringify(user));
+    currentUser = user;
+    enterStudentApp();
+  } catch(e) {
+    document.getElementById("reg-err").textContent = "Erro ao criar conta. Tente novamente.";
+    document.getElementById("reg-err").style.display = "block";
+    console.error(e);
+  }
+  btn.disabled=false; btn.textContent="Criar Conta";
+}
+
+async function studentLogin() {
+  if (!requireFirebase()) return;
+  const un = document.getElementById("l-username").value.trim().toLowerCase();
+  const pw = document.getElementById("l-password").value;
+  document.getElementById("login-err").style.display = "none";
+
+  if (!un || !pw) { showLoginErr("Preencha todos os campos"); return; }
+
+  const btn = event.target; btn.disabled=true; btn.textContent="Entrando...";
+  try {
+    const snap = await db.collection("users").where("username","==",un).where("password","==",pw).get();
+    if (snap.empty) { showLoginErr("Usuário ou senha incorretos"); btn.disabled=false; btn.textContent="Entrar"; return; }
+
+    const doc = snap.docs[0];
+    const user = { id:doc.id, username:doc.data().username, firstName:doc.data().firstName };
+    localStorage.setItem("caronaprof_user", JSON.stringify(user));
+    currentUser = user;
+    enterStudentApp();
+  } catch(e) {
+    showLoginErr("Erro ao conectar. Verifique o Firebase.");
+    console.error(e);
+  }
+  btn.disabled=false; btn.textContent="Entrar";
+}
+
+function showLoginErr(msg) {
+  const el = document.getElementById("login-err");
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+function enterStudentApp() {
+  document.getElementById("sl-greeting").textContent = `Olá, ${currentUser.firstName}! 👋`;
+  showScreen("student-list");
+  startStudentListeners();
+}
+
+function studentLogout() {
+  if (unsubRides)  { unsubRides();  unsubRides  = null; }
+  if (unsubNotifs) { unsubNotifs(); unsubNotifs = null; }
+  localStorage.removeItem("caronaprof_user");
+  currentUser = null;
+  allRides = [];
+  showScreen("mode");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ALUNO — LISTENER EM TEMPO REAL (FIRESTORE)
+//  ← Aqui está a mágica: onSnapshot atualiza INSTANTANEAMENTE
+// ══════════════════════════════════════════════════════════════════════════
+
+function startStudentListeners() {
+  if (!requireFirebase()) return;
+
+  // Listener de caronas — atualiza em tempo real
+  if (unsubRides) unsubRides();
+  document.getElementById("s-loading").style.display = "flex";
+  document.getElementById("s-rides-list").innerHTML = "";
+  document.getElementById("s-empty").style.display = "none";
+
+  unsubRides = db.collection("rides")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snap => {
+      allRides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderStudentRides(allRides);
+      // Atualiza detalhe se estiver aberto
+      if (currentRideId) {
+        const r = allRides.find(r => r.id === currentRideId);
+        if (r) renderStudentDetail(r);
+      }
+    });
+
+  // Listener de notificações
+  if (unsubNotifs) unsubNotifs();
+  unsubNotifs = db.collection("notifications").doc(currentUser.id).collection("items")
+    .orderBy("at", "desc")
+    .onSnapshot(snap => {
+      const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderNotifications(notifs);
+      const unread = notifs.filter(n => !n.read).length;
+      const badge = document.getElementById("notif-badge");
+      const navBadge = document.getElementById("nav-notif-badge");
+      if (unread > 0) {
+        badge.textContent = unread; badge.style.display = "flex";
+        navBadge.textContent = unread; navBadge.style.display = "flex";
+      } else {
+        badge.style.display = "none";
+        navBadge.style.display = "none";
+      }
+    });
+}
+
+function renderStudentRides(rides) {
+  document.getElementById("s-loading").style.display = "none";
+  const now = new Date();
+  const up = rides.filter(r => !isPast(r.date, r.time)).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  const list = document.getElementById("s-rides-list");
+
+  if (up.length === 0) { document.getElementById("s-empty").style.display = "block"; list.innerHTML = ""; return; }
+  document.getElementById("s-empty").style.display = "none";
+
+  list.innerHTML = up.map(ride => {
+    const booked = ride.booked || [], wl = ride.waitlist || [];
+    const myBooked  = booked.some(b => b.userId === currentUser.id);
+    const myWaiting = wl.some(w => w.userId === currentUser.id);
+    const full  = booked.length >= ride.seats;
+    const wFull = wl.length >= 5;
+
+    const cls = myBooked ? "confirmed" : myWaiting ? "waiting" : "";
+    const badge = myBooked
+      ? `<span class="badge" style="background:#ccfbf1;color:#0d9488">✓ CONFIRMADO</span>`
+      : myWaiting
+      ? `<span class="badge" style="background:#fef3c7;color:#d97706">⏳ FILA</span>`
+      : !full ? `<span class="badge" style="background:#dcfce7;color:#16a34a">${ride.seats-booked.length} VAGAS</span>`
+      : !wFull ? `<span class="badge" style="background:#fef3c7;color:#d97706">LOTADO</span>`
+      : `<span class="badge" style="background:#fee2e2;color:#dc2626">ESGOTADO</span>`;
+
+    return `
+      <div class="s-ride-card ${cls}" onclick="openStudentDetail('${ride.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <span style="font-weight:800;font-size:15px;color:#1e293b;flex:1;margin-right:8px">${ride.title}</span>
+          ${badge}
+        </div>
+        <p style="color:#64748b;font-size:13px;margin-bottom:10px">📅 ${fmtShort(ride.date)} · ⏰ ${ride.time}</p>
+        <div style="display:flex;gap:4px;margin-bottom:4px">
+          ${Array.from({length:ride.seats}).map((_,i)=>`<div style="flex:1;height:5px;border-radius:3px;background:${i<booked.length?'#0d9488':'#e2e8f0'}"></div>`).join("")}
+        </div>
+        <p style="color:#94a3b8;font-size:11px">${booked.length} de ${ride.seats} vagas · ${wl.length} na lista de espera</p>
+      </div>`;
+  }).join("");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ALUNO — DETALHE E RESERVA
+// ══════════════════════════════════════════════════════════════════════════
+
+function openStudentDetail(rideId) {
+  currentRideId = rideId;
+  const ride = allRides.find(r => r.id === rideId);
+  if (!ride) return;
+  renderStudentDetail(ride);
+  showScreen("student-detail");
+}
+
+function renderStudentDetail(ride) {
+  const booked = ride.booked || [], wl = ride.waitlist || [];
+  const myBooked  = booked.some(b => b.userId === currentUser.id);
+  const myWaiting = wl.some(w => w.userId === currentUser.id);
+  const myPos = wl.findIndex(w => w.userId === currentUser.id) + 1;
+  const full  = booked.length >= ride.seats;
+  const wFull = wl.length >= 5;
+
+  document.getElementById("sd-title").textContent = ride.title;
+  document.getElementById("sd-info").innerHTML = `📅 ${fmtDate(ride.date)}&nbsp;&nbsp;⏰ ${ride.time}`;
+
+  const cols = Math.min(ride.seats, 4);
+  let html = "";
+
+  // Status banner
+  if (myBooked) html += `<div style="background:#ccfbf1;border:1.5px solid #0d9488;border-radius:16px;padding:14px;margin-bottom:14px;text-align:center"><p style="font-size:22px">🎉</p><p style="font-weight:800;color:#0d9488;font-size:15px">Você está confirmado!</p></div>`;
+  if (myWaiting) html += `<div style="background:#fef3c7;border:1.5px solid #fbbf24;border-radius:16px;padding:14px;margin-bottom:14px;text-align:center"><p style="font-size:22px">⏳</p><p style="font-weight:800;color:#d97706;font-size:15px">Lista de espera — #${myPos} na fila</p><p style="color:#92400e;font-size:12px;margin-top:3px">Você será notificado se uma vaga abrir</p></div>`;
+
+  // Seats
+  html += `<div style="background:#fff;border-radius:16px;border:1.5px solid #e2e8f0;padding:18px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-weight:800;font-size:15px">Vagas</span>
+      <span style="color:#64748b;font-size:13px">${booked.length}/${ride.seats}</span>
+    </div>
+    <div class="s-seat-grid" style="grid-template-columns:repeat(${cols},1fr)">
+      ${Array.from({length:ride.seats}).map((_,i) => {
+        const occ = booked[i];
+        const isMe = occ && occ.userId === currentUser.id;
+        const cls = occ ? (isMe?"mine":"taken") : "free";
+        const icon = occ ? (isMe?"😊":"👤") : "💺";
+        const name = occ ? (isMe?"Você":occ.firstName) : "Livre";
+        return `<div class="s-seat ${cls}"><div style="font-size:20px">${icon}</div><div class="seat-name" style="color:${occ?(isMe?'#0d9488':'#374151'):'#cbd5e1'}">${name}</div></div>`;
+      }).join("")}
+    </div>`;
+
+  // Progress bar
+  html += `<div style="display:flex;gap:3px;margin-top:10px">${Array.from({length:ride.seats}).map((_,i)=>`<div style="flex:1;height:5px;border-radius:3px;background:${i<booked.length?'#0d9488':'#e2e8f0'}"></div>`).join("")}</div></div>`;
+
+  // Waitlist
+  if (full || wl.length > 0) {
+    html += `<div style="background:#fff;border-radius:16px;border:1.5px solid #fbbf24;padding:18px;margin-bottom:14px">
+      <h3 style="font-weight:800;font-size:15px;margin-bottom:12px">⏳ Lista de Espera (${wl.length}/5)</h3>`;
+    if (wl.length === 0) html += `<p style="color:#94a3b8;font-size:13px">Ninguém na fila</p>`;
+    else html += wl.map((w,i) => {
+      const isMe = w.userId === currentUser.id;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:${i<wl.length-1?'1px solid #f1f5f9':'none'}">
+        <div style="width:24px;height:24px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px">#${i+1}</div>
+        <span style="font-weight:${isMe?800:600};color:${isMe?'#d97706':'#374151'};font-size:14px">${isMe?'Você':w.firstName}</span>
+        ${isMe?'<span style="margin-left:auto;font-size:11px;color:#d97706">← você</span>':''}
+      </div>`;
+    }).join("");
+    html += "</div>";
+  }
+
+  document.getElementById("sd-content").innerHTML = html;
+
+  // Action button
+  let action = "";
+  if (!myBooked && !myWaiting && !full) {
+    action = `<button class="btn-main" onclick="bookRide('${ride.id}')">🚗 Reservar Vaga</button>`;
+  } else if (!myBooked && !myWaiting && full && !wFull) {
+    action = `<button class="btn-main" style="background:linear-gradient(135deg,#f59e0b,#ef4444)" onclick="bookRide('${ride.id}')">⏳ Entrar na Lista de Espera</button>`;
+  } else if (!myBooked && !myWaiting && full && wFull) {
+    action = `<div style="padding:15px;border-radius:14px;background:#fee2e2;color:#dc2626;font-weight:800;text-align:center">🔴 Carona e lista de espera lotadas</div>`;
+  } else {
+    action = `<button class="btn-ghost" style="width:100%;text-align:center;color:#dc2626;border-color:#f87171" onclick="cancelRide('${ride.id}')">Cancelar ${myBooked?'Reserva':'da Lista de Espera'}</button>`;
+  }
+  document.getElementById("sd-action").innerHTML = action;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ALUNO — RESERVAR / CANCELAR
+// ══════════════════════════════════════════════════════════════════════════
+
+async function bookRide(rideId) {
+  if (!requireFirebase()) return;
+  const rideRef = db.collection("rides").doc(rideId);
+
+  try {
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) throw "Carona não encontrada";
+      const ride = doc.data();
+      const booked = ride.booked || [], wl = ride.waitlist || [];
+
+      if (booked.some(b => b.userId === currentUser.id) || wl.some(w => w.userId === currentUser.id)) return;
+
+      const entry = { userId: currentUser.id, firstName: currentUser.firstName, username: currentUser.username };
+
+      if (booked.length < ride.seats) {
+        tx.update(rideRef, { booked: [...booked, entry] });
+        showToast("✅ Vaga reservada!");
+      } else if (wl.length < 5) {
+        tx.update(rideRef, { waitlist: [...wl, entry] });
+        showToast("⏳ Você entrou na lista de espera");
+      }
+    });
+  } catch(e) { showToast("Erro. Tente novamente."); console.error(e); }
+}
+
+async function cancelRide(rideId) {
+  if (!requireFirebase()) return;
+  const rideRef = db.collection("rides").doc(rideId);
+
+  try {
+    let promotedUser = null;
+    let rideTitle = "";
+
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) throw "Carona não encontrada";
+      const ride = doc.data();
+      const booked = ride.booked || [], wl = ride.waitlist || [];
+      rideTitle = ride.title;
+
+      const wasBooked  = booked.some(b => b.userId === currentUser.id);
+      const newBooked  = booked.filter(b => b.userId !== currentUser.id);
+      const newWaitlist = wl.filter(w => w.userId !== currentUser.id);
+
+      // Promover primeiro da fila se havia vaga
+      if (wasBooked && wl.length > 0) {
+        const promoted = wl[0];
+        promotedUser = promoted;
+        tx.update(rideRef, { booked: [...newBooked, promoted], waitlist: wl.slice(1) });
+      } else {
+        tx.update(rideRef, { booked: newBooked, waitlist: newWaitlist });
+      }
+    });
+
+    // Notificar o promovido
+    if (promotedUser) {
+      await db.collection("notifications").doc(promotedUser.userId).collection("items").add({
+        msg: `🎉 Boa notícia! Uma vaga abriu na carona "${rideTitle}" e você foi confirmado automaticamente!`,
+        read: false,
+        at: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    showToast("Reserva cancelada");
+    showScreen("student-list");
+  } catch(e) { showToast("Erro. Tente novamente."); console.error(e); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ALUNO — NOTIFICAÇÕES
+// ══════════════════════════════════════════════════════════════════════════
+
+function renderNotifications(notifs) {
+  const list = document.getElementById("notifs-list");
+  if (notifs.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="icon">🔔</div><p>Nenhuma notificação</p></div>`;
+    return;
+  }
+  list.innerHTML = notifs.map(n => `
+    <div class="notif-item${n.read?'':' unread'}">
+      <p style="font-size:14px;font-weight:600;color:#1e293b;line-height:1.5">${n.msg}</p>
+      <p style="color:#94a3b8;font-size:11px;margin-top:8px">${fmtTs(n.at)}</p>
+    </div>`).join("");
+}
+
+async function markNotifsRead() {
+  if (!currentUser || !firebaseOk) return;
+  try {
+    const snap = await db.collection("notifications").doc(currentUser.id).collection("items").where("read","==",false).get();
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.update(d.ref, { read: true }));
+    await batch.commit();
+  } catch(e) { console.error(e); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  INICIALIZAÇÃO
+// ══════════════════════════════════════════════════════════════════════════
+
+updateSeats(4);
+
+// Se já logado, vai direto para o app de aluno
+if (currentUser && firebaseOk) {
+  document.getElementById("sl-greeting").textContent = `Olá, ${currentUser.firstName}! 👋`;
+  showScreen("student-list");
+  startStudentListeners();
+}
+</script>
+</body>
+</html>
