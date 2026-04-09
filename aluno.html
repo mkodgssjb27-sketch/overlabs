@@ -154,25 +154,6 @@ input,select{font-family:inherit;outline:none}
       </div>
     </div>
     <div class="s-content" id="s-rides-content">
-      <!-- Banner instalar app -->
-      <div id="install-banner" style="display:none;background:linear-gradient(135deg,#f59e0b,#e85d04);border-radius:16px;padding:16px;margin-bottom:14px;color:#fff;text-align:center">
-        <p style="font-size:13px;font-weight:700;margin-bottom:10px">📲 Instale o app na sua tela inicial!</p>
-        <button id="install-btn" onclick="installApp()" style="padding:10px 24px;border-radius:12px;background:#fff;color:#e85d04;font-weight:800;font-size:14px;border:none;cursor:pointer">Instalar App</button>
-        <button onclick="dismissInstall()" style="display:block;margin:8px auto 0;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer">Agora não</button>
-      </div>
-      <!-- Modal iOS -->
-      <div id="ios-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px">
-        <div style="background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px;max-width:340px;width:100%;text-align:center">
-          <div style="font-size:40px;margin-bottom:12px">📲</div>
-          <h3 style="font-size:18px;font-weight:800;margin-bottom:16px;color:#fff">Instalar OVER LABS</h3>
-          <div style="text-align:left;font-size:14px;color:#94a3b8;line-height:1.8">
-            <p><strong style="color:#e2e8f0">1.</strong> Toque no botão <span style="font-size:18px">⬆️</span> <strong style="color:#e2e8f0">Compartilhar</strong></p>
-            <p><strong style="color:#e2e8f0">2.</strong> Role e toque em <strong style="color:#e2e8f0">"Adicionar à Tela de Início"</strong></p>
-            <p><strong style="color:#e2e8f0">3.</strong> Toque em <strong style="color:#e2e8f0">"Adicionar"</strong></p>
-          </div>
-          <button onclick="closeIosModal()" style="margin-top:18px;padding:12px 32px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer">Entendi!</button>
-        </div>
-      </div>
       <div class="loading" id="s-loading"><div class="spin"></div>Carregando...</div>
       <div class="empty" id="s-empty" style="display:none"><div class="icon">🛣️</div><p>Nenhuma carona disponível</p><small>O professor ainda não criou caronas</small></div>
       <div id="s-rides-list"></div>
@@ -290,6 +271,25 @@ input,select{font-family:inherit;outline:none}
       </div>
     </div>
     <div class="s-content">
+      <!-- Banner instalar app -->
+      <div id="install-banner" style="display:none;background:linear-gradient(135deg,#f59e0b,#e85d04);border-radius:16px;padding:16px;margin-bottom:14px;color:#fff;text-align:center">
+        <p style="font-size:13px;font-weight:700;margin-bottom:10px">📲 Instale o app na sua tela inicial!</p>
+        <button id="install-btn" onclick="installApp()" style="padding:10px 24px;border-radius:12px;background:#fff;color:#e85d04;font-weight:800;font-size:14px;border:none;cursor:pointer">Instalar App</button>
+        <button onclick="dismissInstall()" style="display:block;margin:8px auto 0;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer">Agora não</button>
+      </div>
+      <!-- Modal iOS -->
+      <div id="ios-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px;max-width:340px;width:100%;text-align:center">
+          <div style="font-size:40px;margin-bottom:12px">📲</div>
+          <h3 style="font-size:18px;font-weight:800;margin-bottom:16px;color:#fff">Instalar OVER LABS</h3>
+          <div style="text-align:left;font-size:14px;color:#94a3b8;line-height:1.8">
+            <p><strong style="color:#e2e8f0">1.</strong> Toque no botão <span style="font-size:18px">⬆️</span> <strong style="color:#e2e8f0">Compartilhar</strong></p>
+            <p><strong style="color:#e2e8f0">2.</strong> Role e toque em <strong style="color:#e2e8f0">"Adicionar à Tela de Início"</strong></p>
+            <p><strong style="color:#e2e8f0">3.</strong> Toque em <strong style="color:#e2e8f0">"Adicionar"</strong></p>
+          </div>
+          <button onclick="closeIosModal()" style="margin-top:18px;padding:12px 32px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer">Entendi!</button>
+        </div>
+      </div>
       <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">📰 Últimas Atualizações</div>
       <div class="loading" id="feed-loading"><div class="spin"></div>Carregando...</div>
       <div class="empty" id="feed-empty" style="display:none"><div class="icon">📭</div><p>Nenhuma atualização</p><small>Aqui você se manterá informado de todas atualizações</small></div>
