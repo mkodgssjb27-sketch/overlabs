@@ -937,7 +937,18 @@ let waitingWorker = null;
 function applyUpdate() {
   if (waitingWorker) {
     waitingWorker.postMessage("SKIP_WAITING");
+  } else {
+    // Fallback: limpa cache e recarrega
+    if ("caches" in window) {
+      caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => {
+        window.location.reload(true);
+      });
+    } else {
+      window.location.reload(true);
+    }
   }
+  // Se controllerchange não disparar em 3s, força reload
+  setTimeout(() => window.location.reload(true), 3000);
 }
 
 if ("serviceWorker" in navigator) {
