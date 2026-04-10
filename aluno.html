@@ -17,6 +17,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
@@ -1110,10 +1111,32 @@ function showAlertPopup(message) {
   showNativeNotification(message);
 }
 
-// ── Notificação nativa do sistema ──
-function requestNotifPermission() {
-  if ("Notification" in window && Notification.permission === "default") {
-    Notification.requestPermission();
+// ── Notificação nativa do sistema + FCM ──
+const VAPID_KEY = "BIzhFT17WWLKkocrGyuWRlkVNYUGbmh3RZZo7UFdJiRIHOwP3f9lOjZXFBgUPYlJt0kvR85qCa6aTzQ4E8RJ9Ik";
+
+async function requestNotifPermission() {
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "default") {
+    await Notification.requestPermission();
+  }
+  // Registrar token FCM para push em background
+  if (Notification.permission === "granted") {
+    registerFCMToken();
+  }
+}
+
+async function registerFCMToken() {
+  try {
+    if (!firebaseOk || !currentUser) return;
+    const messaging = firebase.messaging();
+    const reg = await navigator.serviceWorker.ready;
+    const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+    if (token) {
+      await db.collection("users").doc(currentUser.id).update({ fcmToken: token });
+      console.log("FCM token salvo");
+    }
+  } catch(e) {
+    console.log("FCM token error:", e);
   }
 }
 
@@ -1128,13 +1151,12 @@ function showNativeNotification(message) {
     requireInteraction: false,
     silent: false
   };
-  // Usar SW para notificação persistente (funciona em background)
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
     navigator.serviceWorker.ready.then(reg => {
-      reg.showNotification("🔔 OVER LABS — Alerta", options);
+      reg.showNotification("🔔 OVER LABS", options);
     });
   } else {
-    new Notification("🔔 OVER LABS — Alerta", options);
+    new Notification("🔔 OVER LABS", options);
   }
 }
 
@@ -1624,6 +1646,7 @@ if (currentUser && firebaseOk) {
     showPermissionDialog();
     if (localStorage.getItem("carolampra_perms_granted")) {
       startLocationTracking();
+      registerFCMToken();
     }
     updateAllAvatars();
     // Load photo from Firestore if not in localStorage

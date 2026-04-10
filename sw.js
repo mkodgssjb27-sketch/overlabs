@@ -1,4 +1,34 @@
-const CACHE_NAME = "overlabs-v35";
+// Firebase Messaging no Service Worker
+importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js");
+
+firebase.initializeApp({
+  apiKey: "AIzaSyAc9Ews7WVz6GSBp9vzXF4sFI1SMwzklX0",
+  authDomain: "carolampra.firebaseapp.com",
+  projectId: "carolampra",
+  storageBucket: "carolampra.firebasestorage.app",
+  messagingSenderId: "821388549140",
+  appId: "1:821388549140:web:3f60aa294f6f67949adb01"
+});
+
+const messaging = firebase.messaging();
+
+// Notificação push recebida em background
+messaging.onBackgroundMessage(payload => {
+  const title = payload.notification?.title || "🔔 OVER LABS";
+  const options = {
+    body: payload.notification?.body || "",
+    icon: "icon-192.png",
+    badge: "icon-192.png",
+    vibrate: [200, 100, 200],
+    tag: "overlabs-push-" + Date.now(),
+    renotify: true,
+    data: payload.data || {}
+  };
+  return self.registration.showNotification(title, options);
+});
+
+const CACHE_NAME = "overlabs-v36";
 const URLS_TO_CACHE = [
   "./aluno.html",
   "./manifest.json",
