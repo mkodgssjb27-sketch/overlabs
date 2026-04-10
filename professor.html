@@ -871,8 +871,34 @@ async function saveEditRide() {
 
   const btn = event.target; btn.disabled = true; btn.textContent = "Salvando...";
   try {
-    await db.collection("rides").doc(currentDetailRideId).update({ title, date, time, seats, visible });
-    showToast("✅ Carona atualizada!");
+    const rideRef = db.collection("rides").doc(currentDetailRideId);
+    let promoted = 0;
+
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) throw "Carona não encontrada";
+      const ride = doc.data();
+      let booked = ride.booked || [];
+      let wl = ride.waitlist || [];
+
+      // Se aumentou as vagas e tem gente na fila, promove automaticamente
+      const vagasNovas = seats - booked.length;
+      if (vagasNovas > 0 && wl.length > 0) {
+        const qtdPromover = Math.min(vagasNovas, wl.length);
+        const promovidos = wl.slice(0, qtdPromover);
+        booked = [...booked, ...promovidos];
+        wl = wl.slice(qtdPromover);
+        promoted = qtdPromover;
+      }
+
+      tx.update(rideRef, { title, date, time, seats, visible, booked, waitlist: wl });
+    });
+
+    if (promoted > 0) {
+      showToast(`✅ Carona atualizada! ${promoted} aluno(s) saiu(ram) da fila de espera`);
+    } else {
+      showToast("✅ Carona atualizada!");
+    }
     openTeacherDetail(currentDetailRideId);
   } catch(e) {
     showToast("Erro ao salvar");

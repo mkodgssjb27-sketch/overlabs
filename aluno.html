@@ -252,7 +252,9 @@ input,select{font-family:inherit;outline:none}
         </div>
       </div>
     </div>
-    <div class="s-content" id="sd-content"></div>
+    <div class="s-content" id="sd-content">
+      <div class="ptr-indicator" id="ptr-detail"><span class="ptr-spin"></span>Atualizando...</div>
+    </div>
     <div class="action-bar" id="sd-action"></div>
   </div>
 </div>
@@ -521,12 +523,32 @@ let lastAlertTs = null;
 let alertsReady = false;
 
 // ── Navegação ──
-function showScreen(name) {
+let screenHistory = [];
+// Estado inicial do history para botão voltar do Android
+history.replaceState({ screen: "initial" }, "");
+
+function showScreen(name, skipHistory) {
+  const prev = document.querySelector(".screen.active");
+  const prevName = prev ? prev.id.replace("screen-", "") : null;
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById("screen-" + name).classList.add("active");
   window.scrollTo(0, 0);
   if (name === "student-notifs") markNotifsRead();
+
+  // Gerenciar histórico para botão voltar do Android
+  if (!skipHistory && prevName && prevName !== name) {
+    screenHistory.push(prevName);
+    history.pushState({ screen: name }, "");
+  }
 }
+
+// Botão voltar do Android (hardware/software)
+window.addEventListener("popstate", function(e) {
+  if (screenHistory.length > 0) {
+    const prev = screenHistory.pop();
+    showScreen(prev, true);
+  }
+});
 
 function switchTab(tab) {
   document.getElementById("form-login").style.display = tab === "login" ? "block" : "none";
@@ -918,7 +940,10 @@ function renderStudentDetail(ride) {
     html += "</div>";
   }
 
-  document.getElementById("sd-content").innerHTML = html;
+  const sdContent = document.getElementById("sd-content");
+  const ptrEl = document.getElementById("ptr-detail");
+  sdContent.innerHTML = html;
+  if (ptrEl) sdContent.insertBefore(ptrEl, sdContent.firstChild);
 
   let action = "";
   if (!myBooked && !myWaiting && !full) {
@@ -1312,6 +1337,17 @@ function initPullToRefresh() {
         allRides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         renderStudentRides(allRides);
       });
+  });
+
+  setupPullToRefresh("sd-content", "ptr-detail", () => {
+    if (!currentRideId || !firebaseOk) return;
+    db.collection("rides").doc(currentRideId).get().then(doc => {
+      if (!doc.exists) return;
+      const fresh = { id: doc.id, ...doc.data() };
+      const idx = allRides.findIndex(r => r.id === fresh.id);
+      if (idx !== -1) allRides[idx] = fresh;
+      renderStudentDetail(fresh);
+    });
   });
 
   setupPullToRefresh("notifs-list", "ptr-notifs", () => {
