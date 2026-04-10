@@ -151,7 +151,7 @@ input,select{font-family:inherit;outline:none}
     <div class="s-header">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:12px">
-          <button class="profile-avatar-btn" id="avatar-btn-list" onclick="showScreen('student-profile');loadProfile()"></button>
+          <button class="profile-avatar-btn" id="avatar-btn-list" onclick="openSidebar()"></button>
           <div>
             <div class="s-hsub" id="sl-greeting">Olá!</div>
             <div class="s-htitle">OVER LABS</div>
@@ -211,7 +211,7 @@ input,select{font-family:inherit;outline:none}
   <div class="app-wrap">
     <div class="s-header">
       <div style="display:flex;align-items:center;gap:12px">
-        <button class="profile-avatar-btn" id="avatar-btn-presence" onclick="showScreen('student-profile');loadProfile()"></button>
+        <button class="profile-avatar-btn" id="avatar-btn-presence" onclick="openSidebar()"></button>
         <div>
           <div class="s-hsub" id="sp-greeting">Olá!</div>
           <div class="s-htitle">OVER LABS</div>
@@ -239,7 +239,7 @@ input,select{font-family:inherit;outline:none}
   <div class="app-wrap">
     <div class="s-header">
       <div style="display:flex;align-items:center;gap:12px">
-        <button class="profile-avatar-btn" id="avatar-btn-tournaments" onclick="showScreen('student-profile');loadProfile()"></button>
+        <button class="profile-avatar-btn" id="avatar-btn-tournaments" onclick="openSidebar()"></button>
         <div>
           <div class="s-hsub" id="st-greeting">Olá!</div>
           <div class="s-htitle">OVER LABS</div>
@@ -268,7 +268,7 @@ input,select{font-family:inherit;outline:none}
     <div class="s-header">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:12px">
-          <button class="profile-avatar-btn" id="avatar-btn-home" onclick="showScreen('student-profile');loadProfile()"></button>
+          <button class="profile-avatar-btn" id="avatar-btn-home" onclick="openSidebar()"></button>
           <div>
             <div class="s-hsub" id="sh-greeting">Olá!</div>
             <div class="s-htitle">OVER LABS</div>
@@ -314,21 +314,48 @@ input,select{font-family:inherit;outline:none}
   </div>
 </div>
 
-<!-- ══ ALUNO — PERFIL ══════════════════════════════════════════════ -->
-<div class="screen" id="screen-student-profile">
+<!-- ══ SIDEBAR DO PERFIL ════════════════════════════════════════════ -->
+<div id="profile-sidebar-overlay" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.6)" onclick="closeSidebar()"></div>
+<div id="profile-sidebar" style="position:fixed;top:0;left:-300px;width:280px;height:100%;background:#1e293b;z-index:501;transition:left .3s ease;overflow-y:auto;border-right:1px solid rgba(255,255,255,.08)">
+  <div style="padding:28px 20px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,.06)">
+    <div style="width:70px;height:70px;border-radius:50%;margin:0 auto 12px;overflow:hidden;border:3px solid rgba(245,158,11,.5);background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center" onclick="document.getElementById('photo-input').click()">
+      <div id="sidebar-photo" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff"></div>
+    </div>
+    <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
+    <div style="font-weight:800;font-size:16px;color:#fff" id="sidebar-name">—</div>
+    <div style="font-size:12px;color:#64748b;margin-top:2px" id="sidebar-username">—</div>
+  </div>
+  <div style="padding:12px 14px">
+    <button onclick="closeSidebar();showScreen('student-personal');loadProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:18px">👤</span> Dados Pessoais
+    </button>
+    <button disabled style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.02);color:#475569;font-weight:700;font-size:14px;cursor:not-allowed;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
+      <span style="font-size:18px">⚙️</span> Configurações
+      <span style="position:absolute;top:10px;right:12px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:9px;font-weight:900;padding:2px 8px;border-radius:8px">EM BREVE</span>
+    </button>
+    <button onclick="closeSidebar();showScreen('student-patchnotes');loadStudentPatchNotes()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:18px">📋</span> Notas de Patch
+    </button>
+    <div style="border-top:1px solid rgba(255,255,255,.06);margin:12px 0"></div>
+    <button onclick="closeSidebar();studentLogout()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(239,68,68,.08);color:#f87171;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:12px">
+      <span style="font-size:18px">🚪</span> Sair
+    </button>
+  </div>
+</div>
+
+<!-- ══ ALUNO — DADOS PESSOAIS ══════════════════════════════════════ -->
+<div class="screen" id="screen-student-personal">
   <div class="app-wrap">
     <div class="s-header" style="display:flex;align-items:center;gap:14px">
       <button onclick="showScreen('student-home')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
-      <div class="s-htitle" style="flex:1;font-size:16px">Meu Perfil</div>
-      <button onclick="studentLogout()" style="background:rgba(239,68,68,.12);padding:8px 14px;border-radius:10px;color:#f87171;font-weight:700;font-size:13px;border:none">Sair</button>
+      <div class="s-htitle" style="flex:1;font-size:16px">Dados Pessoais</div>
     </div>
     <div class="s-content" style="padding-top:24px">
-      <!-- Foto de perfil -->
-      <div class="profile-photo-wrap" onclick="document.getElementById('photo-input').click()">
+      <div class="profile-photo-wrap" onclick="document.getElementById('photo-input-personal').click()">
         <div class="photo" id="profile-photo-display"></div>
         <div class="cam-badge">📷</div>
       </div>
-      <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
+      <input type="file" id="photo-input-personal" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
       <p style="text-align:center;color:#64748b;font-size:12px;margin-bottom:24px">Toque na foto para alterar</p>
 
       <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:24px">
@@ -349,15 +376,30 @@ input,select{font-family:inherit;outline:none}
           <input class="inp" id="p-address" placeholder="Rua, nº — Bairro, Cidade">
         </div>
         <div style="margin-bottom:16px">
-          <label class="lbl">TELEFONE (WHATSAPP)</label>
+          <label class="lbl">WHATSAPP</label>
           <input type="tel" class="inp" id="p-phone" placeholder="(99) 9 9999-9999">
         </div>
         <div style="margin-bottom:16px">
           <label class="lbl">USUÁRIO</label>
           <input class="inp" id="p-username" disabled style="opacity:.5;cursor:not-allowed">
         </div>
-        <button onclick="saveProfile()" class="btn-main" id="btn-save-profile">💾 Salvar Perfil</button>
+        <button onclick="saveProfile()" class="btn-main" id="btn-save-profile">💾 Salvar Dados</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — NOTAS DE PATCH ══════════════════════════════════════ -->
+<div class="screen" id="screen-student-patchnotes">
+  <div class="app-wrap">
+    <div class="s-header" style="display:flex;align-items:center;gap:14px">
+      <button onclick="showScreen('student-home')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div class="s-htitle" style="flex:1;font-size:16px">Notas de Patch</div>
+    </div>
+    <div class="s-content" style="padding-top:16px">
+      <div class="loading" id="patchnotes-loading"><div class="spin"></div>Carregando...</div>
+      <div class="empty" id="patchnotes-empty" style="display:none"><div class="icon">📋</div><p>Nenhuma nota de patch</p></div>
+      <div id="patchnotes-list"></div>
     </div>
   </div>
 </div>
@@ -667,6 +709,7 @@ function startStudentListeners() {
       const items = snap.docs
         .map(d => ({ id: d.id, ...d.data() }))
         .filter(item => {
+          if (item.hidden === true) return false;
           if (item.type !== "ride_created" && item.type !== "alert") return false;
           if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h24) return false;
           return true;
@@ -1058,6 +1101,30 @@ function updateAllAvatars() {
       btn.textContent = initial;
     }
   });
+  // Update sidebar photo
+  const sidebarPhoto = document.getElementById("sidebar-photo");
+  if (sidebarPhoto) {
+    if (photo) {
+      sidebarPhoto.innerHTML = `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="Foto">`;
+    } else {
+      sidebarPhoto.textContent = initial;
+    }
+  }
+  const sn = document.getElementById("sidebar-name");
+  const su = document.getElementById("sidebar-username");
+  if (sn && currentUser) sn.textContent = currentUser.firstName || "—";
+  if (su && currentUser) su.textContent = "@" + (currentUser.username || "");
+}
+
+function openSidebar() {
+  updateAllAvatars();
+  document.getElementById("profile-sidebar").style.left = "0";
+  document.getElementById("profile-sidebar-overlay").style.display = "block";
+}
+
+function closeSidebar() {
+  document.getElementById("profile-sidebar").style.left = "-300px";
+  document.getElementById("profile-sidebar-overlay").style.display = "none";
 }
 
 function loadProfile() {
@@ -1156,13 +1223,49 @@ async function saveProfile() {
     showToast("Erro ao salvar perfil");
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = "💾 Salvar Perfil";
+  btn.disabled = false; btn.textContent = "💾 Salvar Dados";
 }
 
 function updateGreetings() {
   const name = currentUser.firstName;
   const ids = ["sl-greeting","sh-greeting","sp-greeting","st-greeting"];
   ids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = `Olá, ${name}!`; });
+}
+
+// ── Notas de Patch (leitura) ──
+function loadStudentPatchNotes() {
+  if (!firebaseOk) return;
+  const loading = document.getElementById("patchnotes-loading");
+  const empty = document.getElementById("patchnotes-empty");
+  const list = document.getElementById("patchnotes-list");
+  if (loading) loading.style.display = "flex";
+  if (list) list.innerHTML = "";
+
+  db.collection("patchNotes")
+    .orderBy("createdAt", "desc")
+    .get()
+    .then(snap => {
+      if (loading) loading.style.display = "none";
+      const notes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (empty) empty.style.display = notes.length === 0 ? "block" : "none";
+      if (!list) return;
+      list.innerHTML = notes.map(p => {
+        const time = p.createdAt ? fmtTs(p.createdAt) : "";
+        return `
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-weight:900;font-size:16px;color:#f59e0b">v${escapeHtml(p.version || "")}</span>
+              <span style="font-size:11px;color:#64748b">${time}</span>
+            </div>
+            <div style="font-weight:800;font-size:15px;color:#fff;margin-bottom:10px">${escapeHtml(p.title || "")}</div>
+            <pre style="color:#94a3b8;font-size:13px;white-space:pre-wrap;margin:0;font-family:inherit;line-height:1.6">${escapeHtml(p.content || "")}</pre>
+          </div>`;
+      }).join("");
+    })
+    .catch(e => {
+      if (loading) loading.style.display = "none";
+      console.error(e);
+    });
 }
 
 // ── Permissões e Geolocalização ──

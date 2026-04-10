@@ -175,6 +175,16 @@ input,select,textarea{font-family:inherit;outline:none}
         <div class="mc-title">Alunos Cadastrados</div>
         <div class="mc-desc">Gerenciar alunos e localização</div>
       </div>
+      <div class="menu-card" onclick="showScreen('teacher-feed');loadFeedManager()">
+        <span class="mc-icon">📰</span>
+        <div class="mc-title">Feed de Atualizações</div>
+        <div class="mc-desc">Gerenciar o feed dos alunos</div>
+      </div>
+      <div class="menu-card" onclick="showScreen('teacher-patch');loadPatchNotes()">
+        <span class="mc-icon">📝</span>
+        <div class="mc-title">Notas de Patch</div>
+        <div class="mc-desc">Editar changelog do app</div>
+      </div>
     </div>
   </div>
 </div>
@@ -445,6 +455,77 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
 </div>
 
+<!-- ══ PROFESSOR — FEED DE ATUALIZAÇÕES ═════════════════════════════ -->
+<div class="screen" id="screen-teacher-feed">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📰 Feed de Atualizações</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:660px">
+    <div class="loading" id="feed-mgr-loading"><div class="spin"></div>Carregando...</div>
+    <div class="empty" id="feed-mgr-empty" style="display:none"><div class="icon">📭</div><p>Nenhum item no feed</p></div>
+    <div id="feed-mgr-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — EDITAR ITEM DO FEED ═════════════════════════════ -->
+<div class="screen" id="screen-teacher-feed-edit">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-feed');loadFeedManager()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">Editar Item</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <div class="t-form">
+      <div style="margin-bottom:16px">
+        <label class="lbl">ÍCONE</label>
+        <input class="inp" id="fe-icon" placeholder="🚗" maxlength="4">
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">TEXTO</label>
+        <input class="inp" id="fe-text" placeholder="Texto da atualização">
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">DETALHE (opcional)</label>
+        <input class="inp" id="fe-detail" placeholder="Informação extra">
+      </div>
+      <button onclick="saveFeedItem()" class="btn-main" id="btn-save-feed">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — NOTAS DE PATCH ═══════════════════════════════════ -->
+<div class="screen" id="screen-teacher-patch">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📝 Notas de Patch</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:660px">
+    <div class="t-form" style="margin-bottom:20px">
+      <div style="margin-bottom:16px">
+        <label class="lbl">VERSÃO</label>
+        <input class="inp" id="patch-version" placeholder="Ex: 2.0.0">
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">TÍTULO</label>
+        <input class="inp" id="patch-title" placeholder="Ex: Atualização de Abril">
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">CONTEÚDO (o que foi implementado)</label>
+        <textarea class="inp" id="patch-content" rows="8" placeholder="Descreva as novidades..." style="resize:vertical;min-height:120px"></textarea>
+      </div>
+      <button onclick="savePatchNote()" class="btn-main" id="btn-save-patch">📤 Publicar Nota de Patch</button>
+    </div>
+    <div style="font-size:14px;font-weight:800;color:#94a3b8;margin-bottom:12px">Histórico</div>
+    <div id="patch-list"></div>
+  </div>
+</div>
+
 <!-- Map Modal -->
 <div id="map-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:200">
   <div style="position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;z-index:201">
@@ -557,6 +638,7 @@ function teacherLogout() {
   if (unsubRides) { unsubRides(); unsubRides = null; }
   if (unsubStudents) { unsubStudents(); unsubStudents = null; }
   if (unsubAlerts) { unsubAlerts(); unsubAlerts = null; }
+  if (unsubFeedMgr) { unsubFeedMgr(); unsubFeedMgr = null; }
   showScreen("teacher-login");
 }
 
@@ -1059,6 +1141,182 @@ function closeMap() {
 }
 
 updateSeats(4);
+
+// ── Feed de Atualizações (gerenciamento) ──
+let unsubFeedMgr = null;
+let allFeedItems = [];
+let editingFeedId = null;
+
+function loadFeedManager() {
+  if (!firebaseOk) return;
+  const list = document.getElementById("feed-mgr-list");
+  const loading = document.getElementById("feed-mgr-loading");
+  const empty = document.getElementById("feed-mgr-empty");
+  if (loading) loading.style.display = "flex";
+  if (list) list.innerHTML = "";
+
+  if (unsubFeedMgr) unsubFeedMgr();
+  unsubFeedMgr = db.collection("feed")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snap => {
+      if (loading) loading.style.display = "none";
+      allFeedItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (empty) empty.style.display = allFeedItems.length === 0 ? "block" : "none";
+      renderFeedManager(allFeedItems);
+    });
+}
+
+function renderFeedManager(items) {
+  const list = document.getElementById("feed-mgr-list");
+  if (!list) return;
+  list.innerHTML = items.map(item => {
+    const time = item.createdAt ? fmtTs(item.createdAt) : "agora";
+    const hidden = item.hidden === true;
+    return `
+      <div style="background:rgba(255,255,255,.04);border:1px solid ${hidden?'rgba(239,68,68,.2)':'rgba(255,255,255,.08)'};border-radius:16px;padding:16px;margin-bottom:10px;${hidden?'opacity:.5':''}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="font-size:20px">${item.icon || "📌"}</span>
+          <span style="font-weight:800;font-size:14px;color:#fff;flex:1">${escapeHtml(item.text || "")}</span>
+          <span style="font-size:11px;color:#64748b">${hidden?'OCULTO':''}</span>
+        </div>
+        ${item.detail ? `<p style="color:#94a3b8;font-size:13px;margin-left:32px;margin-bottom:8px">${escapeHtml(item.detail)}</p>` : ""}
+        <p style="color:#64748b;font-size:11px;margin-left:32px;margin-bottom:10px">${time}</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="openEditFeed('${item.id}')" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">✏️ Editar</button>
+          <button onclick="toggleFeedVisibility('${item.id}',${!hidden})" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">${hidden?'👁 Mostrar':'🙈 Ocultar'}</button>
+          <button onclick="deleteFeedItem('${item.id}')" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171">🗑 Excluir</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function openEditFeed(id) {
+  const item = allFeedItems.find(f => f.id === id);
+  if (!item) return;
+  editingFeedId = id;
+  document.getElementById("fe-icon").value = item.icon || "";
+  document.getElementById("fe-text").value = item.text || "";
+  document.getElementById("fe-detail").value = item.detail || "";
+  showScreen("teacher-feed-edit");
+}
+
+async function saveFeedItem() {
+  if (!editingFeedId || !firebaseOk) return;
+  const icon = document.getElementById("fe-icon").value.trim();
+  const text = document.getElementById("fe-text").value.trim();
+  const detail = document.getElementById("fe-detail").value.trim();
+  if (!text) { showToast("Informe o texto"); return; }
+
+  const btn = document.getElementById("btn-save-feed");
+  btn.disabled = true; btn.textContent = "Salvando...";
+  try {
+    await db.collection("feed").doc(editingFeedId).update({ icon, text, detail });
+    showToast("✅ Item atualizado!");
+    editingFeedId = null;
+    showScreen("teacher-feed");
+    loadFeedManager();
+  } catch(e) { showToast("Erro ao salvar"); }
+  btn.disabled = false; btn.textContent = "💾 Salvar";
+}
+
+async function toggleFeedVisibility(id, hide) {
+  try {
+    await db.collection("feed").doc(id).update({ hidden: hide });
+    showToast(hide ? "Item oculto" : "Item visível");
+  } catch(e) { showToast("Erro"); }
+}
+
+function deleteFeedItem(id) {
+  showConfirmModal("Excluir item do feed?", "Esta ação não pode ser desfeita.", async () => {
+    try {
+      await db.collection("feed").doc(id).delete();
+      showToast("Item excluído");
+    } catch(e) { showToast("Erro ao excluir"); }
+  });
+}
+
+// ── Notas de Patch ──
+let allPatchNotes = [];
+
+function loadPatchNotes() {
+  if (!firebaseOk) return;
+  db.collection("patchNotes")
+    .orderBy("createdAt", "desc")
+    .get()
+    .then(snap => {
+      allPatchNotes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderPatchNotes();
+    });
+}
+
+function renderPatchNotes() {
+  const list = document.getElementById("patch-list");
+  if (!list) return;
+  list.innerHTML = allPatchNotes.map(p => {
+    const time = p.createdAt ? fmtTs(p.createdAt) : "";
+    return `
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-weight:900;font-size:15px;color:#f59e0b">v${escapeHtml(p.version || "")}</span>
+          <span style="font-size:11px;color:#64748b">${time}</span>
+        </div>
+        <div style="font-weight:800;font-size:14px;color:#fff;margin-bottom:8px">${escapeHtml(p.title || "")}</div>
+        <pre style="color:#94a3b8;font-size:13px;white-space:pre-wrap;margin:0;font-family:inherit;line-height:1.5">${escapeHtml(p.content || "")}</pre>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button onclick="editPatchNote('${p.id}')" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">✏️ Editar</button>
+          <button onclick="deletePatchNote('${p.id}')" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171">🗑 Excluir</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+let editingPatchId = null;
+
+async function savePatchNote() {
+  if (!firebaseOk) return;
+  const version = document.getElementById("patch-version").value.trim();
+  const title = document.getElementById("patch-title").value.trim();
+  const content = document.getElementById("patch-content").value.trim();
+  if (!version || !title || !content) { showToast("Preencha todos os campos"); return; }
+
+  const btn = document.getElementById("btn-save-patch");
+  btn.disabled = true; btn.textContent = "Salvando...";
+  try {
+    if (editingPatchId) {
+      await db.collection("patchNotes").doc(editingPatchId).update({ version, title, content });
+      editingPatchId = null;
+    } else {
+      await db.collection("patchNotes").add({ version, title, content, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+    document.getElementById("patch-version").value = "";
+    document.getElementById("patch-title").value = "";
+    document.getElementById("patch-content").value = "";
+    showToast("✅ Nota de patch salva!");
+    loadPatchNotes();
+  } catch(e) { showToast("Erro ao salvar"); }
+  btn.disabled = false; btn.textContent = "📤 Publicar Nota de Patch";
+}
+
+function editPatchNote(id) {
+  const p = allPatchNotes.find(n => n.id === id);
+  if (!p) return;
+  editingPatchId = id;
+  document.getElementById("patch-version").value = p.version || "";
+  document.getElementById("patch-title").value = p.title || "";
+  document.getElementById("patch-content").value = p.content || "";
+  document.getElementById("btn-save-patch").textContent = "💾 Salvar Alterações";
+  window.scrollTo(0, 0);
+}
+
+function deletePatchNote(id) {
+  showConfirmModal("Excluir nota de patch?", "Esta ação não pode ser desfeita.", async () => {
+    try {
+      await db.collection("patchNotes").doc(id).delete();
+      showToast("Nota excluída");
+      loadPatchNotes();
+    } catch(e) { showToast("Erro ao excluir"); }
+  });
+}
 
 // ── Partículas Parallax ──
 (function() {
