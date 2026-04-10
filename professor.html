@@ -189,6 +189,11 @@ input,select,textarea{font-family:inherit;outline:none}
         <div class="mc-title">Torneios</div>
         <div class="mc-desc">Gerenciar torneios e inscrições</div>
       </div>
+      <div class="menu-card" onclick="showScreen('teacher-decorations');loadDecorations()">
+        <span class="mc-icon">🎨</span>
+        <div class="mc-title">Decorações</div>
+        <div class="mc-desc">Molduras e banners para alunos</div>
+      </div>
     </div>
   </div>
 </div>
@@ -722,6 +727,71 @@ input,select,textarea{font-family:inherit;outline:none}
     <div style="display:flex;gap:10px;justify-content:center">
       <button id="confirm-cancel" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#94a3b8;font-weight:700;font-size:14px">Cancelar</button>
       <button id="confirm-ok" style="flex:1;padding:12px;border-radius:12px;border:none;background:rgba(248,113,113,.2);color:#f87171;font-weight:700;font-size:14px">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — DECORAÇÕES ═══════════════════════════════════════ -->
+<div class="screen" id="screen-teacher-decorations">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" style="font-size:16px">🎨 Decorações</div><div class="t-sub">Molduras e Banners para Alunos</div></div>
+    </div>
+    <div class="top-bar-actions">
+      <button class="btn-topbar" onclick="showScreen('teacher-add-decoration')">+ Nova</button>
+    </div>
+  </div>
+  <div class="t-content">
+    <div style="margin-bottom:20px">
+      <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:12px">🖼️ Molduras de Avatar</div>
+      <div id="deco-frames-list"><div class="loading"><div class="spin"></div></div></div>
+    </div>
+    <div>
+      <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:12px">🌄 Fundos de Banner</div>
+      <div id="deco-banners-list"><div class="loading"><div class="spin"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — ADICIONAR DECORAÇÃO ══════════════════════════════ -->
+<div class="screen" id="screen-teacher-add-decoration">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-decorations');loadDecorations()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" style="font-size:16px">Nova Decoração</div></div>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <div class="t-form">
+      <div style="margin-bottom:18px">
+        <label class="lbl">TIPO</label>
+        <select class="inp" id="deco-type" style="color-scheme:dark">
+          <option value="frame">🖼️ Moldura de Avatar</option>
+          <option value="banner">🌄 Fundo de Banner</option>
+        </select>
+      </div>
+      <div style="margin-bottom:18px">
+        <label class="lbl">NOME DA DECORAÇÃO</label>
+        <input class="inp" id="deco-name" placeholder="Ex: Moldura Dourada, Fundo Neon...">
+        <p class="err-txt" id="deco-name-err"></p>
+      </div>
+      <div style="margin-bottom:18px">
+        <label class="lbl">ORDEM (posição na lista)</label>
+        <input type="number" class="inp" id="deco-order" value="0" min="0" placeholder="0 = primeiro">
+      </div>
+      <div style="margin-bottom:18px">
+        <label class="lbl">IMAGEM (PNG, GIF ou JPG — máx 800KB)</label>
+        <div id="deco-upload-area" onclick="document.getElementById('deco-file-input').click()" style="border:2px dashed rgba(255,255,255,.15);border-radius:16px;padding:30px 20px;text-align:center;cursor:pointer;transition:.2s;background:rgba(255,255,255,.02)">
+          <div id="deco-upload-preview" style="margin-bottom:12px">
+            <span style="font-size:40px;display:block;margin-bottom:8px">📁</span>
+            <span style="color:#94a3b8;font-size:13px">Clique para selecionar a imagem</span>
+          </div>
+        </div>
+        <input type="file" id="deco-file-input" accept="image/png,image/gif,image/jpeg,image/webp" style="display:none" onchange="previewDecoFile(event)">
+        <p class="err-txt" id="deco-file-err"></p>
+      </div>
+      <button onclick="saveDecoration()" class="btn-main" id="btn-save-deco">💾 Salvar Decoração</button>
     </div>
   </div>
 </div>
@@ -2008,6 +2078,113 @@ function deleteInscricao(id) {
       showScreen("teacher-consultar-inscricao");
       loadInscricoes();
     } catch(e) { showToast("Erro ao excluir"); }
+  });
+}
+
+// ── Decorações (Molduras e Banners) ──
+let decoFileBase64 = null;
+
+function loadDecorations() {
+  if (!firebaseOk) return;
+  db.collection("decorations").orderBy("order", "asc").get().then(snap => {
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const frames = items.filter(i => i.type === "frame");
+    const banners = items.filter(i => i.type === "banner");
+    renderDecoList("deco-frames-list", frames);
+    renderDecoList("deco-banners-list", banners);
+  }).catch(e => {
+    console.error(e);
+    document.getElementById("deco-frames-list").innerHTML = '<p style="color:#f87171">Erro ao carregar</p>';
+  });
+}
+
+function renderDecoList(containerId, items) {
+  const el = document.getElementById(containerId);
+  if (items.length === 0) {
+    el.innerHTML = '<p style="color:#64748b;font-size:13px">Nenhuma decoração criada</p>';
+    return;
+  }
+  el.innerHTML = items.map(item => `
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:14px">
+      <div style="width:60px;height:60px;border-radius:12px;overflow:hidden;flex-shrink:0;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center">
+        <img src="${item.imageURL}" style="max-width:100%;max-height:100%;object-fit:contain" alt="${escapeHtml(item.name)}">
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:800;font-size:14px;color:#fff">${escapeHtml(item.name)}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">${item.type === 'frame' ? '🖼️ Moldura' : '🌄 Banner'} · Ordem: ${item.order || 0}</div>
+      </div>
+      <button onclick="deleteDecoration('${item.id}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:8px 12px;color:#f87171;font-weight:700;font-size:12px;cursor:pointer">🗑</button>
+    </div>
+  `).join("");
+}
+
+function previewDecoFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const errEl = document.getElementById("deco-file-err");
+  errEl.textContent = "";
+
+  if (file.size > 800000) {
+    errEl.textContent = "Arquivo muito grande (máx 800KB). Reduza o tamanho da imagem.";
+    event.target.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    decoFileBase64 = e.target.result;
+    document.getElementById("deco-upload-preview").innerHTML = `
+      <img src="${decoFileBase64}" style="max-width:100%;max-height:160px;object-fit:contain;border-radius:12px;margin-bottom:8px">
+      <div style="color:#22c55e;font-size:12px;font-weight:700">✓ ${escapeHtml(file.name)} (${(file.size / 1024).toFixed(1)}KB)</div>
+    `;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveDecoration() {
+  if (!firebaseOk) return;
+  const type = document.getElementById("deco-type").value;
+  const name = document.getElementById("deco-name").value.trim();
+  const order = parseInt(document.getElementById("deco-order").value) || 0;
+  const nameErr = document.getElementById("deco-name-err");
+  const fileErr = document.getElementById("deco-file-err");
+  nameErr.textContent = ""; fileErr.textContent = "";
+
+  if (!name) { nameErr.textContent = "Informe um nome"; return; }
+  if (!decoFileBase64) { fileErr.textContent = "Selecione uma imagem"; return; }
+
+  const btn = document.getElementById("btn-save-deco");
+  btn.disabled = true; btn.textContent = "Salvando...";
+  try {
+    await db.collection("decorations").add({
+      type, name, order, imageURL: decoFileBase64,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast("🎨 Decoração criada!");
+    // Reset form
+    document.getElementById("deco-name").value = "";
+    document.getElementById("deco-order").value = "0";
+    document.getElementById("deco-file-input").value = "";
+    decoFileBase64 = null;
+    document.getElementById("deco-upload-preview").innerHTML = `
+      <span style="font-size:40px;display:block;margin-bottom:8px">📁</span>
+      <span style="color:#94a3b8;font-size:13px">Clique para selecionar a imagem</span>
+    `;
+    showScreen("teacher-decorations");
+    loadDecorations();
+  } catch(e) {
+    showToast("Erro ao salvar decoração");
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = "💾 Salvar Decoração";
+}
+
+function deleteDecoration(id) {
+  showConfirmModal("Excluir Decoração", "Remover esta decoração? Alunos que a usam ficarão sem ela.", () => {
+    db.collection("decorations").doc(id).delete().then(() => {
+      showToast("Decoração excluída");
+      loadDecorations();
+    }).catch(e => { showToast("Erro ao excluir"); console.error(e); });
   });
 }
 
