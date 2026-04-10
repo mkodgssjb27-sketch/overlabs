@@ -6,61 +6,57 @@ const { getMessaging } = require("firebase-admin/messaging");
 initializeApp();
 
 exports.sendPushNotification = onDocumentCreated(
-  "notifications/{userId}/items/{docId}",
+  "feed/{docId}",
   async (event) => {
     const snap = event.data;
     if (!snap) { console.log("Sem data no evento"); return; }
 
-    const notifData = snap.data();
-    const userId = event.params.userId;
-    console.log(`Notificação criada para userId: ${userId}, msg: ${notifData.msg || "sem msg"}`);
+    const feedData = snap.data();
+    const targetUserId = feedData.targetUserId;
+    if (!targetUserId) { console.log("Feed item sem targetUserId, ignorando push"); return; }
+
+    console.log(`Feed item criado para userId: ${targetUserId}, type: ${feedData.type}, text: ${feedData.text || "sem text"}`);
 
     // Buscar o token FCM do usuário
     const db = getFirestore();
-    const userDoc = await db.collection("users").doc(userId).get();
-    if (!userDoc.exists) { console.log(`User ${userId} não existe`); return; }
+    const userDoc = await db.collection("users").doc(targetUserId).get();
+    if (!userDoc.exists) { console.log(`User ${targetUserId} não existe`); return; }
 
     const userData = userDoc.data();
     const fcmToken = userData.fcmToken;
-    if (!fcmToken) { console.log(`User ${userId} (${userData.firstName}) sem fcmToken`); return; }
+    if (!fcmToken) { console.log(`User ${targetUserId} (${userData.firstName}) sem fcmToken`); return; }
     console.log(`Token encontrado para ${userData.firstName}, enviando push...`);
 
-    // Montar e enviar a notificação push
+    // Montar body a partir do feed item
+    const bodyText = feedData.detail
+      ? `${feedData.icon || ""} ${feedData.text}: ${feedData.detail}`
+      : `${feedData.icon || ""} ${feedData.text || "Nova atualização"}`;
+
+    // Enviar apenas como data message (evita notificação duplicada pelo browser)
     const message = {
       token: fcmToken,
-      notification: {
+      data: {
         title: "🔔 OVER LABS",
-        body: notifData.msg || "Nova notificação",
+        body: bodyText,
       },
       android: {
         priority: "high",
-        notification: {
-          sound: "default",
-          channelId: "overlabs_notifications",
-        },
       },
       webpush: {
         headers: { Urgency: "high" },
-        notification: {
-          icon: "https://mkodgssjb27-sketch.github.io/overlabs/icon-192.png",
-          badge: "https://mkodgssjb27-sketch.github.io/overlabs/icon-192.png",
-          vibrate: [200, 100, 200],
-          requireInteraction: false,
-        },
       },
     };
 
     try {
       await getMessaging().send(message);
-      console.log(`Push enviado para ${userId}`);
+      console.log(`Push enviado para ${targetUserId}`);
     } catch (err) {
-      console.error(`Erro ao enviar push para ${userId}:`, err.message);
-      // Se o token expirou, limpar
+      console.error(`Erro ao enviar push para ${targetUserId}:`, err.message);
       if (
         err.code === "messaging/registration-token-not-registered" ||
         err.code === "messaging/invalid-registration-token"
       ) {
-        await db.collection("users").doc(userId).update({ fcmToken: "" });
+        await db.collection("users").doc(targetUserId).update({ fcmToken: "" });
       }
     }
   }

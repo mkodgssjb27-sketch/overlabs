@@ -851,21 +851,43 @@ function removeStudentFromRide(userId) {
   showConfirmModal(`Remover ${studentName}?`, "A vaga será liberada. Se houver alguém na fila de espera, será promovido automaticamente.", async () => {
     try {
       const rideRef = db.collection("rides").doc(currentDetailRideId);
+      let promotedUser = null;
+      let rideTitle = "";
       await db.runTransaction(async tx => {
         const doc = await tx.get(rideRef);
         if (!doc.exists) throw "Carona não encontrada";
         const data = doc.data();
+        rideTitle = data.title;
         const booked = data.booked || [];
         const wl = data.waitlist || [];
         const newBooked = booked.filter(b => b.userId !== userId);
 
         if (newBooked.length < booked.length && wl.length > 0) {
           const promoted = wl[0];
+          promotedUser = promoted;
           tx.update(rideRef, { booked: [...newBooked, promoted], waitlist: wl.slice(1) });
         } else {
           tx.update(rideRef, { booked: newBooked });
         }
       });
+
+      // Notificar aluno promovido da fila de espera
+      if (promotedUser) {
+        await db.collection("feed").add({
+          type: "waitlist_promotion",
+          icon: "🎉",
+          text: "Vaga confirmada!",
+          detail: `Uma vaga abriu na carona "${rideTitle}" e você foi confirmado automaticamente!`,
+          targetUserId: promotedUser.userId,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await db.collection("notifications").doc(promotedUser.userId).collection("items").add({
+          msg: `🎉 Uma vaga abriu na carona "${rideTitle}" e você foi confirmado automaticamente!`,
+          read: false,
+          at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+
       showToast("✅ Aluno removido");
       openTeacherDetail(currentDetailRideId);
     } catch(e) {
@@ -907,6 +929,7 @@ async function saveEditRide() {
   try {
     const rideRef = db.collection("rides").doc(currentDetailRideId);
     let promoted = 0;
+    let promotedUsers = [];
 
     await db.runTransaction(async tx => {
       const doc = await tx.get(rideRef);
@@ -920,6 +943,7 @@ async function saveEditRide() {
       if (vagasNovas > 0 && wl.length > 0) {
         const qtdPromover = Math.min(vagasNovas, wl.length);
         const promovidos = wl.slice(0, qtdPromover);
+        promotedUsers = promovidos;
         booked = [...booked, ...promovidos];
         wl = wl.slice(qtdPromover);
         promoted = qtdPromover;
@@ -927,6 +951,23 @@ async function saveEditRide() {
 
       tx.update(rideRef, { title, date, time, seats, visible, booked, waitlist: wl });
     });
+
+    // Notificar alunos promovidos da fila de espera
+    for (const pu of promotedUsers) {
+      await db.collection("feed").add({
+        type: "waitlist_promotion",
+        icon: "🎉",
+        text: "Vaga confirmada!",
+        detail: `Uma vaga abriu na carona "${title}" e você foi confirmado automaticamente!`,
+        targetUserId: pu.userId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await db.collection("notifications").doc(pu.userId).collection("items").add({
+        msg: `🎉 Uma vaga abriu na carona "${title}" e você foi confirmado automaticamente!`,
+        read: false,
+        at: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
 
     if (promoted > 0) {
       showToast(`✅ Carona atualizada! ${promoted} aluno(s) saiu(ram) da fila de espera`);

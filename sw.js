@@ -15,9 +15,9 @@ const messaging = firebase.messaging();
 
 // Notificação push recebida em background
 messaging.onBackgroundMessage(payload => {
-  const title = payload.notification?.title || "🔔 OVER LABS";
+  const title = payload.data?.title || "🔔 OVER LABS";
   const options = {
-    body: payload.notification?.body || "",
+    body: payload.data?.body || "",
     icon: "icon-192.png",
     badge: "icon-192.png",
     vibrate: [200, 100, 200],
@@ -28,7 +28,7 @@ messaging.onBackgroundMessage(payload => {
   return self.registration.showNotification(title, options);
 });
 
-const CACHE_NAME = "overlabs-v41";
+const CACHE_NAME = "overlabs-v42";
 const URLS_TO_CACHE = [
   "./aluno.html",
   "./manifest.json",
