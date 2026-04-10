@@ -114,6 +114,59 @@ input,select{font-family:inherit;outline:none}
 </head>
 <body>
 
+<!-- ══ TELA DE INSTALAÇÃO (bloqueia acesso pelo navegador) ══════════ -->
+<div id="install-gate" style="display:none;position:fixed;inset:0;z-index:10000;background:#0a0a0f;align-items:center;justify-content:center;padding:24px;overflow-y:auto">
+  <div style="text-align:center;width:100%;max-width:380px">
+    <img src="logo.png" alt="Over Labs" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:20px;box-shadow:0 0 40px rgba(245,158,11,.3)">
+    <h1 style="font-size:26px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px">OVER LABS</h1>
+    <p style="color:#64748b;font-size:14px;margin-bottom:32px">Instale o app para começar a usar</p>
+
+    <!-- Android / Chrome -->
+    <div id="gate-android" style="display:none">
+      <button id="gate-install-btn" onclick="installApp()" style="width:100%;padding:16px;border-radius:16px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:17px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(245,158,11,.3);margin-bottom:16px">📲 Instalar App</button>
+      <p style="color:#475569;font-size:12px">Toque no botão acima e confirme a instalação</p>
+    </div>
+
+    <!-- iOS / Safari -->
+    <div id="gate-ios" style="display:none">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;text-align:left;margin-bottom:20px">
+        <p style="color:#fff;font-weight:800;font-size:15px;margin-bottom:16px;text-align:center">Como instalar no iPhone</p>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,.15);display:flex;align-items:center;justify-content:center;font-weight:900;color:#f59e0b;flex-shrink:0">1</div>
+          <p style="color:#e2e8f0;font-size:14px">Toque no botão <strong>Compartilhar</strong> <span style="font-size:18px">⬆️</span></p>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,.15);display:flex;align-items:center;justify-content:center;font-weight:900;color:#f59e0b;flex-shrink:0">2</div>
+          <p style="color:#e2e8f0;font-size:14px">Toque em <strong>"Adicionar à Tela de Início"</strong></p>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,.15);display:flex;align-items:center;justify-content:center;font-weight:900;color:#f59e0b;flex-shrink:0">3</div>
+          <p style="color:#e2e8f0;font-size:14px">Toque em <strong>"Adicionar"</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fallback genérico (Samsung Browser, Firefox, etc.) -->
+    <div id="gate-generic" style="display:none">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;text-align:left;margin-bottom:20px">
+        <p style="color:#fff;font-weight:800;font-size:15px;margin-bottom:16px;text-align:center">Como instalar</p>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,.15);display:flex;align-items:center;justify-content:center;font-weight:900;color:#f59e0b;flex-shrink:0">1</div>
+          <p style="color:#e2e8f0;font-size:14px">Toque no menu <strong>⋮</strong> do navegador</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(245,158,11,.15);display:flex;align-items:center;justify-content:center;font-weight:900;color:#f59e0b;flex-shrink:0">2</div>
+          <p style="color:#e2e8f0;font-size:14px">Toque em <strong>"Instalar app"</strong> ou <strong>"Adicionar à tela inicial"</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.06)">
+      <p style="color:#334155;font-size:11px">Após instalar, abra o app pela tela inicial</p>
+    </div>
+  </div>
+</div>
+
 <!-- ══ ALUNO — AUTH ══════════════════════════════════════════════════ -->
 <div class="screen active" id="screen-student-auth">
   <div class="app-wrap" style="justify-content:center;align-items:center;padding:24px;overflow-y:auto">
@@ -211,7 +264,10 @@ input,select{font-family:inherit;outline:none}
       <div class="s-htitle" style="flex:1;font-size:16px">Notificações</div>
       <button id="clear-notifs-btn" onclick="clearNotifications()" style="display:none;background:rgba(255,255,255,.08);padding:7px 12px;border-radius:10px;color:#94a3b8;font-size:12px;font-weight:700;border:none;cursor:pointer">🗑 Limpar</button>
     </div>
-    <div class="s-content" id="notifs-list"><div class="empty"><div class="icon">🔔</div><p>Nenhuma notificação</p></div></div>
+    <div class="s-content" id="notifs-list">
+      <div class="ptr-indicator" id="ptr-notifs"><span class="ptr-spin"></span>Atualizando...</div>
+      <div class="empty"><div class="icon">🔔</div><p>Nenhuma notificação</p></div>
+    </div>
   </div>
 </div>
 
@@ -290,26 +346,7 @@ input,select{font-family:inherit;outline:none}
       </div>
     </div>
     <div class="s-content" id="s-feed-content">
-      <!-- Banner instalar app -->
-      <div id="install-banner" style="display:none;background:linear-gradient(135deg,#f59e0b,#e85d04);border-radius:16px;padding:16px;margin-bottom:14px;color:#fff;text-align:center">
-        <p style="font-size:13px;font-weight:700;margin-bottom:10px">📲 Instale o app na sua tela inicial!</p>
-        <button id="install-btn" onclick="installApp()" style="padding:10px 24px;border-radius:12px;background:#fff;color:#e85d04;font-weight:800;font-size:14px;border:none;cursor:pointer">Instalar App</button>
-        <button onclick="dismissInstall()" style="display:block;margin:8px auto 0;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer">Agora não</button>
-      </div>
-      <!-- Modal iOS -->
-      <div id="ios-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px">
-        <div style="background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px;max-width:340px;width:100%;text-align:center">
-          <div style="font-size:40px;margin-bottom:12px">📲</div>
-          <h3 style="font-size:18px;font-weight:800;margin-bottom:16px;color:#fff">Instalar OVER LABS</h3>
-          <div style="text-align:left;font-size:14px;color:#94a3b8;line-height:1.8">
-            <p><strong style="color:#e2e8f0">1.</strong> Toque no botão <span style="font-size:18px">⬆️</span> <strong style="color:#e2e8f0">Compartilhar</strong></p>
-            <p><strong style="color:#e2e8f0">2.</strong> Role e toque em <strong style="color:#e2e8f0">"Adicionar à Tela de Início"</strong></p>
-            <p><strong style="color:#e2e8f0">3.</strong> Toque em <strong style="color:#e2e8f0">"Adicionar"</strong></p>
-          </div>
-          <button onclick="closeIosModal()" style="margin-top:18px;padding:12px 32px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:15px;border:none;cursor:pointer">Entendi!</button>
-        </div>
-      </div>
-      <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">📰 Últimas Atualizações</div>
+      <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">📰 Feed</div>
       <div class="ptr-indicator" id="ptr-feed"><span class="ptr-spin"></span>Atualizando...</div>
       <div class="loading" id="feed-loading"><div class="spin"></div>Carregando...</div>
       <div class="empty" id="feed-empty" style="display:none"><div class="icon">📭</div><p>Nenhuma atualização</p><small>Aqui você se manterá informado de todas atualizações</small></div>
@@ -721,6 +758,9 @@ function startStudentListeners() {
         .map(d => ({ id: d.id, ...d.data() }))
         .filter(item => {
           if (item.hidden === true) return false;
+          if (item.type === 'personal_msg') {
+            return item.targetUserId === currentUser.id;
+          }
           if (item.type !== "ride_created" && item.type !== "alert") return false;
           if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h24) return false;
           return true;
@@ -745,7 +785,8 @@ function renderFeed(items) {
   list.innerHTML = items.map(item => {
     const colors = {
       ride_created: { bg: "rgba(34,197,94,.08)", border: "rgba(34,197,94,.2)" },
-      alert:        { bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.2)" }
+      alert:        { bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.2)" },
+      personal_msg: { bg: "rgba(139,92,246,.08)", border: "rgba(139,92,246,.2)" }
     };
     const c = colors[item.type] || colors.alert;
     const time = item.createdAt ? fmtTs(item.createdAt) : "agora";
@@ -1271,6 +1312,18 @@ function initPullToRefresh() {
         renderStudentRides(allRides);
       });
   });
+
+  setupPullToRefresh("notifs-list", "ptr-notifs", () => {
+    if (unsubNotifs) unsubNotifs();
+    unsubNotifs = db.collection("notifications").doc(currentUser.id).collection("items")
+      .orderBy("at", "desc")
+      .onSnapshot(snap => {
+        const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderNotifications(notifs);
+        const unread = notifs.filter(n => !n.read).length;
+        updateNotifBadge(unread);
+      });
+  });
 }
 
 function loadProfile() {
@@ -1565,18 +1618,6 @@ if ("serviceWorker" in navigator) {
 // ── Instalar App (A2HS) ──
 let deferredPrompt = null;
 
-window.addEventListener("beforeinstallprompt", e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  showInstallBanner();
-});
-
-// Esconde o banner se já está instalado como PWA
-window.addEventListener("appinstalled", () => {
-  deferredPrompt = null;
-  hideInstallBanner();
-});
-
 function isStandalone() {
   return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
 }
@@ -1585,50 +1626,61 @@ function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-function showInstallBanner() {
-  if (isStandalone() || localStorage.getItem("carolampra_dismiss_install")) return;
-  const banner = document.getElementById("install-banner");
-  if (banner) banner.style.display = "block";
-}
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Se o gate está visível, mostrar botão Android
+  const androidDiv = document.getElementById("gate-android");
+  const genericDiv = document.getElementById("gate-generic");
+  if (androidDiv) androidDiv.style.display = "block";
+  if (genericDiv) genericDiv.style.display = "none";
+});
 
-function hideInstallBanner() {
-  const banner = document.getElementById("install-banner");
-  if (banner) banner.style.display = "none";
-}
-
-function dismissInstall() {
-  localStorage.setItem("carolampra_dismiss_install", "1");
-  hideInstallBanner();
-}
+window.addEventListener("appinstalled", () => {
+  deferredPrompt = null;
+});
 
 function installApp() {
   if (deferredPrompt) {
-    // Android / Chrome
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(result => {
       deferredPrompt = null;
-      hideInstallBanner();
-      if (result.outcome === "accepted") showToast("✅ App instalado!");
+      if (result.outcome === "accepted") {
+        showToast("✅ App instalado! Abra pela tela inicial.");
+      }
     });
-  } else if (isIOS()) {
-    // iOS — mostra modal com instruções
-    const modal = document.getElementById("ios-modal");
-    if (modal) modal.style.display = "flex";
   } else {
     showToast("Use o menu do navegador para instalar");
   }
 }
 
-function closeIosModal() {
-  const modal = document.getElementById("ios-modal");
-  if (modal) modal.style.display = "none";
-  dismissInstall();
+// ── Gate de instalação — bloqueia acesso pelo navegador ──
+function checkInstallGate() {
+  if (isStandalone()) {
+    // Já instalado como PWA — esconde o gate
+    document.getElementById("install-gate").style.display = "none";
+    return;
+  }
+
+  // Não está instalado — bloquear e mostrar instruções
+  const gate = document.getElementById("install-gate");
+  gate.style.display = "flex";
+
+  // Esconder todas as telas do app
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+
+  if (isIOS()) {
+    document.getElementById("gate-ios").style.display = "block";
+  } else if (deferredPrompt) {
+    document.getElementById("gate-android").style.display = "block";
+  } else {
+    // Chromium pode ainda não ter disparado beforeinstallprompt — mostrar genérico
+    // mas deixar o Android pronto caso dispare depois
+    document.getElementById("gate-generic").style.display = "block";
+  }
 }
 
-// Mostrar banner ao carregar se for iOS e não instalado
-if (isIOS() && !isStandalone() && !localStorage.getItem("carolampra_dismiss_install")) {
-  showInstallBanner();
-}
+checkInstallGate();
 </script>
 </body>
 </html>
