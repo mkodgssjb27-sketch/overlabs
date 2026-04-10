@@ -1427,6 +1427,10 @@ async function updateLocationInFirestore(lat, lng) {
 
 // ── Inicialização ──
 if (currentUser && firebaseOk) {
+  // Mostrar home imediatamente (evita flash da tela de login)
+  document.getElementById("screen-student-auth").classList.remove("active");
+  document.getElementById("screen-student-home").classList.add("active");
+
   // Check if account is blocked before auto-login
   db.collection("users").doc(currentUser.id).get().then(doc => {
     if (doc.exists && doc.data().blocked === true) {
@@ -1508,20 +1512,20 @@ if ("serviceWorker" in navigator) {
       if (document.visibilityState === "visible") reg.update();
     });
 
-    // Detecta quando uma nova versão está pronta — recarrega automaticamente
+    // Detecta quando uma nova versão está pronta
     reg.addEventListener("updatefound", () => {
       const newWorker = reg.installing;
       newWorker.addEventListener("statechange", () => {
-        if (newWorker.state === "installed" && hadController) {
-          // Nova versão pronta — recarrega na hora
-          window.location.reload();
+        if (newWorker.state === "installed" && !hadController) {
+          // Primeira instalação — nada a fazer
         }
+        // Atualização real: controllerchange tratará o reload
       });
     });
 
-    // Se já existe um worker esperando, recarrega
+    // Se já existe um worker esperando, controllerchange tratará
     if (reg.waiting && hadController) {
-      window.location.reload();
+      reg.waiting.postMessage("SKIP_WAITING");
     }
   }).catch(err => console.log("SW:", err));
 
