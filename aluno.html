@@ -288,11 +288,14 @@ input,select{font-family:inherit;outline:none}
       </div>
     </div>
     <div class="s-content">
-      <div style="text-align:center;padding:80px 20px">
-        <div style="font-size:60px;margin-bottom:20px">📋</div>
-        <h2 style="color:#fff;font-weight:800;font-size:22px;margin-bottom:8px">Presenças</h2>
-        <p style="color:#64748b;font-size:15px;max-width:320px;margin:0 auto">Esta função estará disponível em breve. Você poderá consultar sua presença por aqui.</p>
+      <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">📋 Minhas Presenças</div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">MÊS</label>
+        <input type="month" class="inp" id="my-presence-month" style="color-scheme:dark" onchange="loadMyPresence()">
       </div>
+      <div id="my-presence-stats"></div>
+      <div id="my-presence-list"></div>
+      <div class="empty" id="my-presence-empty" style="display:none"><div class="icon">📋</div><p>Nenhuma presença neste mês</p></div>
     </div>
     <div class="s-bottom-nav">
       <button class="nav-btn" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
@@ -303,7 +306,7 @@ input,select{font-family:inherit;outline:none}
   </div>
 </div>
 
-<!-- ══ ALUNO — TORNEIOS (placeholder) ══════════════════════════════ -->
+<!-- ══ ALUNO — TORNEIOS ═════════════════════════════════════════════ -->
 <div class="screen" id="screen-student-tournaments">
   <div class="app-wrap">
     <div class="s-header">
@@ -315,11 +318,13 @@ input,select{font-family:inherit;outline:none}
         </div>
       </div>
     </div>
-    <div class="s-content">
-      <div style="text-align:center;padding:80px 20px">
-        <div style="font-size:60px;margin-bottom:20px">🏐</div>
-        <h2 style="color:#fff;font-weight:800;font-size:22px;margin-bottom:8px">Torneios</h2>
-        <p style="color:#64748b;font-size:15px;max-width:320px;margin:0 auto">Esta função estará disponível em breve. Aqui você poderá acompanhar todos torneios que você participa, torneios em andamento e os torneios que virão.</p>
+    <div class="s-content" id="s-tournaments-content">
+      <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">🏐 Torneios</div>
+      <button onclick="showScreen('student-inscricoes');loadStudentInscricoes()" style="width:100%;padding:18px;border-radius:16px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <span style="font-size:22px">📝</span> Inscrições Abertas
+      </button>
+      <div style="text-align:center;padding:40px 20px">
+        <p style="color:#64748b;font-size:14px;max-width:320px;margin:0 auto">Mais funções de torneios estarão disponíveis em breve!</p>
       </div>
     </div>
     <div class="s-bottom-nav">
@@ -327,6 +332,54 @@ input,select{font-family:inherit;outline:none}
       <button class="nav-btn" onclick="switchStudentTab('list')"><span>🚗</span><span>Caronas</span></button>
       <button class="nav-btn" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
       <button class="nav-btn active" onclick="switchStudentTab('tournaments')"><span>🏐</span><span>Torneios</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — INSCRIÇÕES ABERTAS ═══════════════════════════════════ -->
+<div class="screen" id="screen-student-inscricoes">
+  <div class="app-wrap">
+    <div class="s-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button onclick="switchStudentTab('tournaments')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px;border:none">←</button>
+        <div class="s-htitle" style="font-size:16px">📝 Inscrições</div>
+      </div>
+    </div>
+    <div class="s-content">
+      <div class="loading" id="student-insc-loading"><div class="spin"></div>Carregando...</div>
+      <div class="empty" id="student-insc-empty" style="display:none"><div class="icon">📝</div><p>Nenhuma inscrição disponível</p></div>
+      <div id="student-insc-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — FORMULÁRIO DE INSCRIÇÃO ══════════════════════════════ -->
+<div class="screen" id="screen-student-inscricao-form">
+  <div class="app-wrap">
+    <div class="s-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button onclick="showScreen('student-inscricoes');loadStudentInscricoes()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px;border:none">←</button>
+        <div class="s-htitle" style="font-size:16px" id="insc-form-title">Inscrição</div>
+      </div>
+    </div>
+    <div class="s-content" style="max-width:500px;margin:0 auto">
+      <div id="insc-already-msg" style="display:none;text-align:center;padding:40px 20px">
+        <div style="font-size:50px;margin-bottom:16px">✅</div>
+        <h3 style="color:#22c55e;font-weight:800;font-size:18px;margin-bottom:8px">Você já está inscrito!</h3>
+        <p style="color:#64748b;font-size:14px">Sua inscrição foi confirmada.</p>
+      </div>
+      <div id="insc-form-fields">
+        <div style="margin-bottom:18px">
+          <label class="lbl">NOME COMPLETO</label>
+          <input class="inp" id="insc-fullname" placeholder="Seu nome completo" style="-webkit-user-select:text;user-select:text">
+        </div>
+        <div style="margin-bottom:18px">
+          <label class="lbl">IDADE</label>
+          <input type="number" class="inp" id="insc-age" placeholder="Ex: 18" min="1" max="99" style="-webkit-user-select:text;user-select:text">
+        </div>
+        <p class="err-txt" id="insc-form-err" style="margin-bottom:12px"></p>
+        <button onclick="submitInscricao()" class="btn-main" id="btn-submit-insc">📝 Confirmar Inscrição</button>
+      </div>
     </div>
   </div>
 </div>
@@ -563,6 +616,7 @@ function switchTab(tab) {
 function switchStudentTab(tab) {
   const map = { home: "student-home", list: "student-list", presence: "student-presence", tournaments: "student-tournaments" };
   showScreen(map[tab] || "student-home");
+  if (tab === "presence") initMyPresence();
 }
 
 // ── Helpers ──
@@ -1708,6 +1762,165 @@ if (firebaseOk) {
       }
     } catch(e) { console.log("Erro ao criar usuário teste:", e); }
   })();
+}
+
+// ── Minhas Presenças (aluno) ──
+function initMyPresence() {
+  const monthEl = document.getElementById("my-presence-month");
+  if (!monthEl.value) {
+    const now = new Date();
+    monthEl.value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+  }
+  loadMyPresence();
+}
+
+function loadMyPresence() {
+  if (!firebaseOk || !currentUser) return;
+  const monthVal = document.getElementById("my-presence-month").value;
+  if (!monthVal) return;
+
+  const [year, month] = monthVal.split("-");
+  const startDate = `${year}-${month}-01`;
+  const endMonth = Number(month) === 12 ? `${Number(year)+1}-01-01` : `${year}-${String(Number(month)+1).padStart(2,"0")}-01`;
+
+  const stats = document.getElementById("my-presence-stats");
+  const list = document.getElementById("my-presence-list");
+  const empty = document.getElementById("my-presence-empty");
+
+  db.collection("attendance")
+    .where("userId", "==", currentUser.id)
+    .where("date", ">=", startDate)
+    .where("date", "<", endMonth)
+    .orderBy("date", "asc")
+    .get().then(snap => {
+      const items = snap.docs.map(d => d.data());
+      if (empty) empty.style.display = items.length === 0 ? "block" : "none";
+
+      const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+      const mName = monthNames[Number(month) - 1] + " " + year;
+
+      if (stats) {
+        stats.innerHTML = `
+          <div style="background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(34,197,94,.05));border:1px solid rgba(34,197,94,.2);border-radius:18px;padding:22px;text-align:center;margin-bottom:18px">
+            <div style="font-size:36px;font-weight:900;color:#22c55e">${items.length}</div>
+            <div style="font-size:14px;color:#94a3b8;font-weight:700;margin-top:4px">Treinos em ${mName}</div>
+          </div>`;
+      }
+
+      if (list) {
+        list.innerHTML = items.map(a => `
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:700;font-size:14px;color:#fff">${new Date(a.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}</div>
+              <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} — ${a.timeEnd || ''}</div>
+            </div>
+            <span style="color:#22c55e;font-size:13px;font-weight:700">✅</span>
+          </div>`).join("");
+      }
+    }).catch(e => console.error(e));
+}
+
+// ── Inscrições (aluno) ──
+let currentStudentInscId = null;
+
+function loadStudentInscricoes() {
+  if (!firebaseOk) return;
+  const list = document.getElementById("student-insc-list");
+  const loading = document.getElementById("student-insc-loading");
+  const empty = document.getElementById("student-insc-empty");
+  if (loading) loading.style.display = "flex";
+  if (list) list.innerHTML = "";
+
+  db.collection("inscricoes").where("open", "==", true).orderBy("createdAt", "desc").get().then(snap => {
+    if (loading) loading.style.display = "none";
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (empty) empty.style.display = items.length === 0 ? "block" : "none";
+    if (!list) return;
+    list.innerHTML = items.map(insc => {
+      const inscritos = insc.inscritos || [];
+      const alreadyIn = currentUser && inscritos.some(p => p.userId === currentUser.id);
+      return `
+        <div onclick="openStudentInscricao('${insc.id}')" style="background:rgba(255,255,255,.04);border:1px solid ${alreadyIn ? 'rgba(34,197,94,.3)' : 'rgba(255,255,255,.08)'};border-radius:16px;padding:18px;margin-bottom:10px;cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:800;font-size:15px;color:#fff">${escapeHtml(insc.title || '')}</span>
+            ${alreadyIn ? '<span style="font-size:12px;color:#22c55e;font-weight:800">✅ Inscrito</span>' : '<span style="font-size:12px;color:#f59e0b;font-weight:800">Inscrever-se →</span>'}
+          </div>
+        </div>`;
+    }).join("");
+  }).catch(e => {
+    if (loading) loading.style.display = "none";
+    console.error(e);
+  });
+}
+
+function openStudentInscricao(id) {
+  currentStudentInscId = id;
+  db.collection("inscricoes").doc(id).get().then(doc => {
+    if (!doc.exists) { showToast("Inscrição não encontrada"); return; }
+    const data = doc.data();
+    document.getElementById("insc-form-title").textContent = "📝 " + (data.title || "Inscrição");
+
+    const inscritos = data.inscritos || [];
+    const alreadyIn = currentUser && inscritos.some(p => p.userId === currentUser.id);
+
+    document.getElementById("insc-already-msg").style.display = alreadyIn ? "block" : "none";
+    document.getElementById("insc-form-fields").style.display = alreadyIn ? "none" : "block";
+
+    if (!alreadyIn) {
+      document.getElementById("insc-fullname").value = currentUser ? (currentUser.fullName || currentUser.firstName || "") : "";
+      document.getElementById("insc-age").value = "";
+      document.getElementById("insc-form-err").textContent = "";
+    }
+
+    showScreen("student-inscricao-form");
+  }).catch(e => {
+    showToast("Erro ao carregar");
+    console.error(e);
+  });
+}
+
+async function submitInscricao() {
+  if (!firebaseOk || !currentUser || !currentStudentInscId) return;
+  const fullName = document.getElementById("insc-fullname").value.trim();
+  const age = document.getElementById("insc-age").value.trim();
+  const errEl = document.getElementById("insc-form-err");
+
+  if (!fullName) { errEl.textContent = "Informe seu nome completo"; return; }
+  if (!age) { errEl.textContent = "Informe sua idade"; return; }
+  errEl.textContent = "";
+
+  const btn = document.getElementById("btn-submit-insc");
+  btn.disabled = true; btn.textContent = "Enviando...";
+  try {
+    const ref = db.collection("inscricoes").doc(currentStudentInscId);
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(ref);
+      if (!doc.exists) throw "Inscrição não existe";
+      const data = doc.data();
+      if (data.open === false) throw "Inscrição fechada";
+      const inscritos = data.inscritos || [];
+      if (inscritos.some(p => p.userId === currentUser.id)) throw "Já inscrito";
+      inscritos.push({
+        userId: currentUser.id,
+        fullName,
+        age: Number(age),
+        username: currentUser.username || "",
+        inscritAt: new Date().toISOString()
+      });
+      tx.update(ref, { inscritos });
+    });
+    showToast("✅ Inscrição confirmada!");
+    document.getElementById("insc-already-msg").style.display = "block";
+    document.getElementById("insc-form-fields").style.display = "none";
+  } catch(e) {
+    if (typeof e === "string") {
+      showToast(e);
+    } else {
+      showToast("Erro ao inscrever");
+      console.error(e);
+    }
+  }
+  btn.disabled = false; btn.textContent = "📝 Confirmar Inscrição";
 }
 
 // Registrar Service Worker com auto-update
