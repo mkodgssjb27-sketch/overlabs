@@ -325,8 +325,9 @@ input,select{font-family:inherit;outline:none}
         </div>
       </div>
     </div>
-    <div class="s-content">
+    <div class="s-content" id="s-presence-content">
       <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">📋 Minhas Presenças</div>
+      <div class="ptr-indicator" id="ptr-presence"><span class="ptr-spin"></span>Atualizando...</div>
       <div style="margin-bottom:16px">
         <label class="lbl">MÊS</label>
         <input type="month" class="inp" id="my-presence-month" style="color-scheme:dark" onchange="loadMyPresence()">
@@ -1614,6 +1615,10 @@ function initPullToRefresh() {
         updateNotifBadge(unread);
       });
   });
+
+  setupPullToRefresh("s-presence-content", "ptr-presence", () => {
+    loadMyPresence();
+  });
 }
 
 function loadProfile() {
@@ -2109,11 +2114,11 @@ function loadMyPresence() {
 
   unsubPresence = db.collection("attendance")
     .where("userId", "==", currentUser.id)
-    .where("date", ">=", startDate)
-    .where("date", "<", endMonth)
     .orderBy("date", "asc")
     .onSnapshot(snap => {
-      const items = snap.docs.map(d => d.data());
+      const allItems = snap.docs.map(d => d.data());
+      // Filtrar pelo mês selecionado no JS
+      const items = allItems.filter(a => a.date >= startDate && a.date < endMonth);
       if (empty) empty.style.display = items.length === 0 ? "block" : "none";
 
       const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -2128,16 +2133,27 @@ function loadMyPresence() {
       }
 
       if (list) {
-        list.innerHTML = items.map(a => `
+        list.innerHTML = items.map(a => {
+          const cutsTag = a.cutsAwarded ? `<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:6px">🪙 +${a.cutsAwarded}</span>` : '';
+          return `
           <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
             <div>
-              <div style="font-weight:700;font-size:14px;color:#fff">${new Date(a.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}</div>
+              <div style="font-weight:700;font-size:14px;color:#fff">${new Date(a.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}${cutsTag}</div>
               <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} — ${a.timeEnd || ''}</div>
             </div>
             <span style="color:#22c55e;font-size:13px;font-weight:700">✅</span>
-          </div>`).join("");
+          </div>`;
+        }).join("");
       }
-    }, e => console.error(e));
+    }, e => console.error("Erro presenças:", e));
+
+  // Atualizar CUTS na sidebar
+  db.collection("users").doc(currentUser.id).get().then(doc => {
+    if (doc.exists && doc.data().cuts != null) {
+      const cutsEl = document.getElementById("sidebar-cuts");
+      if (cutsEl) cutsEl.textContent = doc.data().cuts;
+    }
+  }).catch(() => {});
 }
 
 // ── Inscrições (aluno) ──

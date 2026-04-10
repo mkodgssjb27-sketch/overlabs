@@ -2033,14 +2033,14 @@ async function savePresenca() {
 
     // Award CUTS to student
     if (cutsVal > 0) {
-      const userDoc = await db.collection("users").doc(presenceStudentId).get();
-      const currentCuts = (userDoc.exists && userDoc.data().cuts) || 0;
-      await db.collection("users").doc(presenceStudentId).update({ cuts: currentCuts + cutsVal });
+      await db.collection("users").doc(presenceStudentId).update({
+        cuts: firebase.firestore.FieldValue.increment(cutsVal)
+      });
       // Update local cache if student in allStudents
       const st = allStudents.find(x => x.id === presenceStudentId);
-      if (st) st.cuts = currentCuts + cutsVal;
+      if (st) st.cuts = (st.cuts || 0) + cutsVal;
       const cutsEl = document.getElementById("cuts-" + presenceStudentId);
-      if (cutsEl) cutsEl.textContent = currentCuts + cutsVal;
+      if (cutsEl) cutsEl.textContent = (st && st.cuts) || cutsVal;
     }
 
     showToast(cutsVal > 0 ? `✅ Presença salva! 🪙 +${cutsVal} CUTS` : "✅ Presença salva!");
