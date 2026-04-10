@@ -1646,8 +1646,9 @@ if (currentUser && firebaseOk) {
     showPermissionDialog();
     if (localStorage.getItem("carolampra_perms_granted")) {
       startLocationTracking();
-      registerFCMToken();
     }
+    // Sempre tentar registrar FCM token (caso notificações já estejam permitidas)
+    registerFCMToken();
     updateAllAvatars();
     // Load photo from Firestore if not in localStorage
     if (!localStorage.getItem("carolampra_photo")) {

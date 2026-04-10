@@ -9,19 +9,21 @@ exports.sendPushNotification = onDocumentCreated(
   "notifications/{userId}/items/{docId}",
   async (event) => {
     const snap = event.data;
-    if (!snap) return;
+    if (!snap) { console.log("Sem data no evento"); return; }
 
     const notifData = snap.data();
     const userId = event.params.userId;
+    console.log(`Notificação criada para userId: ${userId}, msg: ${notifData.msg || "sem msg"}`);
 
     // Buscar o token FCM do usuário
     const db = getFirestore();
     const userDoc = await db.collection("users").doc(userId).get();
-    if (!userDoc.exists) return;
+    if (!userDoc.exists) { console.log(`User ${userId} não existe`); return; }
 
     const userData = userDoc.data();
     const fcmToken = userData.fcmToken;
-    if (!fcmToken) return;
+    if (!fcmToken) { console.log(`User ${userId} (${userData.firstName}) sem fcmToken`); return; }
+    console.log(`Token encontrado para ${userData.firstName}, enviando push...`);
 
     // Montar e enviar a notificação push
     const message = {
