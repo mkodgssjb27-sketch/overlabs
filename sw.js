@@ -1,4 +1,4 @@
-const CACHE_NAME = "overlabs-v29";
+const CACHE_NAME = "overlabs-v30";
 const URLS_TO_CACHE = [
   "./aluno.html",
   "./manifest.json",
