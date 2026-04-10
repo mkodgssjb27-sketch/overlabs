@@ -359,7 +359,7 @@ input,select{font-family:inherit;outline:none}
     <div class="s-content" id="s-tournaments-content">
       <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">🏐 Torneios</div>
       <button onclick="showScreen('student-inscricoes');loadStudentInscricoes()" style="width:100%;padding:18px;border-radius:16px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <span style="font-size:22px">📝</span> Inscrições Abertas
+        <span style="font-size:22px">📝</span> Inscrições
       </button>
       <div style="text-align:center;padding:40px 20px">
         <p style="color:#64748b;font-size:14px;max-width:320px;margin:0 auto">Mais funções de torneios estarão disponíveis em breve!</p>
@@ -470,6 +470,11 @@ input,select{font-family:inherit;outline:none}
     <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
     <div style="font-weight:800;font-size:16px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)" id="sidebar-name">—</div>
     <div style="font-size:12px;color:#94a3b8;margin-top:2px;text-shadow:0 1px 3px rgba(0,0,0,.5)" id="sidebar-username">—</div>
+    <div style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:20px;padding:5px 14px">
+      <span style="font-size:16px">🪙</span>
+      <span style="font-weight:900;font-size:15px;color:#f59e0b;text-shadow:0 1px 3px rgba(0,0,0,.5)" id="sidebar-cuts">0</span>
+      <span style="font-size:11px;font-weight:700;color:#f59e0b;text-shadow:0 1px 3px rgba(0,0,0,.5)">CUTS</span>
+    </div>
   </div>
   <div style="padding:12px 14px">
     <button onclick="closeSidebar();showScreen('student-personal');loadProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
@@ -659,6 +664,7 @@ let unsubRides = null;
 let unsubNotifs = null;
 let unsubAlerts = null;
 let unsubFeed = null;
+let unsubPresence = null;
 let currentUser = JSON.parse(localStorage.getItem("carolampra_user") || "null");
 let allRides = [];
 let allFeedItems = [];
@@ -837,6 +843,17 @@ function enterStudentApp() {
         localStorage.setItem("carolampra_photo", doc.data().photoURL);
         updateAllAvatars();
       }
+      if (doc.exists && doc.data().cuts != null) {
+        const cutsEl = document.getElementById("sidebar-cuts");
+        if (cutsEl) cutsEl.textContent = doc.data().cuts;
+      }
+    }).catch(() => {});
+  } else if (firebaseOk) {
+    db.collection("users").doc(currentUser.id).get().then(doc => {
+      if (doc.exists && doc.data().cuts != null) {
+        const cutsEl = document.getElementById("sidebar-cuts");
+        if (cutsEl) cutsEl.textContent = doc.data().cuts;
+      }
     }).catch(() => {});
   }
   // Load customization data
@@ -844,10 +861,11 @@ function enterStudentApp() {
 }
 
 function studentLogout() {
-  if (unsubRides)  { unsubRides();  unsubRides  = null; }
-  if (unsubNotifs) { unsubNotifs(); unsubNotifs = null; }
-  if (unsubAlerts) { unsubAlerts(); unsubAlerts = null; }
-  if (unsubFeed)   { unsubFeed();   unsubFeed   = null; }
+  if (unsubRides)    { unsubRides();    unsubRides    = null; }
+  if (unsubNotifs)   { unsubNotifs();   unsubNotifs   = null; }
+  if (unsubAlerts)   { unsubAlerts();   unsubAlerts   = null; }
+  if (unsubFeed)     { unsubFeed();     unsubFeed     = null; }
+  if (unsubPresence) { unsubPresence(); unsubPresence = null; }
   if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
   localStorage.removeItem("carolampra_user");
   localStorage.removeItem("carolampra_photo");
@@ -2078,6 +2096,9 @@ function loadMyPresence() {
   const monthVal = document.getElementById("my-presence-month").value;
   if (!monthVal) return;
 
+  // Cancelar listener anterior ao trocar de mês
+  if (unsubPresence) { unsubPresence(); unsubPresence = null; }
+
   const [year, month] = monthVal.split("-");
   const startDate = `${year}-${month}-01`;
   const endMonth = Number(month) === 12 ? `${Number(year)+1}-01-01` : `${year}-${String(Number(month)+1).padStart(2,"0")}-01`;
@@ -2086,12 +2107,12 @@ function loadMyPresence() {
   const list = document.getElementById("my-presence-list");
   const empty = document.getElementById("my-presence-empty");
 
-  db.collection("attendance")
+  unsubPresence = db.collection("attendance")
     .where("userId", "==", currentUser.id)
     .where("date", ">=", startDate)
     .where("date", "<", endMonth)
     .orderBy("date", "asc")
-    .get().then(snap => {
+    .onSnapshot(snap => {
       const items = snap.docs.map(d => d.data());
       if (empty) empty.style.display = items.length === 0 ? "block" : "none";
 
@@ -2116,7 +2137,7 @@ function loadMyPresence() {
             <span style="color:#22c55e;font-size:13px;font-weight:700">✅</span>
           </div>`).join("");
       }
-    }).catch(e => console.error(e));
+    }, e => console.error(e));
 }
 
 // ── Inscrições (aluno) ──
