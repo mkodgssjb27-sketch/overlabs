@@ -666,6 +666,7 @@ let unsubNotifs = null;
 let unsubAlerts = null;
 let unsubFeed = null;
 let unsubPresence = null;
+let unsubUserDoc = null;
 let currentUser = JSON.parse(localStorage.getItem("carolampra_user") || "null");
 let allRides = [];
 let allFeedItems = [];
@@ -837,25 +838,21 @@ function enterStudentApp() {
     startLocationTracking();
   }
   updateAllAvatars();
-  // Load photo from Firestore if not in localStorage
-  if (!localStorage.getItem("carolampra_photo") && firebaseOk) {
-    db.collection("users").doc(currentUser.id).get().then(doc => {
-      if (doc.exists && doc.data().photoURL) {
-        localStorage.setItem("carolampra_photo", doc.data().photoURL);
+  // Listener tempo real no documento do usuário (CUTS, foto, etc)
+  if (firebaseOk) {
+    if (unsubUserDoc) { unsubUserDoc(); unsubUserDoc = null; }
+    unsubUserDoc = db.collection("users").doc(currentUser.id).onSnapshot(doc => {
+      if (!doc.exists) return;
+      const d = doc.data();
+      // CUTS
+      const cutsEl = document.getElementById("sidebar-cuts");
+      if (cutsEl) cutsEl.textContent = d.cuts || 0;
+      // Foto
+      if (d.photoURL) {
+        localStorage.setItem("carolampra_photo", d.photoURL);
         updateAllAvatars();
       }
-      if (doc.exists && doc.data().cuts != null) {
-        const cutsEl = document.getElementById("sidebar-cuts");
-        if (cutsEl) cutsEl.textContent = doc.data().cuts;
-      }
-    }).catch(() => {});
-  } else if (firebaseOk) {
-    db.collection("users").doc(currentUser.id).get().then(doc => {
-      if (doc.exists && doc.data().cuts != null) {
-        const cutsEl = document.getElementById("sidebar-cuts");
-        if (cutsEl) cutsEl.textContent = doc.data().cuts;
-      }
-    }).catch(() => {});
+    }, () => {});
   }
   // Load customization data
   loadUserCustomization();
@@ -867,6 +864,7 @@ function studentLogout() {
   if (unsubAlerts)   { unsubAlerts();   unsubAlerts   = null; }
   if (unsubFeed)     { unsubFeed();     unsubFeed     = null; }
   if (unsubPresence) { unsubPresence(); unsubPresence = null; }
+  if (unsubUserDoc)  { unsubUserDoc();  unsubUserDoc  = null; }
   if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
   localStorage.removeItem("carolampra_user");
   localStorage.removeItem("carolampra_photo");

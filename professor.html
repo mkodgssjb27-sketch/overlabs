@@ -1544,20 +1544,32 @@ function closeCutsModal() {
 async function saveCuts() {
   const val = parseInt(document.getElementById("cuts-input").value);
   if (isNaN(val) || val < 0) { showToast("Informe um valor válido"); return; }
-  let newVal;
-  if (cutsModalMode === "add") newVal = cutsModalCurrent + val;
-  else if (cutsModalMode === "remove") newVal = Math.max(0, cutsModalCurrent - val);
-  else newVal = val;
 
   try {
-    await db.collection("users").doc(cutsModalUserId).update({ cuts: newVal });
+    let updateData;
+    if (cutsModalMode === "add") {
+      updateData = { cuts: firebase.firestore.FieldValue.increment(val) };
+    } else if (cutsModalMode === "remove") {
+      updateData = { cuts: firebase.firestore.FieldValue.increment(-val) };
+    } else {
+      updateData = { cuts: val };
+    }
+    await db.collection("users").doc(cutsModalUserId).update(updateData);
+
+    // Buscar valor atualizado do Firestore
+    const freshDoc = await db.collection("users").doc(cutsModalUserId).get();
+    const newVal = (freshDoc.exists && freshDoc.data().cuts) || 0;
+    const finalVal = Math.max(0, newVal);
+    // Se ficou negativo, corrigir
+    if (newVal < 0) await db.collection("users").doc(cutsModalUserId).update({ cuts: 0 });
+
     // update local cache
     const s = allStudents.find(x => x.id === cutsModalUserId);
-    if (s) s.cuts = newVal;
+    if (s) s.cuts = finalVal;
     // update card UI
     const el = document.getElementById("cuts-" + cutsModalUserId);
-    if (el) el.textContent = newVal;
-    showToast("🪙 CUTS atualizado: " + newVal);
+    if (el) el.textContent = finalVal;
+    showToast("🪙 CUTS atualizado: " + finalVal);
     closeCutsModal();
   } catch(e) {
     showToast("Erro ao salvar CUTS");
