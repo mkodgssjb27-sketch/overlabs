@@ -518,9 +518,11 @@ let unsubAlerts = null;
 let unsubFeed = null;
 let currentUser = JSON.parse(localStorage.getItem("carolampra_user") || "null");
 let allRides = [];
+let allFeedItems = [];
 let currentRideId = null;
 let lastAlertTs = null;
 let alertsReady = false;
+let autoRefreshInterval = null;
 
 // ── Navegação ──
 let screenHistory = [];
@@ -700,10 +702,12 @@ function studentLogout() {
   if (unsubNotifs) { unsubNotifs(); unsubNotifs = null; }
   if (unsubAlerts) { unsubAlerts(); unsubAlerts = null; }
   if (unsubFeed)   { unsubFeed();   unsubFeed   = null; }
+  if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
   localStorage.removeItem("carolampra_user");
   localStorage.removeItem("carolampra_photo");
   currentUser = null;
   allRides = [];
+  allFeedItems = [];
   cachedAlerts = [];
   showScreen("student-auth");
 }
@@ -775,21 +779,35 @@ function startStudentListeners() {
     .orderBy("createdAt", "desc")
     .limit(30)
     .onSnapshot(snap => {
-      const now = Date.now();
-      const h24 = 24 * 60 * 60 * 1000;
-      const items = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(item => {
-          if (item.hidden === true) return false;
-          if (item.type === 'personal_msg') {
-            return item.targetUserId === currentUser.id;
-          }
-          if (item.type !== "ride_created" && item.type !== "alert") return false;
-          if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h24) return false;
-          return true;
-        });
-      renderFeed(items);
+      allFeedItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderFilteredFeed();
     });
+
+  // Auto-refresh silencioso a cada 2 segundos
+  if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+  autoRefreshInterval = setInterval(() => {
+    renderFilteredFeed();
+    renderStudentRides(allRides);
+    if (currentRideId) {
+      const r = allRides.find(r => r.id === currentRideId);
+      if (r) renderStudentDetail(r);
+    }
+  }, 2000);
+}
+
+function renderFilteredFeed() {
+  const now = Date.now();
+  const h24 = 24 * 60 * 60 * 1000;
+  const items = allFeedItems.filter(item => {
+    if (item.hidden === true) return false;
+    if (item.type === 'personal_msg') {
+      return item.targetUserId === currentUser.id;
+    }
+    if (item.type !== "ride_created" && item.type !== "alert") return false;
+    if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h24) return false;
+    return true;
+  });
+  renderFeed(items);
 }
 
 function renderFeed(items) {
@@ -1315,17 +1333,8 @@ function initPullToRefresh() {
       .orderBy("createdAt", "desc")
       .limit(30)
       .onSnapshot(snap => {
-        const now = Date.now();
-        const h24 = 24 * 60 * 60 * 1000;
-        const items = snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .filter(item => {
-            if (item.hidden === true) return false;
-            if (item.type !== "ride_created" && item.type !== "alert") return false;
-            if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h24) return false;
-            return true;
-          });
-        renderFeed(items);
+        allFeedItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderFilteredFeed();
       });
   });
 
@@ -1575,6 +1584,17 @@ if (currentUser && firebaseOk) {
       showLoginErr("Sua conta foi bloqueada. Fale com o professor.");
       return;
     }
+    // Sincronizar dados do Firestore com localStorage (caso professor tenha editado)
+    const freshData = doc.data();
+    if (freshData.firstName && freshData.firstName !== currentUser.firstName) {
+      currentUser.firstName = freshData.firstName;
+    }
+    if (freshData.username && freshData.username !== currentUser.username) {
+      currentUser.username = freshData.username;
+    }
+    if (freshData.fullName) currentUser.fullName = freshData.fullName;
+    if (freshData.nickname) currentUser.nickname = freshData.nickname;
+    localStorage.setItem("carolampra_user", JSON.stringify(currentUser));
     document.getElementById("sl-greeting").textContent = `Olá, ${currentUser.firstName}!`;
     const sh = document.getElementById("sh-greeting");
     const sp = document.getElementById("sp-greeting");

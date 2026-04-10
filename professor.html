@@ -774,7 +774,7 @@ async function createRide() {
       await db.collection("feed").add({
         type: "ride_created",
         icon: "🚗",
-        text: `Nova carona: ${title}`,
+        text: title,
         detail: `📅 ${date} · ⏰ ${time} · ${seats} vagas`,
         refId: docRef.id,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -813,6 +813,7 @@ function renderTeacherDetail(ride) {
           <div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#e85d04)">${b.firstName[0]}</div>
           <div style="flex:1"><p style="font-weight:700;font-size:14px;color:#e2e8f0">${b.firstName}</p><p style="color:#64748b;font-size:12px">@${b.username}</p></div>
           <span class="badge" style="background:rgba(34,197,94,.15);color:#22c55e">Vaga ${i+1}</span>
+          <button onclick="removeStudentFromRide('${b.userId}')" style="margin-left:8px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">✕ Remover</button>
         </div>`).join("");
 
   const wlWrap = document.getElementById("td-waitlist-wrap");
@@ -838,6 +839,39 @@ function deleteRide() {
       currentDetailRideId = null;
       showScreen("teacher-rides");
     } catch(e) { showToast("Erro ao excluir"); }
+  });
+}
+
+// ── Remover aluno de uma carona ──
+function removeStudentFromRide(userId) {
+  const ride = allRides.find(r => r.id === currentDetailRideId);
+  if (!ride) return;
+  const student = (ride.booked || []).find(b => b.userId === userId);
+  const studentName = student ? student.firstName : "este aluno";
+  showConfirmModal(`Remover ${studentName}?`, "A vaga será liberada. Se houver alguém na fila de espera, será promovido automaticamente.", async () => {
+    try {
+      const rideRef = db.collection("rides").doc(currentDetailRideId);
+      await db.runTransaction(async tx => {
+        const doc = await tx.get(rideRef);
+        if (!doc.exists) throw "Carona não encontrada";
+        const data = doc.data();
+        const booked = data.booked || [];
+        const wl = data.waitlist || [];
+        const newBooked = booked.filter(b => b.userId !== userId);
+
+        if (newBooked.length < booked.length && wl.length > 0) {
+          const promoted = wl[0];
+          tx.update(rideRef, { booked: [...newBooked, promoted], waitlist: wl.slice(1) });
+        } else {
+          tx.update(rideRef, { booked: newBooked });
+        }
+      });
+      showToast("✅ Aluno removido");
+      openTeacherDetail(currentDetailRideId);
+    } catch(e) {
+      showToast("Erro ao remover aluno");
+      console.error(e);
+    }
   });
 }
 
@@ -1273,6 +1307,28 @@ async function saveStudentProfile() {
     if (fullName) updates.firstName = fullName.split(" ")[0];
     if (password && password.length >= 4) updates.password = password;
     await db.collection("users").doc(editingStudentId).update(updates);
+
+    // Atualizar nome/username nas caronas (booked e waitlist)
+    if (updates.firstName) {
+      const newFirst = updates.firstName;
+      const ridesSnap = await db.collection("rides").get();
+      const batch = db.batch();
+      ridesSnap.forEach(doc => {
+        const data = doc.data();
+        let changed = false;
+        const booked = (data.booked || []).map(b => {
+          if (b.userId === editingStudentId && b.firstName !== newFirst) { changed = true; return { ...b, firstName: newFirst }; }
+          return b;
+        });
+        const waitlist = (data.waitlist || []).map(w => {
+          if (w.userId === editingStudentId && w.firstName !== newFirst) { changed = true; return { ...w, firstName: newFirst }; }
+          return w;
+        });
+        if (changed) batch.update(doc.ref, { booked, waitlist });
+      });
+      await batch.commit();
+    }
+
     showToast("✅ Perfil do aluno atualizado!");
     showScreen("teacher-students");
     loadStudents();
