@@ -1981,13 +1981,13 @@ function loadPresencaHistory() {
   const empty = document.getElementById("presenca-history-empty");
   db.collection("attendance")
     .where("userId", "==", presenceStudentId)
-    .orderBy("date", "asc")
-    .limitToLast(20)
     .get().then(snap => {
-      const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse();
-      if (empty) empty.style.display = items.length === 0 ? "block" : "none";
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      const recent = items.slice(0, 20);
+      if (empty) empty.style.display = recent.length === 0 ? "block" : "none";
       if (!list) return;
-      list.innerHTML = items.map(a => {
+      list.innerHTML = recent.map(a => {
         const cutsTag = a.cutsAwarded ? `<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:8px">🪙 +${a.cutsAwarded}</span>` : '';
         return `
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
@@ -2081,9 +2081,9 @@ function loadAllPresencas() {
   const empty = document.getElementById("gerenciar-pres-empty");
   db.collection("attendance")
     .where("userId", "==", presenceStudentId)
-    .orderBy("date", "asc")
     .get().then(snap => {
-      const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse();
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
       if (empty) empty.style.display = items.length === 0 ? "block" : "none";
       if (!list) return;
       list.innerHTML = items.map(a => {
@@ -2172,11 +2172,10 @@ function loadRelatorio() {
 
   db.collection("attendance")
     .where("userId", "==", presenceStudentId)
-    .where("date", ">=", startDate)
-    .where("date", "<", endMonth)
-    .orderBy("date", "asc")
     .get().then(snap => {
-      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const items = allItems.filter(a => a.date >= startDate && a.date < endMonth);
+      items.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
       if (empty) empty.style.display = items.length === 0 ? "block" : "none";
 
       const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];

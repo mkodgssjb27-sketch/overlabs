@@ -2114,11 +2114,11 @@ function loadMyPresence() {
 
   unsubPresence = db.collection("attendance")
     .where("userId", "==", currentUser.id)
-    .orderBy("date", "asc")
     .onSnapshot(snap => {
       const allItems = snap.docs.map(d => d.data());
-      // Filtrar pelo mês selecionado no JS
+      // Filtrar pelo mês selecionado e ordenar no JS
       const items = allItems.filter(a => a.date >= startDate && a.date < endMonth);
+      items.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
       if (empty) empty.style.display = items.length === 0 ? "block" : "none";
 
       const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
