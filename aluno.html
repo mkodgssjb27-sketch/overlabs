@@ -102,6 +102,11 @@ input,select{font-family:inherit;outline:none}
 .profile-photo-wrap .photo{width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid rgba(245,158,11,.5);background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;font-weight:800}
 .profile-photo-wrap .photo img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .profile-photo-wrap .cam-badge{position:absolute;bottom:2px;right:2px;width:28px;height:28px;border-radius:50%;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #0a0a0f}
+
+/* Pull to refresh */
+.ptr-indicator{text-align:center;padding:0;max-height:0;overflow:hidden;transition:max-height .3s,padding .3s;color:#64748b;font-size:13px;font-weight:700}
+.ptr-indicator.active{max-height:50px;padding:12px 0}
+.ptr-indicator .ptr-spin{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.1);border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
 </style>
 </head>
 <body>
@@ -164,6 +169,7 @@ input,select{font-family:inherit;outline:none}
       </div>
     </div>
     <div class="s-content" id="s-rides-content">
+      <div class="ptr-indicator" id="ptr-rides"><span class="ptr-spin"></span>Atualizando...</div>
       <div class="loading" id="s-loading"><div class="spin"></div>Carregando...</div>
       <div class="empty" id="s-empty" style="display:none"><div class="icon">🛣️</div><p>Nenhuma carona disponível</p><small>O professor ainda não criou caronas</small></div>
       <div id="s-rides-list"></div>
@@ -280,7 +286,7 @@ input,select{font-family:inherit;outline:none}
         </button>
       </div>
     </div>
-    <div class="s-content">
+    <div class="s-content" id="s-feed-content">
       <!-- Banner instalar app -->
       <div id="install-banner" style="display:none;background:linear-gradient(135deg,#f59e0b,#e85d04);border-radius:16px;padding:16px;margin-bottom:14px;color:#fff;text-align:center">
         <p style="font-size:13px;font-weight:700;margin-bottom:10px">📲 Instale o app na sua tela inicial!</p>
@@ -301,6 +307,7 @@ input,select{font-family:inherit;outline:none}
         </div>
       </div>
       <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">📰 Últimas Atualizações</div>
+      <div class="ptr-indicator" id="ptr-feed"><span class="ptr-spin"></span>Atualizando...</div>
       <div class="loading" id="feed-loading"><div class="spin"></div>Carregando...</div>
       <div class="empty" id="feed-empty" style="display:none"><div class="icon">📭</div><p>Nenhuma atualização</p><small>Aqui você se manterá informado de todas atualizações</small></div>
       <div id="feed-list"></div>
@@ -608,6 +615,7 @@ function enterStudentApp() {
   if (st) st.textContent = `Olá, ${name}!`;
   showScreen("student-home");
   startStudentListeners();
+  initPullToRefresh();
   showPermissionDialog();
   if (localStorage.getItem("carolampra_perms_granted")) {
     startLocationTracking();
@@ -1127,6 +1135,100 @@ function closeSidebar() {
   document.getElementById("profile-sidebar-overlay").style.display = "none";
 }
 
+// ── Swipe sidebar para fechar ──
+(function() {
+  const sidebar = document.getElementById("profile-sidebar");
+  let startX = 0, currentX = 0, swiping = false;
+  sidebar.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+    swiping = true;
+  }, { passive: true });
+  sidebar.addEventListener("touchmove", e => {
+    if (!swiping) return;
+    currentX = e.touches[0].clientX;
+    const diff = currentX - startX;
+    if (diff < 0) {
+      sidebar.style.transition = "none";
+      sidebar.style.left = diff + "px";
+    }
+  }, { passive: true });
+  sidebar.addEventListener("touchend", () => {
+    if (!swiping) return;
+    swiping = false;
+    sidebar.style.transition = "left .3s ease";
+    if (startX - currentX > 80) {
+      closeSidebar();
+    } else {
+      sidebar.style.left = "0";
+    }
+  });
+})();
+
+// ── Pull to refresh ──
+function setupPullToRefresh(scrollContainerId, indicatorId, onRefresh) {
+  const container = document.getElementById(scrollContainerId);
+  const indicator = document.getElementById(indicatorId);
+  if (!container || !indicator) return;
+  let startY = 0, pulling = false;
+
+  container.addEventListener("touchstart", e => {
+    if (container.scrollTop <= 0) {
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }
+  }, { passive: true });
+
+  container.addEventListener("touchmove", e => {
+    if (!pulling) return;
+    const diff = e.touches[0].clientY - startY;
+    if (diff > 60 && container.scrollTop <= 0) {
+      indicator.classList.add("active");
+    }
+  }, { passive: true });
+
+  container.addEventListener("touchend", () => {
+    if (!pulling) return;
+    pulling = false;
+    if (indicator.classList.contains("active")) {
+      onRefresh();
+      setTimeout(() => indicator.classList.remove("active"), 1200);
+    }
+  });
+}
+
+// Configurar pull-to-refresh após login
+function initPullToRefresh() {
+  setupPullToRefresh("s-feed-content", "ptr-feed", () => {
+    if (unsubFeed) unsubFeed();
+    unsubFeed = db.collection("feed")
+      .orderBy("createdAt", "desc")
+      .limit(30)
+      .onSnapshot(snap => {
+        const now = Date.now();
+        const h24 = 24 * 60 * 60 * 1000;
+        const items = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(item => {
+            if (item.hidden === true) return false;
+            if (item.type !== "ride_created" && item.type !== "alert") return false;
+            if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h24) return false;
+            return true;
+          });
+        renderFeed(items);
+      });
+  });
+
+  setupPullToRefresh("s-rides-content", "ptr-rides", () => {
+    if (unsubRides) unsubRides();
+    unsubRides = db.collection("rides")
+      .orderBy("createdAt", "desc")
+      .onSnapshot(snap => {
+        allRides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderStudentRides(allRides);
+      });
+  });
+}
+
 function loadProfile() {
   if (!currentUser || !firebaseOk) return;
   db.collection("users").doc(currentUser.id).get().then(doc => {
@@ -1344,6 +1446,7 @@ if (currentUser && firebaseOk) {
     if (st) st.textContent = `Olá, ${currentUser.firstName}!`;
     showScreen("student-home");
     startStudentListeners();
+    initPullToRefresh();
     showPermissionDialog();
     if (localStorage.getItem("carolampra_perms_granted")) {
       startLocationTracking();
@@ -1361,6 +1464,7 @@ if (currentUser && firebaseOk) {
     document.getElementById("sl-greeting").textContent = `Olá, ${currentUser.firstName}!`;
     showScreen("student-home");
     startStudentListeners();
+    initPullToRefresh();
   });
 }
 
