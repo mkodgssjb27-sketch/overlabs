@@ -1038,8 +1038,9 @@ function renderStudents(students) {
           <button onclick="openEditStudent('${s.id}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">✏️ Editar</button>
           ${hasLoc ? `<button onclick="openStudentMap('${s.id}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">📍 Local</button>` : `<button disabled style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;background:rgba(255,255,255,.04);color:#64748b;cursor:default">📍 Sem local</button>`}
         </div>
-        <div style="margin-top:8px">
-          <button onclick="openMsgModal('${s.id}','${escapeHtml(s.firstName||'')}')" style="width:100%;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(139,92,246,.12);color:#a78bfa;display:flex;align-items:center;justify-content:center;gap:6px">✉️ Enviar Mensagem</button>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button onclick="openMsgModal('${s.id}','${escapeHtml(s.firstName||'')}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(139,92,246,.12);color:#a78bfa;display:flex;align-items:center;justify-content:center;gap:6px">✉️ Mensagem</button>
+          <button onclick="deleteStudent('${s.id}','${escapeHtml(s.firstName||'')}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(239,68,68,.08);color:#f87171;display:flex;align-items:center;justify-content:center;gap:6px">🗑 Excluir Conta</button>
         </div>
         ${hasLoc ? `<div style="color:#64748b;font-size:11px;margin-top:8px">📍 Última atualização: ${locTime}</div>` : ''}
       </div>`;
@@ -1059,6 +1060,36 @@ function togglePw(id) {
     el.textContent = student.password || "";
     el.style.letterSpacing = "0px";
     el.dataset.visible = "1";
+  }
+}
+
+async function deleteStudent(userId, name) {
+  if (!confirm(`Excluir a conta de "${name}"? O aluno perderá todos os dados e terá que criar uma nova conta.`)) return;
+  if (!confirm(`TEM CERTEZA? Esta ação não pode ser desfeita!`)) return;
+  try {
+    // Remove notificações do aluno
+    const notifSnap = await db.collection('notifications').doc(userId).collection('items').get();
+    const batch = db.batch();
+    notifSnap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    // Remove o documento do aluno
+    await db.collection('users').doc(userId).delete();
+    // Remove o aluno de todas as caronas (booked e waitlist)
+    const ridesSnap = await db.collection('rides').get();
+    for (const rideDoc of ridesSnap.docs) {
+      const data = rideDoc.data();
+      const booked = data.booked || [];
+      const waitlist = data.waitlist || [];
+      const newBooked = booked.filter(b => b.userId !== userId);
+      const newWaitlist = waitlist.filter(w => w.userId !== userId);
+      if (newBooked.length !== booked.length || newWaitlist.length !== waitlist.length) {
+        await rideDoc.ref.update({ booked: newBooked, waitlist: newWaitlist });
+      }
+    }
+    showToast('🗑 Conta excluída com sucesso');
+  } catch(e) {
+    showToast('Erro ao excluir conta');
+    console.error(e);
   }
 }
 
