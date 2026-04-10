@@ -1,4 +1,4 @@
-const CACHE_NAME = "overlabs-v27";
+const CACHE_NAME = "overlabs-v28";
 const URLS_TO_CACHE = [
   "./aluno.html",
   "./manifest.json",
@@ -12,9 +12,10 @@ const URLS_TO_CACHE = [
 // Instala e cacheia os arquivos base
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(URLS_TO_CACHE))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(URLS_TO_CACHE))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 // Remove caches antigos e avisa os clientes

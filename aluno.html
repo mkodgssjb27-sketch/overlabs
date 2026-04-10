@@ -1499,37 +1499,17 @@ if (firebaseOk) {
 
 // Registrar Service Worker com auto-update
 if ("serviceWorker" in navigator) {
-  // Se não havia controller ao carregar, é primeira instalação
   const hadController = !!navigator.serviceWorker.controller;
 
   navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
-    // Verifica atualizações a cada 60 segundos
     setInterval(() => reg.update(), 60000);
-
-    // Verifica atualização imediatamente e quando o app volta ao foco
     reg.update();
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") reg.update();
     });
-
-    // Detecta quando uma nova versão está pronta
-    reg.addEventListener("updatefound", () => {
-      const newWorker = reg.installing;
-      newWorker.addEventListener("statechange", () => {
-        if (newWorker.state === "installed" && !hadController) {
-          // Primeira instalação — nada a fazer
-        }
-        // Atualização real: controllerchange tratará o reload
-      });
-    });
-
-    // Se já existe um worker esperando, controllerchange tratará
-    if (reg.waiting && hadController) {
-      reg.waiting.postMessage("SKIP_WAITING");
-    }
   }).catch(err => console.log("SW:", err));
 
-  // Quando o novo SW assume, recarrega a página (só se já tinha controller)
+  // Quando o novo SW assume, recarrega a página uma única vez
   let refreshing = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (refreshing) return;
