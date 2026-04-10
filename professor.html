@@ -2059,10 +2059,20 @@ async function savePresenca() {
 function deletePresenca(id) {
   showConfirmModal("Excluir presença?", "Esta ação não pode ser desfeita.", async () => {
     try {
+      const doc = await db.collection("attendance").doc(id).get();
+      const cuts = doc.exists && doc.data().cutsAwarded ? doc.data().cutsAwarded : 0;
+      const uid = doc.exists ? doc.data().userId : presenceStudentId;
       await db.collection("attendance").doc(id).delete();
-      showToast("Presença excluída");
+      if (cuts > 0 && uid) {
+        await db.collection("users").doc(uid).update({ cuts: firebase.firestore.FieldValue.increment(-cuts) });
+        const st = allStudents.find(x => x.id === uid);
+        if (st) { st.cuts = Math.max(0, (st.cuts || 0) - cuts); }
+        const cutsEl = document.getElementById("cuts-" + uid);
+        if (cutsEl && st) cutsEl.textContent = st.cuts;
+      }
+      showToast(cuts > 0 ? `Presença excluída (🪙 -${cuts} CUTS)` : "Presença excluída");
       loadPresencaHistory();
-    } catch(e) { showToast("Erro ao excluir"); }
+    } catch(e) { showToast("Erro ao excluir"); console.error(e); }
   });
 }
 
@@ -2140,10 +2150,20 @@ async function updatePresenca() {
 function deletePresencaFromList(id) {
   showConfirmModal("Excluir presença?", "Esta ação não pode ser desfeita.", async () => {
     try {
+      const doc = await db.collection("attendance").doc(id).get();
+      const cuts = doc.exists && doc.data().cutsAwarded ? doc.data().cutsAwarded : 0;
+      const uid = doc.exists ? doc.data().userId : presenceStudentId;
       await db.collection("attendance").doc(id).delete();
-      showToast("Presença excluída");
+      if (cuts > 0 && uid) {
+        await db.collection("users").doc(uid).update({ cuts: firebase.firestore.FieldValue.increment(-cuts) });
+        const st = allStudents.find(x => x.id === uid);
+        if (st) { st.cuts = Math.max(0, (st.cuts || 0) - cuts); }
+        const cutsEl = document.getElementById("cuts-" + uid);
+        if (cutsEl && st) cutsEl.textContent = st.cuts;
+      }
+      showToast(cuts > 0 ? `Presença excluída (🪙 -${cuts} CUTS)` : "Presença excluída");
       loadAllPresencas();
-    } catch(e) { showToast("Erro ao excluir"); }
+    } catch(e) { showToast("Erro ao excluir"); console.error(e); }
   });
 }
 
