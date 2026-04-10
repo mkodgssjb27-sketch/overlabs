@@ -7,8 +7,12 @@
 <meta name="theme-color" content="#0d9488">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="CAROLAMPRA">
+<meta name="apple-mobile-web-app-title" content="OVER Prof">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest-prof.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -127,6 +131,7 @@ input,select,textarea{font-family:inherit;outline:none}
         style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#fff;font-size:22px;letter-spacing:10px;text-align:center;margin-bottom:6px">
       <p class="err-txt" id="t-pin-err" style="margin-bottom:10px"></p>
       <button onclick="teacherLogin()" style="width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:16px;margin-top:4px;box-shadow:0 4px 20px rgba(245,158,11,.3)">Entrar →</button>
+      <button id="prof-install-btn" onclick="installProfApp()" style="display:none;width:100%;padding:13px;border-radius:14px;background:rgba(13,148,136,.15);border:1px solid rgba(13,148,136,.3);color:#0d9488;font-weight:800;font-size:14px;margin-top:12px;cursor:pointer;align-items:center;justify-content:center;gap:8px">📲 Instalar App Professor</button>
       <p style="color:#334155;font-size:11px;margin-top:20px">PIN padrão: <strong style="color:#64748b">1234</strong> (mude no código)</p>
     </div>
   </div>
@@ -2530,6 +2535,46 @@ function deleteDecoration(id) {
   }
   draw();
 })();
+
+// ── Service Worker & PWA Install ──
+if ("serviceWorker" in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register("sw-prof.js", { updateViaCache: "none" }).then(reg => {
+    setInterval(() => reg.update(), 60000);
+    reg.update();
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") reg.update();
+    });
+  }).catch(err => console.log("SW Prof:", err));
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshing) return;
+    refreshing = true;
+    if (hadController) window.location.reload();
+  });
+}
+
+let deferredPromptProf = null;
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredPromptProf = e;
+  const installBtn = document.getElementById("prof-install-btn");
+  if (installBtn) installBtn.style.display = "inline-flex";
+});
+window.addEventListener("appinstalled", () => { deferredPromptProf = null; });
+
+function installProfApp() {
+  if (deferredPromptProf) {
+    deferredPromptProf.prompt();
+    deferredPromptProf.userChoice.then(r => {
+      deferredPromptProf = null;
+      if (r.outcome === "accepted") showToast("✅ App Professor instalado!");
+    });
+  } else {
+    showToast("Use o menu do navegador → Instalar app");
+  }
+}
 </script>
 </body>
 </html>
