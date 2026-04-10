@@ -438,6 +438,10 @@ input,select,textarea{font-family:inherit;outline:none}
           <input type="time" class="inp" id="pres-time-end" style="color-scheme:dark">
         </div>
       </div>
+      <div style="margin-bottom:18px">
+        <label class="lbl">🪙 CUTS A CONCEDER</label>
+        <input type="number" class="inp" id="pres-cuts" min="0" placeholder="Ex: 5 (0 = nenhum)" value="0" style="color-scheme:dark;-webkit-user-select:text;user-select:text">
+      </div>
       <p class="err-txt" id="pres-err" style="margin-bottom:12px"></p>
       <button onclick="savePresenca()" class="btn-main" id="btn-save-presenca">💾 Salvar Presença</button>
     </div>
@@ -1965,6 +1969,7 @@ function openLancarPresenca() {
   document.getElementById("pres-date").value = "";
   document.getElementById("pres-time-start").value = "";
   document.getElementById("pres-time-end").value = "";
+  document.getElementById("pres-cuts").value = "0";
   document.getElementById("pres-err").textContent = "";
   showScreen("teacher-lancar-presenca");
   loadPresencaHistory();
@@ -1976,20 +1981,23 @@ function loadPresencaHistory() {
   const empty = document.getElementById("presenca-history-empty");
   db.collection("attendance")
     .where("userId", "==", presenceStudentId)
-    .orderBy("date", "desc")
-    .limit(20)
+    .orderBy("date", "asc")
+    .limitToLast(20)
     .get().then(snap => {
-      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse();
       if (empty) empty.style.display = items.length === 0 ? "block" : "none";
       if (!list) return;
-      list.innerHTML = items.map(a => `
+      list.innerHTML = items.map(a => {
+        const cutsTag = a.cutsAwarded ? `<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:8px">🪙 +${a.cutsAwarded}</span>` : '';
+        return `
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-weight:700;font-size:14px;color:#fff">${fmtShort(a.date)}</div>
+            <div style="font-weight:700;font-size:14px;color:#fff">${fmtShort(a.date)}${cutsTag}</div>
             <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} — ${a.timeEnd || ''}</div>
           </div>
           <button onclick="deletePresenca('${a.id}')" style="background:rgba(239,68,68,.12);color:#f87171;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">🗑</button>
-        </div>`).join("");
+        </div>`;
+      }).join("");
     }).catch(e => {
       console.error(e);
     });
@@ -2007,21 +2015,39 @@ async function savePresenca() {
   if (timeEnd <= timeStart) { errEl.textContent = "Horário fim deve ser após o início"; return; }
   errEl.textContent = "";
 
+  const cutsVal = parseInt(document.getElementById("pres-cuts").value) || 0;
+
   const btn = document.getElementById("btn-save-presenca");
   btn.disabled = true; btn.textContent = "Salvando...";
   try {
-    await db.collection("attendance").add({
+    const presData = {
       userId: presenceStudentId,
       userName: presenceStudentName,
       date,
       timeStart,
       timeEnd,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    showToast("✅ Presença salva!");
+    };
+    if (cutsVal > 0) presData.cutsAwarded = cutsVal;
+    await db.collection("attendance").add(presData);
+
+    // Award CUTS to student
+    if (cutsVal > 0) {
+      const userDoc = await db.collection("users").doc(presenceStudentId).get();
+      const currentCuts = (userDoc.exists && userDoc.data().cuts) || 0;
+      await db.collection("users").doc(presenceStudentId).update({ cuts: currentCuts + cutsVal });
+      // Update local cache if student in allStudents
+      const st = allStudents.find(x => x.id === presenceStudentId);
+      if (st) st.cuts = currentCuts + cutsVal;
+      const cutsEl = document.getElementById("cuts-" + presenceStudentId);
+      if (cutsEl) cutsEl.textContent = currentCuts + cutsVal;
+    }
+
+    showToast(cutsVal > 0 ? `✅ Presença salva! 🪙 +${cutsVal} CUTS` : "✅ Presença salva!");
     document.getElementById("pres-date").value = "";
     document.getElementById("pres-time-start").value = "";
     document.getElementById("pres-time-end").value = "";
+    document.getElementById("pres-cuts").value = "0";
     loadPresencaHistory();
   } catch(e) {
     showToast("Erro ao salvar presença");
@@ -2055,22 +2081,25 @@ function loadAllPresencas() {
   const empty = document.getElementById("gerenciar-pres-empty");
   db.collection("attendance")
     .where("userId", "==", presenceStudentId)
-    .orderBy("date", "desc")
+    .orderBy("date", "asc")
     .get().then(snap => {
-      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse();
       if (empty) empty.style.display = items.length === 0 ? "block" : "none";
       if (!list) return;
-      list.innerHTML = items.map(a => `
+      list.innerHTML = items.map(a => {
+        const cutsTag = a.cutsAwarded ? `<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:8px">🪙 +${a.cutsAwarded}</span>` : '';
+        return `
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-weight:700;font-size:14px;color:#fff">${fmtShort(a.date)}</div>
+            <div style="font-weight:700;font-size:14px;color:#fff">${fmtShort(a.date)}${cutsTag}</div>
             <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} — ${a.timeEnd || ''}</div>
           </div>
           <div style="display:flex;gap:6px">
             <button onclick="openEditPresenca('${a.id}','${a.date}','${a.timeStart || ''}','${a.timeEnd || ''}')" style="background:rgba(56,189,248,.12);color:#38bdf8;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">✏️</button>
             <button onclick="deletePresencaFromList('${a.id}')" style="background:rgba(239,68,68,.12);color:#f87171;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">🗑</button>
           </div>
-        </div>`).join("");
+        </div>`;
+      }).join("");
     }).catch(e => console.error(e));
 }
 
