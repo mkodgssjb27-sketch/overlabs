@@ -288,17 +288,6 @@ input,select,textarea{font-family:inherit;outline:none}
         </div>
       </div>
       <div id="e-vis-warn" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;color:#f87171;font-size:13px;font-weight:700">⚠️ Atenção: a carona ficará OCULTA para todos os alunos!</div>
-      <div style="margin-bottom:22px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
-        <label class="toggle-wrap">
-          <input type="checkbox" id="e-notify">
-          <span class="toggle-track"></span>
-          <span class="toggle-dot"></span>
-        </label>
-        <div>
-          <div style="font-weight:700;font-size:14px;color:#e2e8f0">📢 Notificar na Home dos alunos</div>
-          <div style="font-size:12px;color:#64748b;margin-top:2px">Enviar atualização no feed dos alunos</div>
-        </div>
-      </div>
       <button onclick="saveEditRide()" class="btn-main">💾 Salvar Alterações</button>
     </div>
   </div>
@@ -727,15 +716,6 @@ function deleteRide() {
     try {
       const ride = allRides.find(r => r.id === currentDetailRideId);
       await db.collection("rides").doc(currentDetailRideId).delete();
-      if (ride && ride.visible !== false) {
-        await db.collection("feed").add({
-          type: "ride_deleted",
-          icon: "❌",
-          text: `Carona cancelada: ${ride.title}`,
-          detail: `📅 ${ride.date} · ⏰ ${ride.time}`,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      }
       showToast("Carona excluída");
       currentDetailRideId = null;
       showScreen("teacher-rides");
@@ -754,7 +734,6 @@ function openEditRide() {
   document.getElementById("e-seats-val").textContent = ride.seats;
   document.getElementById("e-visible").checked = ride.visible !== false;
   document.getElementById("e-vis-warn").style.display = ride.visible === false ? "block" : "none";
-  document.getElementById("e-notify").checked = false;
   showScreen("teacher-edit");
 }
 
@@ -775,16 +754,6 @@ async function saveEditRide() {
   const btn = event.target; btn.disabled = true; btn.textContent = "Salvando...";
   try {
     await db.collection("rides").doc(currentDetailRideId).update({ title, date, time, seats, visible });
-    if (document.getElementById("e-notify").checked) {
-      await db.collection("feed").add({
-        type: "ride_updated",
-        icon: "✏️",
-        text: `Carona atualizada: ${title}`,
-        detail: `📅 ${date} · ⏰ ${time} · ${seats} vagas`,
-        refId: currentDetailRideId,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }
     showToast("✅ Carona atualizada!");
     openTeacherDetail(currentDetailRideId);
   } catch(e) {
