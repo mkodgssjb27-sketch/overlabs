@@ -733,6 +733,8 @@ function startStudentListeners() {
     });
 
   if (unsubNotifs) unsubNotifs();
+  let notifsReady = false;
+  const seenNotifIds = new Set();
   unsubNotifs = db.collection("notifications").doc(currentUser.id).collection("items")
     .orderBy("at", "desc")
     .onSnapshot(snap => {
@@ -740,6 +742,20 @@ function startStudentListeners() {
       renderNotifications(notifs);
       const unread = notifs.filter(n => !n.read).length;
       updateNotifBadge(unread);
+
+      if (notifsReady) {
+        // Detectar novas notificações de mensagem e mostrar popup
+        notifs.forEach(n => {
+          if (!seenNotifIds.has(n.id) && !n.read && n.msg) {
+            showAlertPopup(n.msg);
+            seenNotifIds.add(n.id);
+          }
+        });
+      } else {
+        // Primeira carga — marcar todas como vistas sem popup
+        notifs.forEach(n => seenNotifIds.add(n.id));
+        notifsReady = true;
+      }
     });
 
   // Escutar alertas do professor
