@@ -12,6 +12,8 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -105,6 +107,8 @@ input,select,textarea{font-family:inherit;outline:none}
 .toggle-wrap input:checked+.toggle-track{background:#f59e0b}
 .toggle-dot{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.3s;pointer-events:none}
 .toggle-wrap input:checked~.toggle-dot{left:22px}
+#map-container{width:100%;height:100%;z-index:1}
+#map-modal .leaflet-container{background:#1a1a2e}
 </style>
 </head>
 <body>
@@ -165,6 +169,11 @@ input,select,textarea{font-family:inherit;outline:none}
         <div class="mc-title">Presenças</div>
         <div class="mc-desc">Controle de presença</div>
         <span class="mc-badge">Em breve</span>
+      </div>
+      <div class="menu-card" onclick="showScreen('teacher-students');loadStudents()">
+        <span class="mc-icon">👥</span>
+        <div class="mc-title">Alunos Cadastrados</div>
+        <div class="mc-desc">Gerenciar alunos e localização</div>
       </div>
     </div>
   </div>
@@ -269,13 +278,25 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
       <div style="margin-bottom:22px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
         <label class="toggle-wrap">
-          <input type="checkbox" id="e-visible" checked>
+          <input type="checkbox" id="e-visible" checked onchange="document.getElementById('e-vis-warn').style.display=this.checked?'none':'block'">
           <span class="toggle-track"></span>
           <span class="toggle-dot"></span>
         </label>
         <div>
           <div style="font-weight:700;font-size:14px;color:#e2e8f0">👁 Visível para alunos</div>
-          <div style="font-size:12px;color:#64748b;margin-top:2px">Aparecerá no app e no feed dos alunos</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Se desligado, a carona desaparecerá para os alunos</div>
+        </div>
+      </div>
+      <div id="e-vis-warn" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;color:#f87171;font-size:13px;font-weight:700">⚠️ Atenção: a carona ficará OCULTA para todos os alunos!</div>
+      <div style="margin-bottom:22px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
+        <label class="toggle-wrap">
+          <input type="checkbox" id="e-notify">
+          <span class="toggle-track"></span>
+          <span class="toggle-dot"></span>
+        </label>
+        <div>
+          <div style="font-weight:700;font-size:14px;color:#e2e8f0">📢 Notificar na Home dos alunos</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Enviar atualização no feed dos alunos</div>
         </div>
       </div>
       <button onclick="saveEditRide()" class="btn-main">💾 Salvar Alterações</button>
@@ -364,8 +385,100 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
 </div>
 
+<!-- ══ PROFESSOR — ALUNOS CADASTRADOS ════════════════════════════════ -->
+<div class="screen" id="screen-teacher-students">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">Alunos Cadastrados</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:700px">
+    <div style="margin-bottom:16px">
+      <button onclick="openAllStudentsMap()" style="width:100%;padding:13px;border-radius:14px;background:rgba(56,189,248,.12);color:#38bdf8;font-weight:700;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        🗺️ Ver todos no mapa
+      </button>
+    </div>
+    <div id="students-loading" class="loading"><div class="spin"></div>Carregando...</div>
+    <div id="students-empty" class="empty" style="display:none"><div class="icon">👥</div><p>Nenhum aluno cadastrado</p></div>
+    <div id="students-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — EDITAR PERFIL DO ALUNO ═════════════════════════ -->
+<div class="screen" id="screen-teacher-edit-student">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-students');loadStudents()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px" id="edit-student-title">Editar Aluno</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <!-- Foto do aluno -->
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="width:80px;height:80px;border-radius:50%;margin:0 auto 10px;overflow:hidden;border:3px solid rgba(245,158,11,.5);background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center" id="es-photo">
+        <span style="font-size:28px;font-weight:800;color:#fff" id="es-photo-initial">?</span>
+      </div>
+    </div>
+    <div class="t-form">
+      <div style="margin-bottom:16px">
+        <label class="lbl">NOME COMPLETO</label>
+        <input class="inp" id="es-fullname" placeholder="Nome completo do aluno">
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">APELIDO</label>
+        <input class="inp" id="es-nickname" placeholder="Apelido do aluno">
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">DATA DE NASCIMENTO</label>
+        <input type="date" class="inp" id="es-birthdate" style="color-scheme:dark">
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">ENDEREÇO</label>
+        <input class="inp" id="es-address" placeholder="Rua, nº — Bairro, Cidade">
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">TELEFONE (WHATSAPP)</label>
+        <input type="tel" class="inp" id="es-phone" placeholder="(99) 9 9999-9999">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        <div>
+          <label class="lbl">USUÁRIO</label>
+          <input class="inp" id="es-username" disabled style="opacity:.5;cursor:not-allowed">
+        </div>
+        <div>
+          <label class="lbl">SENHA</label>
+          <input class="inp" id="es-password" placeholder="Nova senha">
+        </div>
+      </div>
+      <button onclick="saveStudentProfile()" class="btn-main" id="btn-save-student">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- Map Modal -->
+<div id="map-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:200">
+  <div style="position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;z-index:201">
+    <div style="background:rgba(0,0,0,.7);backdrop-filter:blur(10px);padding:10px 18px;border-radius:14px;color:#fff;font-weight:800;font-size:14px" id="map-title">Localização</div>
+    <button onclick="closeMap()" style="background:rgba(0,0,0,.7);backdrop-filter:blur(10px);padding:10px 18px;border-radius:14px;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">✕ Fechar</button>
+  </div>
+  <div id="map-container" style="width:100%;height:100%"></div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<!-- Confirm Modal -->
+<div id="confirm-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center">
+  <div style="background:#1e293b;border-radius:18px;padding:28px 24px;max-width:320px;width:90%;text-align:center;border:1px solid rgba(255,255,255,.1)">
+    <div style="font-size:18px;font-weight:800;color:#e2e8f0;margin-bottom:8px" id="confirm-title"></div>
+    <div style="font-size:14px;color:#94a3b8;margin-bottom:24px" id="confirm-msg"></div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button id="confirm-cancel" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#94a3b8;font-weight:700;font-size:14px">Cancelar</button>
+      <button id="confirm-ok" style="flex:1;padding:12px;border-radius:12px;border:none;background:rgba(248,113,113,.2);color:#f87171;font-weight:700;font-size:14px">Excluir</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const TEACHER_PIN = "1234";
@@ -410,6 +523,17 @@ function showToast(msg) {
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 3000);
 }
+function showConfirmModal(title, msg, onConfirm) {
+  const modal = document.getElementById("confirm-modal");
+  document.getElementById("confirm-title").textContent = title;
+  document.getElementById("confirm-msg").textContent = msg;
+  modal.style.display = "flex";
+  const cancel = document.getElementById("confirm-cancel");
+  const ok = document.getElementById("confirm-ok");
+  const close = () => { modal.style.display = "none"; cancel.onclick = null; ok.onclick = null; };
+  cancel.onclick = close;
+  ok.onclick = () => { close(); onConfirm(); };
+}
 function fmtDate(d) {
   if (!d) return "";
   return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
@@ -442,6 +566,8 @@ function teacherLogin() {
 
 function teacherLogout() {
   if (unsubRides) { unsubRides(); unsubRides = null; }
+  if (unsubStudents) { unsubStudents(); unsubStudents = null; }
+  if (unsubAlerts) { unsubAlerts(); unsubAlerts = null; }
   showScreen("teacher-login");
 }
 
@@ -474,10 +600,10 @@ function renderTeacherRides(rides) {
   const up = rides.filter(r => !isPast(r.date, r.time)).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
   const past = rides.filter(r => isPast(r.date, r.time));
 
-  document.getElementById("t-rides-empty").style.display = rides.length === 0 ? "block" : "none";
-  document.getElementById("stat-rides").textContent = rides.length;
-  document.getElementById("stat-conf").textContent = rides.reduce((s,r) => s + (r.booked||[]).length, 0);
-  document.getElementById("stat-wait").textContent = rides.reduce((s,r) => s + (r.waitlist||[]).length, 0);
+  document.getElementById("t-rides-empty").style.display = up.length === 0 ? "block" : "none";
+  document.getElementById("stat-rides").textContent = up.length;
+  document.getElementById("stat-conf").textContent = up.reduce((s,r) => s + (r.booked||[]).length, 0);
+  document.getElementById("stat-wait").textContent = up.reduce((s,r) => s + (r.waitlist||[]).length, 0);
 
   function rideCard(r, dim) {
     const booked = r.booked || [], wl = r.waitlist || [];
@@ -500,8 +626,7 @@ function renderTeacherRides(rides) {
   }
 
   let html = "";
-  if (up.length) html += `<div class="section-title">Próximas caronas</div>` + up.map(r => rideCard(r)).join("") + `<div style="margin-bottom:24px"></div>`;
-  if (past.length) html += `<div class="section-title" style="color:#64748b">Anteriores</div>` + past.map(r => rideCard(r, true)).join("");
+  if (up.length) html += up.map(r => rideCard(r)).join("");
   list.innerHTML = html;
 }
 
@@ -597,24 +722,25 @@ function renderTeacherDetail(ride) {
   }
 }
 
-async function deleteRide() {
-  if (!confirm("Excluir esta carona? Esta ação não pode ser desfeita.")) return;
-  try {
-    const ride = allRides.find(r => r.id === currentDetailRideId);
-    await db.collection("rides").doc(currentDetailRideId).delete();
-    if (ride && ride.visible !== false) {
-      await db.collection("feed").add({
-        type: "ride_deleted",
-        icon: "❌",
-        text: `Carona cancelada: ${ride.title}`,
-        detail: `📅 ${ride.date} · ⏰ ${ride.time}`,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }
-    showToast("Carona excluída");
-    currentDetailRideId = null;
-    showScreen("teacher-rides");
-  } catch(e) { showToast("Erro ao excluir"); }
+function deleteRide() {
+  showConfirmModal("Excluir esta carona?", "Esta ação não pode ser desfeita.", async () => {
+    try {
+      const ride = allRides.find(r => r.id === currentDetailRideId);
+      await db.collection("rides").doc(currentDetailRideId).delete();
+      if (ride && ride.visible !== false) {
+        await db.collection("feed").add({
+          type: "ride_deleted",
+          icon: "❌",
+          text: `Carona cancelada: ${ride.title}`,
+          detail: `📅 ${ride.date} · ⏰ ${ride.time}`,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      showToast("Carona excluída");
+      currentDetailRideId = null;
+      showScreen("teacher-rides");
+    } catch(e) { showToast("Erro ao excluir"); }
+  });
 }
 
 // ── Editar Carona ──
@@ -627,6 +753,8 @@ function openEditRide() {
   document.getElementById("e-seats").value = ride.seats;
   document.getElementById("e-seats-val").textContent = ride.seats;
   document.getElementById("e-visible").checked = ride.visible !== false;
+  document.getElementById("e-vis-warn").style.display = ride.visible === false ? "block" : "none";
+  document.getElementById("e-notify").checked = false;
   showScreen("teacher-edit");
 }
 
@@ -647,7 +775,7 @@ async function saveEditRide() {
   const btn = event.target; btn.disabled = true; btn.textContent = "Salvando...";
   try {
     await db.collection("rides").doc(currentDetailRideId).update({ title, date, time, seats, visible });
-    if (visible) {
+    if (document.getElementById("e-notify").checked) {
       await db.collection("feed").add({
         type: "ride_updated",
         icon: "✏️",
@@ -720,19 +848,6 @@ async function sendAlert() {
       read: false
     });
 
-    // Enviar como notificação individual para cada aluno
-    const usersSnap = await db.collection("users").get();
-    const batch = db.batch();
-    usersSnap.docs.forEach(userDoc => {
-      const notifRef = db.collection("notifications").doc(userDoc.id).collection("items").doc();
-      batch.set(notifRef, {
-        msg: "🔔 Alerta do Professor: " + msg,
-        read: false,
-        at: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    });
-    await batch.commit();
-
     // Feed item para o Home dos alunos
     if (visible) {
       await db.collection("feed").add({
@@ -747,7 +862,7 @@ async function sendAlert() {
     document.getElementById("alert-msg").value = "";
     document.getElementById("alert-visible").checked = true;
     setErr("alert-msg-err", "");
-    showToast("🔔 Alerta enviado para " + usersSnap.size + " aluno(s)!");
+    showToast("🔔 Alerta enviado!");
   } catch(e) {
     showToast("Erro ao enviar alerta");
     console.error(e);
@@ -761,6 +876,217 @@ async function deleteAlert(id) {
     await db.collection("alerts").doc(id).delete();
     showToast("Alerta removido");
   } catch(e) { showToast("Erro ao remover"); }
+}
+
+// ── Alunos Cadastrados ──
+let unsubStudents = null;
+let allStudents = [];
+let studentMap = null;
+
+function fmtTs(ts) {
+  if (!ts) return "";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString("pt-BR");
+}
+
+function loadStudents() {
+  if (!firebaseOk) return;
+  const list = document.getElementById("students-list");
+  const loading = document.getElementById("students-loading");
+  const empty = document.getElementById("students-empty");
+  if (loading) loading.style.display = "flex";
+  if (list) list.innerHTML = "";
+  if (empty) empty.style.display = "none";
+
+  if (unsubStudents) unsubStudents();
+  unsubStudents = db.collection("users")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snap => {
+      if (loading) loading.style.display = "none";
+      allStudents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (empty) empty.style.display = allStudents.length === 0 ? "block" : "none";
+      renderStudents(allStudents);
+    }, err => {
+      if (loading) loading.style.display = "none";
+      console.error(err);
+    });
+}
+
+function renderStudents(students) {
+  const list = document.getElementById("students-list");
+  if (!list) return;
+  list.innerHTML = students.map(s => {
+    const blocked = s.blocked === true;
+    const hasLoc = s.location && s.location.lat && s.location.lng;
+    const locTime = hasLoc && s.location.updatedAt ? fmtTs(s.location.updatedAt) : "";
+    const hasPhoto = !!s.photoURL;
+    const nickname = s.nickname ? ` (${escapeHtml(s.nickname)})` : "";
+    return `
+      <div style="background:rgba(255,255,255,.04);border:1px solid ${blocked?'rgba(239,68,68,.3)':'rgba(255,255,255,.08)'};border-radius:16px;padding:18px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+          ${hasPhoto
+            ? `<div style="width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid ${blocked?'#ef4444':'rgba(245,158,11,.5)'}"><img src="${s.photoURL}" style="width:100%;height:100%;object-fit:cover"></div>`
+            : `<div class="avatar" style="background:${blocked?'linear-gradient(135deg,#ef4444,#dc2626)':'linear-gradient(135deg,#f59e0b,#e85d04)'}">${(s.firstName||'?')[0]}</div>`
+          }
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:15px;color:${blocked?'#f87171':'#fff'}">${escapeHtml(s.firstName||'')}${nickname} ${blocked?'<span style="font-size:11px;color:#f87171">(BLOQUEADO)</span>':''}</div>
+            <div style="color:#64748b;font-size:12px">@${escapeHtml(s.username||'')}${s.birthdate ? ' · 🎂 '+s.birthdate : ''}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px">
+            <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:3px">SENHA</div>
+            <div style="font-size:13px;color:#e2e8f0;font-weight:600;display:flex;align-items:center;gap:6px">
+              <span id="pw-${s.id}" style="letter-spacing:2px">••••</span>
+              <button onclick="togglePw('${s.id}')" style="background:none;border:none;color:#64748b;font-size:14px;cursor:pointer;padding:2px 4px">👁</button>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px">
+            <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:3px">TELEFONE</div>
+            <div style="font-size:13px;color:#e2e8f0;font-weight:600">${escapeHtml(s.phone||'—')}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="toggleBlock('${s.id}',${!blocked})" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:${blocked?'rgba(34,197,94,.15)':'rgba(239,68,68,.12)'};color:${blocked?'#22c55e':'#f87171'}">${blocked?'🔓 Desbloquear':'🔒 Bloquear'}</button>
+          <button onclick="openEditStudent('${s.id}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">✏️ Editar</button>
+          ${hasLoc ? `<button onclick="openStudentMap('${s.id}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">📍 Local</button>` : `<button disabled style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;background:rgba(255,255,255,.04);color:#64748b;cursor:default">📍 Sem local</button>`}
+        </div>
+        ${hasLoc ? `<div style="color:#64748b;font-size:11px;margin-top:8px">📍 Última atualização: ${locTime}</div>` : ''}
+      </div>`;
+  }).join("");
+}
+
+function togglePw(id) {
+  const student = allStudents.find(s => s.id === id);
+  if (!student) return;
+  const el = document.getElementById("pw-" + id);
+  if (!el) return;
+  if (el.dataset.visible === "1") {
+    el.textContent = "••••";
+    el.style.letterSpacing = "2px";
+    el.dataset.visible = "0";
+  } else {
+    el.textContent = student.password || "";
+    el.style.letterSpacing = "0px";
+    el.dataset.visible = "1";
+  }
+}
+
+async function toggleBlock(userId, block) {
+  if (!confirm(block ? "Bloquear esta conta? O aluno não conseguirá mais fazer login." : "Desbloquear esta conta?")) return;
+  try {
+    await db.collection("users").doc(userId).update({ blocked: block });
+    showToast(block ? "🔒 Conta bloqueada" : "🔓 Conta desbloqueada");
+  } catch(e) {
+    showToast("Erro ao atualizar");
+    console.error(e);
+  }
+}
+
+function openStudentMap(userId) {
+  const student = allStudents.find(s => s.id === userId);
+  if (!student || !student.location) { showToast("Sem localização disponível"); return; }
+  const lat = student.location.lat;
+  const lng = student.location.lng;
+  const name = student.firstName || "Aluno";
+
+  document.getElementById("map-title").textContent = "📍 " + name;
+  document.getElementById("map-modal").style.display = "block";
+
+  setTimeout(() => {
+    if (studentMap) { studentMap.remove(); studentMap = null; }
+    studentMap = L.map("map-container").setView([lat, lng], 15);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19
+    }).addTo(studentMap);
+    L.marker([lat, lng]).addTo(studentMap)
+      .bindPopup("<b>" + escapeHtml(name) + "</b><br>@" + escapeHtml(student.username || "") + "<br><small>Última atualização: " + (student.location.updatedAt ? fmtTs(student.location.updatedAt) : "?") + "</small>")
+      .openPopup();
+    studentMap.invalidateSize();
+  }, 200);
+}
+
+function openAllStudentsMap() {
+  const withLoc = allStudents.filter(s => s.location && s.location.lat && s.location.lng);
+  if (withLoc.length === 0) { showToast("Nenhum aluno com localização disponível"); return; }
+
+  document.getElementById("map-title").textContent = "📍 Todos os Alunos (" + withLoc.length + ")";
+  document.getElementById("map-modal").style.display = "block";
+
+  setTimeout(() => {
+    if (studentMap) { studentMap.remove(); studentMap = null; }
+    const bounds = L.latLngBounds(withLoc.map(s => [s.location.lat, s.location.lng]));
+    studentMap = L.map("map-container").fitBounds(bounds, { padding: [40, 40] });
+    if (withLoc.length === 1) studentMap.setZoom(15);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19
+    }).addTo(studentMap);
+    withLoc.forEach(s => {
+      const blocked = s.blocked === true;
+      L.marker([s.location.lat, s.location.lng]).addTo(studentMap)
+        .bindPopup("<b>" + escapeHtml(s.firstName || "") + "</b>" + (blocked ? " (BLOQUEADO)" : "") + "<br>@" + escapeHtml(s.username || "") + "<br><small>" + (s.location.updatedAt ? fmtTs(s.location.updatedAt) : "") + "</small>");
+    });
+    studentMap.invalidateSize();
+  }, 200);
+}
+
+let editingStudentId = null;
+
+function openEditStudent(userId) {
+  const student = allStudents.find(s => s.id === userId);
+  if (!student) return;
+  editingStudentId = userId;
+  document.getElementById("edit-student-title").textContent = "Editar — " + (student.firstName || "Aluno");
+  document.getElementById("es-fullname").value = student.fullName || student.firstName || "";
+  document.getElementById("es-nickname").value = student.nickname || "";
+  document.getElementById("es-birthdate").value = student.birthdate || "";
+  document.getElementById("es-address").value = student.address || "";
+  document.getElementById("es-phone").value = student.phone || "";
+  document.getElementById("es-username").value = student.username || "";
+  document.getElementById("es-password").value = student.password || "";
+
+  const photoEl = document.getElementById("es-photo");
+  const initialEl = document.getElementById("es-photo-initial");
+  if (student.photoURL) {
+    photoEl.innerHTML = `<img src="${student.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    photoEl.innerHTML = `<span style="font-size:28px;font-weight:800;color:#fff">${(student.firstName||'?')[0]}</span>`;
+  }
+
+  showScreen("teacher-edit-student");
+}
+
+async function saveStudentProfile() {
+  if (!editingStudentId || !firebaseOk) return;
+  const fullName = document.getElementById("es-fullname").value.trim();
+  const nickname = document.getElementById("es-nickname").value.trim();
+  const birthdate = document.getElementById("es-birthdate").value;
+  const address = document.getElementById("es-address").value.trim();
+  const phone = document.getElementById("es-phone").value.trim();
+  const password = document.getElementById("es-password").value;
+
+  const btn = document.getElementById("btn-save-student");
+  btn.disabled = true; btn.textContent = "Salvando...";
+  try {
+    const updates = { fullName, nickname, birthdate, address, phone };
+    if (fullName) updates.firstName = fullName.split(" ")[0];
+    if (password && password.length >= 4) updates.password = password;
+    await db.collection("users").doc(editingStudentId).update(updates);
+    showToast("✅ Perfil do aluno atualizado!");
+    showScreen("teacher-students");
+    loadStudents();
+  } catch(e) {
+    showToast("Erro ao salvar");
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = "💾 Salvar Alterações";
+}
+
+function closeMap() {
+  document.getElementById("map-modal").style.display = "none";
+  if (studentMap) { studentMap.remove(); studentMap = null; }
 }
 
 updateSeats(4);

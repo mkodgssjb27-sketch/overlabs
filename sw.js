@@ -1,4 +1,4 @@
-const CACHE_NAME = "overlabs-v14";
+const CACHE_NAME = "overlabs-v22";
 const URLS_TO_CACHE = [
   "./aluno.html",
   "./manifest.json",
@@ -14,7 +14,7 @@ self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(URLS_TO_CACHE))
   );
-  // Não chama skipWaiting() aqui — espera o usuário aceitar a atualização
+  self.skipWaiting();
 });
 
 // Remove caches antigos e avisa os clientes

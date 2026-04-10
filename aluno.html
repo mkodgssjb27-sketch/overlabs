@@ -94,6 +94,14 @@ input,select{font-family:inherit;outline:none}
 .alert-popup .ap-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;opacity:.85}
 .alert-popup .ap-msg{font-size:15px;line-height:1.5}
 .alert-popup .ap-close{position:absolute;top:10px;right:14px;background:none;border:none;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer}
+
+/* Profile */
+.profile-avatar-btn{width:36px;height:36px;border-radius:50%;border:2px solid rgba(245,158,11,.5);background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;cursor:pointer;overflow:hidden;flex-shrink:0;padding:0}
+.profile-avatar-btn img{width:100%;height:100%;object-fit:cover}
+.profile-photo-wrap{width:100px;height:100px;border-radius:50%;margin:0 auto 20px;position:relative;cursor:pointer}
+.profile-photo-wrap .photo{width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid rgba(245,158,11,.5);background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;font-weight:800}
+.profile-photo-wrap .photo img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.profile-photo-wrap .cam-badge{position:absolute;bottom:2px;right:2px;width:28px;height:28px;border-radius:50%;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #0a0a0f}
 </style>
 </head>
 <body>
@@ -143,7 +151,7 @@ input,select{font-family:inherit;outline:none}
     <div class="s-header">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:12px">
-          <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover">
+          <button class="profile-avatar-btn" id="avatar-btn-list" onclick="showScreen('student-profile');loadProfile()"></button>
           <div>
             <div class="s-hsub" id="sl-greeting">Olá!</div>
             <div class="s-htitle">OVER LABS</div>
@@ -203,7 +211,7 @@ input,select{font-family:inherit;outline:none}
   <div class="app-wrap">
     <div class="s-header">
       <div style="display:flex;align-items:center;gap:12px">
-        <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover">
+        <button class="profile-avatar-btn" id="avatar-btn-presence" onclick="showScreen('student-profile');loadProfile()"></button>
         <div>
           <div class="s-hsub" id="sp-greeting">Olá!</div>
           <div class="s-htitle">OVER LABS</div>
@@ -231,7 +239,7 @@ input,select{font-family:inherit;outline:none}
   <div class="app-wrap">
     <div class="s-header">
       <div style="display:flex;align-items:center;gap:12px">
-        <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover">
+        <button class="profile-avatar-btn" id="avatar-btn-tournaments" onclick="showScreen('student-profile');loadProfile()"></button>
         <div>
           <div class="s-hsub" id="st-greeting">Olá!</div>
           <div class="s-htitle">OVER LABS</div>
@@ -260,7 +268,7 @@ input,select{font-family:inherit;outline:none}
     <div class="s-header">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:12px">
-          <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;object-fit:cover">
+          <button class="profile-avatar-btn" id="avatar-btn-home" onclick="showScreen('student-profile');loadProfile()"></button>
           <div>
             <div class="s-hsub" id="sh-greeting">Olá!</div>
             <div class="s-htitle">OVER LABS</div>
@@ -306,6 +314,54 @@ input,select{font-family:inherit;outline:none}
   </div>
 </div>
 
+<!-- ══ ALUNO — PERFIL ══════════════════════════════════════════════ -->
+<div class="screen" id="screen-student-profile">
+  <div class="app-wrap">
+    <div class="s-header" style="display:flex;align-items:center;gap:14px">
+      <button onclick="showScreen('student-home')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div class="s-htitle" style="flex:1;font-size:16px">Meu Perfil</div>
+      <button onclick="studentLogout()" style="background:rgba(239,68,68,.12);padding:8px 14px;border-radius:10px;color:#f87171;font-weight:700;font-size:13px;border:none">Sair</button>
+    </div>
+    <div class="s-content" style="padding-top:24px">
+      <!-- Foto de perfil -->
+      <div class="profile-photo-wrap" onclick="document.getElementById('photo-input').click()">
+        <div class="photo" id="profile-photo-display"></div>
+        <div class="cam-badge">📷</div>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
+      <p style="text-align:center;color:#64748b;font-size:12px;margin-bottom:24px">Toque na foto para alterar</p>
+
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:24px">
+        <div style="margin-bottom:16px">
+          <label class="lbl">NOME COMPLETO</label>
+          <input class="inp" id="p-fullname" placeholder="Seu nome completo">
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="lbl">APELIDO</label>
+          <input class="inp" id="p-nickname" placeholder="Como gosta de ser chamado">
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="lbl">DATA DE NASCIMENTO</label>
+          <input type="date" class="inp" id="p-birthdate" style="color-scheme:dark">
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="lbl">ENDEREÇO</label>
+          <input class="inp" id="p-address" placeholder="Rua, nº — Bairro, Cidade">
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="lbl">TELEFONE (WHATSAPP)</label>
+          <input type="tel" class="inp" id="p-phone" placeholder="(99) 9 9999-9999">
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="lbl">USUÁRIO</label>
+          <input class="inp" id="p-username" disabled style="opacity:.5;cursor:not-allowed">
+        </div>
+        <button onclick="saveProfile()" class="btn-main" id="btn-save-profile">💾 Salvar Perfil</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Banner de atualização do app -->
 <div id="update-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;padding:16px 20px;z-index:9999;box-shadow:0 -4px 30px rgba(0,0,0,.5)">
   <div style="display:flex;align-items:center;gap:14px;max-width:500px;margin:0 auto">
@@ -323,6 +379,33 @@ input,select{font-family:inherit;outline:none}
   <button class="ap-close" onclick="hideAlertPopup()">✕</button>
   <div class="ap-title">🔔 Alerta do Professor</div>
   <div class="ap-msg" id="alert-popup-msg"></div>
+</div>
+
+<!-- Permission Dialog -->
+<div id="perm-dialog" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:9990;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:32px;max-width:360px;width:100%;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">📍🔔</div>
+    <h3 style="font-size:20px;font-weight:800;color:#fff;margin-bottom:12px">Permissões do App</h3>
+    <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:24px">Para a melhor experiência, o OVER LABS precisa de acesso à:</p>
+    <div style="text-align:left;margin-bottom:24px">
+      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">📍</span>
+        <div>
+          <div style="font-weight:700;color:#e2e8f0;font-size:14px">Localização</div>
+          <div style="color:#64748b;font-size:12px">Permita o aplicativo a acessar sua localização</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">🔔</span>
+        <div>
+          <div style="font-weight:700;color:#e2e8f0;font-size:14px">Notificações</div>
+          <div style="color:#64748b;font-size:12px">Para receber alertas importantes do professor</div>
+        </div>
+      </div>
+    </div>
+    <button onclick="acceptPermissions()" style="width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:16px;border:none;cursor:pointer;margin-bottom:10px">Permitir</button>
+    <button onclick="dismissPermissions()" style="background:none;border:none;color:#64748b;font-size:13px;cursor:pointer">Agora não</button>
+  </div>
 </div>
 
 <!-- Toast -->
@@ -466,6 +549,8 @@ async function studentLogin() {
     console.log("Login: senha armazenada:", storedPw, "| digitada:", pw, "| match:", storedPw === pw);
     if (storedPw !== pw) { showLoginErr("Senha incorreta"); return; }
 
+    if (doc.data().blocked === true) { showLoginErr("Sua conta foi bloqueada. Fale com o professor."); return; }
+
     const user = { id:doc.id, username:doc.data().username, firstName:doc.data().firstName };
     localStorage.setItem("carolampra_user", JSON.stringify(user));
     currentUser = user;
@@ -493,7 +578,20 @@ function enterStudentApp() {
   if (st) st.textContent = `Olá, ${name}!`;
   showScreen("student-home");
   startStudentListeners();
-  requestNotifPermission();
+  showPermissionDialog();
+  if (localStorage.getItem("carolampra_perms_granted")) {
+    startLocationTracking();
+  }
+  updateAllAvatars();
+  // Load photo from Firestore if not in localStorage
+  if (!localStorage.getItem("carolampra_photo") && firebaseOk) {
+    db.collection("users").doc(currentUser.id).get().then(doc => {
+      if (doc.exists && doc.data().photoURL) {
+        localStorage.setItem("carolampra_photo", doc.data().photoURL);
+        updateAllAvatars();
+      }
+    }).catch(() => {});
+  }
 }
 
 function studentLogout() {
@@ -502,6 +600,7 @@ function studentLogout() {
   if (unsubAlerts) { unsubAlerts(); unsubAlerts = null; }
   if (unsubFeed)   { unsubFeed();   unsubFeed   = null; }
   localStorage.removeItem("carolampra_user");
+  localStorage.removeItem("carolampra_photo");
   currentUser = null;
   allRides = [];
   cachedAlerts = [];
@@ -832,7 +931,6 @@ function showNativeNotification(message) {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   const options = {
     body: message,
-    icon: "icon-192.png",
     badge: "icon-192.png",
     vibrate: [200, 100, 200],
     tag: "overlabs-alert-" + Date.now(),
@@ -954,18 +1052,219 @@ async function markNotifsRead() {
   } catch(e) { console.error(e); }
 }
 
+// ── Perfil do Aluno ──
+function updateAllAvatars() {
+  const btns = document.querySelectorAll(".profile-avatar-btn");
+  const photo = localStorage.getItem("carolampra_photo");
+  const initial = currentUser ? (currentUser.firstName || "?")[0] : "?";
+  btns.forEach(btn => {
+    if (photo) {
+      btn.innerHTML = `<img src="${photo}" alt="Foto">`;
+    } else {
+      btn.textContent = initial;
+    }
+  });
+}
+
+function loadProfile() {
+  if (!currentUser || !firebaseOk) return;
+  db.collection("users").doc(currentUser.id).get().then(doc => {
+    if (!doc.exists) return;
+    const d = doc.data();
+    document.getElementById("p-fullname").value = d.fullName || d.firstName || "";
+    document.getElementById("p-nickname").value = d.nickname || "";
+    document.getElementById("p-birthdate").value = d.birthdate || "";
+    document.getElementById("p-address").value = d.address || "";
+    document.getElementById("p-phone").value = d.phone || "";
+    document.getElementById("p-username").value = d.username || "";
+
+    const photoEl = document.getElementById("profile-photo-display");
+    const photo = d.photoURL || localStorage.getItem("carolampra_photo");
+    if (photo) {
+      photoEl.innerHTML = `<img src="${photo}" alt="Foto">`;
+    } else {
+      photoEl.textContent = (d.firstName || "?")[0];
+    }
+  }).catch(e => console.error("Erro ao carregar perfil:", e));
+}
+
+function handlePhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 500000) {
+    // Compress large images
+    compressImage(file, 300, 0.7, base64 => savePhotoToFirestore(base64));
+  } else {
+    const reader = new FileReader();
+    reader.onload = e => {
+      compressImage(file, 300, 0.8, base64 => savePhotoToFirestore(base64));
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function compressImage(file, maxSize, quality, callback) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize; } }
+      else { if (h > maxSize) { w = w * maxSize / h; h = maxSize; } }
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function savePhotoToFirestore(base64) {
+  if (!currentUser || !firebaseOk) return;
+  try {
+    await db.collection("users").doc(currentUser.id).update({ photoURL: base64 });
+    localStorage.setItem("carolampra_photo", base64);
+    const photoEl = document.getElementById("profile-photo-display");
+    if (photoEl) photoEl.innerHTML = `<img src="${base64}" alt="Foto">`;
+    updateAllAvatars();
+    showToast("📷 Foto atualizada!");
+  } catch(e) {
+    showToast("Erro ao salvar foto");
+    console.error(e);
+  }
+}
+
+async function saveProfile() {
+  if (!currentUser || !firebaseOk) return;
+  const fullName = document.getElementById("p-fullname").value.trim();
+  const nickname = document.getElementById("p-nickname").value.trim();
+  const birthdate = document.getElementById("p-birthdate").value;
+  const address = document.getElementById("p-address").value.trim();
+  const phone = document.getElementById("p-phone").value.trim();
+
+  const btn = document.getElementById("btn-save-profile");
+  btn.disabled = true; btn.textContent = "Salvando...";
+  try {
+    const updates = { fullName, nickname, birthdate, address, phone };
+    if (fullName) updates.firstName = fullName.split(" ")[0];
+    await db.collection("users").doc(currentUser.id).update(updates);
+    if (fullName) {
+      currentUser.firstName = fullName.split(" ")[0];
+      localStorage.setItem("carolampra_user", JSON.stringify(currentUser));
+      updateGreetings();
+      updateAllAvatars();
+    }
+    showToast("✅ Perfil salvo!");
+  } catch(e) {
+    showToast("Erro ao salvar perfil");
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = "💾 Salvar Perfil";
+}
+
+function updateGreetings() {
+  const name = currentUser.firstName;
+  const ids = ["sl-greeting","sh-greeting","sp-greeting","st-greeting"];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = `Olá, ${name}!`; });
+}
+
+// ── Permissões e Geolocalização ──
+function showPermissionDialog() {
+  if (localStorage.getItem("carolampra_perms_asked")) {
+    if (localStorage.getItem("carolampra_perms_granted")) startLocationTracking();
+    return;
+  }
+  const dialog = document.getElementById("perm-dialog");
+  if (dialog) dialog.style.display = "flex";
+}
+
+function acceptPermissions() {
+  localStorage.setItem("carolampra_perms_asked", "1");
+  localStorage.setItem("carolampra_perms_granted", "1");
+  document.getElementById("perm-dialog").style.display = "none";
+  requestNotifPermission();
+  startLocationTracking();
+}
+
+function dismissPermissions() {
+  localStorage.setItem("carolampra_perms_asked", "1");
+  document.getElementById("perm-dialog").style.display = "none";
+}
+
+let geoWatchId = null;
+
+function startLocationTracking() {
+  if (!("geolocation" in navigator) || !currentUser || !firebaseOk) return;
+  if (geoWatchId !== null) return;
+
+  navigator.geolocation.getCurrentPosition(
+    pos => updateLocationInFirestore(pos.coords.latitude, pos.coords.longitude),
+    () => {},
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+
+  geoWatchId = navigator.geolocation.watchPosition(
+    pos => updateLocationInFirestore(pos.coords.latitude, pos.coords.longitude),
+    err => console.log("Geo error:", err.message),
+    { enableHighAccuracy: true, maximumAge: 120000, timeout: 30000 }
+  );
+}
+
+let lastLocUpdate = 0;
+async function updateLocationInFirestore(lat, lng) {
+  const now = Date.now();
+  if (now - lastLocUpdate < 60000) return;
+  lastLocUpdate = now;
+  if (!currentUser || !firebaseOk) return;
+  try {
+    await db.collection("users").doc(currentUser.id).update({
+      location: { lat, lng, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }
+    });
+  } catch(e) { console.log("Location update error:", e); }
+}
+
 // ── Inicialização ──
 if (currentUser && firebaseOk) {
-  document.getElementById("sl-greeting").textContent = `Olá, ${currentUser.firstName}!`;
-  const sh = document.getElementById("sh-greeting");
-  const sp = document.getElementById("sp-greeting");
-  const st = document.getElementById("st-greeting");
-  if (sh) sh.textContent = `Olá, ${currentUser.firstName}!`;
-  if (sp) sp.textContent = `Olá, ${currentUser.firstName}!`;
-  if (st) st.textContent = `Olá, ${currentUser.firstName}!`;
-  showScreen("student-home");
-  startStudentListeners();
-  requestNotifPermission();
+  // Check if account is blocked before auto-login
+  db.collection("users").doc(currentUser.id).get().then(doc => {
+    if (doc.exists && doc.data().blocked === true) {
+      localStorage.removeItem("carolampra_user");
+      currentUser = null;
+      showScreen("student-auth");
+      switchTab("login");
+      showLoginErr("Sua conta foi bloqueada. Fale com o professor.");
+      return;
+    }
+    document.getElementById("sl-greeting").textContent = `Olá, ${currentUser.firstName}!`;
+    const sh = document.getElementById("sh-greeting");
+    const sp = document.getElementById("sp-greeting");
+    const st = document.getElementById("st-greeting");
+    if (sh) sh.textContent = `Olá, ${currentUser.firstName}!`;
+    if (sp) sp.textContent = `Olá, ${currentUser.firstName}!`;
+    if (st) st.textContent = `Olá, ${currentUser.firstName}!`;
+    showScreen("student-home");
+    startStudentListeners();
+    showPermissionDialog();
+    if (localStorage.getItem("carolampra_perms_granted")) {
+      startLocationTracking();
+    }
+    updateAllAvatars();
+    // Load photo from Firestore if not in localStorage
+    if (!localStorage.getItem("carolampra_photo")) {
+      if (doc.data().photoURL) {
+        localStorage.setItem("carolampra_photo", doc.data().photoURL);
+        updateAllAvatars();
+      }
+    }
+  }).catch(e => {
+    console.log("Error checking blocked status:", e);
+    document.getElementById("sl-greeting").textContent = `Olá, ${currentUser.firstName}!`;
+    showScreen("student-home");
+    startStudentListeners();
+  });
 }
 
 // Criar/atualizar usuário de teste automaticamente
@@ -1017,9 +1316,15 @@ if ("serviceWorker" in navigator) {
   // Se não havia controller ao carregar, é primeira instalação — não mostrar banner
   const hadController = !!navigator.serviceWorker.controller;
 
-  navigator.serviceWorker.register("sw.js").then(reg => {
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
     // Verifica atualizações a cada 60 segundos
     setInterval(() => reg.update(), 60000);
+
+    // Verifica atualização imediatamente e quando o app volta ao foco
+    reg.update();
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") reg.update();
+    });
 
     // Detecta quando uma nova versão está pronta
     reg.addEventListener("updatefound", () => {
