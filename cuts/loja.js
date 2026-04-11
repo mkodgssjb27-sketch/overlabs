@@ -12,6 +12,7 @@ let allItems = [];
 let myInventory = [];     // [{itemId, equipado}]
 let currentTab = "todos";
 let selectedItem = null;
+let chunkCache = {};       // { itemId: fullBase64Url }
 
 // ── Init Firebase ──
 function initFirebase() {
@@ -83,13 +84,35 @@ function loadItems() {
     allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     console.log("[Loja] Itens atualizados:", allItems.length);
     renderItems();
-    // Atualizar inventário também (pode ter item removido)
     if (myInventory.length) renderInventory();
+    // Carregar chunks de itens grandes em background
+    loadChunkedUrls();
   }, err => {
     console.error("[Loja] Erro ao ouvir itens:", err);
     document.getElementById("items-grid").innerHTML =
       '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar itens</p></div>';
   });
+}
+
+// ── Carrega URLs completas de itens com chunks ──
+async function loadChunkedUrls() {
+  const chunked = allItems.filter(i => i.chunked && !chunkCache[i.id]);
+  if (!chunked.length) return;
+  for (const item of chunked) {
+    try {
+      const snap = await db.collection("cuts_items").doc(item.id)
+        .collection("chunks").get();
+      if (snap.empty) continue;
+      const sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+      chunkCache[item.id] = sorted.map(d => d.data().data).join("");
+      console.log("[Loja] Chunks carregados para:", item.nome);
+    } catch(e) {
+      console.error("[Loja] Erro chunks:", item.id, e);
+    }
+  }
+  // Re-renderizar com URLs completas
+  renderItems();
+  if (myInventory.length) renderInventory();
 }
 
 // ── Listener tempo real do inventário do usuário ──
@@ -127,9 +150,10 @@ function renderItems() {
 
   grid.innerHTML = filtered.map(item => {
     const owned = ownedIds.has(item.id);
+    const imgUrl = chunkCache[item.id] || item.url;
     return `
       <div class="loja-item ${owned ? 'owned' : ''}" onclick="openBuyModal('${item.id}')">
-        <img class="item-img" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}">
+        <img class="item-img" src="${escapeHtml(imgUrl)}" alt="${escapeHtml(item.nome)}">
         <div class="item-info">
           <div class="item-name">${escapeHtml(item.nome)}</div>
           <div class="item-type">${escapeHtml(item.tipo)}</div>
@@ -155,7 +179,7 @@ function renderInventory() {
   myInventory.forEach(inv => {
     const fromShop = allItems.find(i => i.id === inv.itemId);
     const nome = inv.nome || (fromShop && fromShop.nome) || "Item";
-    const url = inv.url || (fromShop && fromShop.url) || "";
+    const url = chunkCache[inv.itemId] || inv.url || (fromShop && fromShop.url) || "";
     const tipo = inv.tipo || (fromShop && fromShop.tipo) || "outro";
     if (!url) return;
     if (!groups[tipo]) groups[tipo] = [];
@@ -220,7 +244,7 @@ function openBuyModal(itemId) {
   selectedItem = item;
   const owned = myInventory.some(i => i.itemId === itemId);
 
-  document.getElementById("modal-img").src = item.url;
+  document.getElementById("modal-img").src = chunkCache[item.id] || item.url;
   document.getElementById("modal-name").textContent = item.nome;
   document.getElementById("modal-type").textContent = item.tipo;
   document.getElementById("modal-price-val").textContent = item.preco;
@@ -293,11 +317,13 @@ async function confirmPurchase() {
 
     // Adicionar ao inventário (salvar dados completos do item para persistir mesmo se removido da loja)
     const invRef = db.collection("cuts_inventory").doc();
+    // Para itens com chunks, salvar thumbnail (url do doc principal) no inventário
+    const invUrl = selectedItem.chunked ? selectedItem.url : (chunkCache[selectedItem.id] || selectedItem.url);
     batch.set(invRef, {
       userId: currentUser.id,
       itemId: selectedItem.id,
       nome: selectedItem.nome,
-      url: selectedItem.url,
+      url: invUrl,
       tipo: selectedItem.tipo,
       equipado: false,
       compradoEm: firebase.firestore.FieldValue.serverTimestamp()
@@ -335,9 +361,9 @@ async function toggleEquip(itemId, tipo) {
     const inv = myInventory.find(i => i.itemId === itemId);
     if (!inv) return;
 
-    // Dados do item: preferir allItems (loja), fallback para dados salvos no inventário
+    // Dados do item: preferir chunkCache (URL completa), depois allItems, fallback para inventário
     const fromShop = allItems.find(a => a.id === itemId);
-    const itemUrl = (fromShop && fromShop.url) || inv.url || "";
+    const itemUrl = chunkCache[itemId] || (fromShop && fromShop.url) || inv.url || "";
 
     if (inv.equipado) {
       // Desequipar

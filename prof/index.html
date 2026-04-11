@@ -2897,15 +2897,10 @@ function editorHandleFile(input) {
 
   editorFile = file;
 
-  // GIF: ler direto (preservar animação), mas limitar base64 a ~900KB
+  // GIF: ler direto (preservar animação)
   if (file.type === "image/gif") {
     const reader = new FileReader();
     reader.onload = function(e) {
-      if (e.target.result.length > 900 * 1024) {
-        showToast("❌ GIF muito grande para a loja. Reduza para menos de ~700KB.");
-        input.value = ""; editorFile = null;
-        return;
-      }
       editorFileUrl = e.target.result;
       editorShowUploadResult(file);
     };
@@ -3047,13 +3042,45 @@ async function editorPublish() {
   btn.textContent = "Publicando...";
 
   try {
-    await db.collection("cuts_items").add({
-      nome: nome,
-      tipo: editorType,
-      preco: preco,
-      url: editorFileUrl,
-      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    const base64 = editorFileUrl;
+
+    if (base64.length <= 800000) {
+      // Cabe em um único documento
+      await db.collection("cuts_items").add({
+        nome: nome,
+        tipo: editorType,
+        preco: preco,
+        url: base64,
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      // Grande demais: gerar thumbnail + armazenar em chunks
+      btn.textContent = "Gerando preview...";
+      const thumbnail = await editorMakeThumbnail(base64);
+
+      btn.textContent = "Enviando...";
+      const docRef = await db.collection("cuts_items").add({
+        nome: nome,
+        tipo: editorType,
+        preco: preco,
+        url: thumbnail,
+        chunked: true,
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Armazenar base64 completo em chunks de 750KB
+      const chunkSize = 750000;
+      const totalChunks = Math.ceil(base64.length / chunkSize);
+      btn.textContent = "Enviando chunks (0/" + totalChunks + ")...";
+
+      for (let i = 0; i < base64.length; i += chunkSize) {
+        const idx = Math.floor(i / chunkSize);
+        await db.collection("cuts_items").doc(docRef.id)
+          .collection("chunks").doc(String(idx))
+          .set({ data: base64.substring(i, i + chunkSize) });
+        btn.textContent = "Enviando chunks (" + (idx + 1) + "/" + totalChunks + ")...";
+      }
+    }
 
     console.log("[Editor] Publicado:", nome, editorType, preco, "CUTS");
     showToast('✅ "' + nome + '" publicado na loja!');
@@ -3066,6 +3093,41 @@ async function editorPublish() {
     btn.disabled = false;
     btn.textContent = "🚀 Publicar na Loja";
   }
+}
+
+// Gera thumbnail JPEG comprimido a partir de base64 (primeiro frame para GIFs)
+function editorMakeThumbnail(base64) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      try {
+        var canvas = document.createElement("canvas");
+        var w = img.naturalWidth || 400, h = img.naturalHeight || 400;
+        var maxSize = 400;
+        if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
+        else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        if (canvas.toBlob) {
+          canvas.toBlob(function(blob) {
+            if (!blob) { resolve(base64.substring(0, 800000)); return; }
+            var r = new FileReader();
+            r.onload = function() { resolve(r.result); };
+            r.onerror = function() { resolve(base64.substring(0, 800000)); };
+            r.readAsDataURL(blob);
+          }, "image/jpeg", 0.7);
+        } else {
+          resolve(canvas.toDataURL("image/jpeg", 0.7));
+        }
+      } catch(e) { resolve(base64.substring(0, 800000)); }
+    };
+    img.onerror = function() { resolve(base64.substring(0, 800000)); };
+    img.src = base64;
+  });
 }
 
 function editorResetForm() {
@@ -3109,12 +3171,13 @@ async function loadEditorItems() {
       editorPublishedItems.map(item => {
         const safeNome = item.nome ? item.nome.replace(/</g,'&lt;') : '';
         const safeUrl = item.url ? item.url.replace(/"/g,'&quot;') : '';
+        const chunkedLabel = item.chunked ? ' 📦' : '';
         return '<div style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;position:relative">' +
           '<button onclick="editorDeleteItem(\'' + item.id + '\')" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5">✕</button>' +
           '<img src="' + safeUrl + '" style="width:100%;aspect-ratio:1;object-fit:contain;background:rgba(255,255,255,.02);padding:8px" loading="lazy">' +
           '<div style="padding:10px">' +
             '<div style="font-size:12px;font-weight:700;color:#fff">' + safeNome + '</div>' +
-            '<div style="font-size:10px;color:#64748b;margin-top:2px">' + (tipoLabels[item.tipo] || item.tipo) + ' — 🪙 ' + item.preco + '</div>' +
+            '<div style="font-size:10px;color:#64748b;margin-top:2px">' + (tipoLabels[item.tipo] || item.tipo) + chunkedLabel + ' — 🪙 ' + item.preco + '</div>' +
           '</div></div>';
       }).join("") + '</div>';
 
@@ -3128,6 +3191,13 @@ async function loadEditorItems() {
 async function editorDeleteItem(itemId) {
   if (!confirm("Excluir este item da loja?")) return;
   try {
+    // Excluir chunks se existirem
+    const chunksSnap = await db.collection("cuts_items").doc(itemId).collection("chunks").get();
+    if (!chunksSnap.empty) {
+      const batch = db.batch();
+      chunksSnap.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
     await db.collection("cuts_items").doc(itemId).delete();
     showToast("🗑️ Item excluído");
     await loadEditorItems();
