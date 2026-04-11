@@ -1748,7 +1748,18 @@ function compressImage(file, maxSize, quality, callback) {
       canvas.height = h;
       canvas.getContext("2d").drawImage(img, 0, 0, w, h);
       URL.revokeObjectURL(url);
-      callback(canvas.toDataURL("image/jpeg", quality));
+      // toBlob é mais confiável que toDataURL em Android
+      if (canvas.toBlob) {
+        canvas.toBlob(function(blob) {
+          if (!blob) { readFileRaw(file, callback); return; }
+          var r = new FileReader();
+          r.onload = function() { callback(r.result); };
+          r.onerror = function() { readFileRaw(file, callback); };
+          r.readAsDataURL(blob);
+        }, "image/jpeg", quality);
+      } else {
+        callback(canvas.toDataURL("image/jpeg", quality));
+      }
     } catch(e) {
       URL.revokeObjectURL(url);
       readFileRaw(file, callback);
@@ -1759,9 +1770,9 @@ function compressImage(file, maxSize, quality, callback) {
 }
 
 function readFileRaw(file, callback) {
-  const r = new FileReader();
-  r.onload = e => callback(e.target.result);
-  r.onerror = () => callback("");
+  var r = new FileReader();
+  r.onload = function() { callback(r.result); };
+  r.onerror = function() { callback(""); };
   r.readAsDataURL(file);
 }
 
