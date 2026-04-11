@@ -841,18 +841,38 @@ function enterStudentApp() {
   // Listener tempo real no documento do usuário (CUTS, foto, etc)
   if (firebaseOk) {
     if (unsubUserDoc) { unsubUserDoc(); unsubUserDoc = null; }
+    // Restaurar CUTS do cache imediatamente
+    const cachedCuts = localStorage.getItem("carolampra_cuts");
+    if (cachedCuts != null) {
+      const cutsEl = document.getElementById("sidebar-cuts");
+      if (cutsEl) cutsEl.textContent = cachedCuts;
+    }
     unsubUserDoc = db.collection("users").doc(currentUser.id).onSnapshot(doc => {
       if (!doc.exists) return;
       const d = doc.data();
       // CUTS
+      const cutsVal = d.cuts || 0;
       const cutsEl = document.getElementById("sidebar-cuts");
-      if (cutsEl) cutsEl.textContent = d.cuts || 0;
+      if (cutsEl) cutsEl.textContent = cutsVal;
+      localStorage.setItem("carolampra_cuts", cutsVal);
       // Foto
       if (d.photoURL) {
         localStorage.setItem("carolampra_photo", d.photoURL);
         updateAllAvatars();
       }
     }, () => {});
+    // Ao voltar do background, forçar refresh dos dados
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && currentUser && firebaseOk) {
+        db.collection("users").doc(currentUser.id).get().then(doc => {
+          if (!doc.exists) return;
+          const d = doc.data();
+          const cutsEl = document.getElementById("sidebar-cuts");
+          if (cutsEl) cutsEl.textContent = d.cuts || 0;
+          localStorage.setItem("carolampra_cuts", d.cuts || 0);
+        }).catch(() => {});
+      }
+    });
   }
   // Load customization data
   loadUserCustomization();
@@ -869,6 +889,7 @@ function studentLogout() {
   localStorage.removeItem("carolampra_user");
   localStorage.removeItem("carolampra_photo");
   localStorage.removeItem("carolampra_customization");
+  localStorage.removeItem("carolampra_cuts");
   currentUser = null;
   allRides = [];
   allFeedItems = [];
