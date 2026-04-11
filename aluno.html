@@ -1727,16 +1727,11 @@ function loadProfile() {
 function handlePhotoUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 500000) {
-    // Compress large images
-    compressImage(file, 300, 0.7, base64 => savePhotoToFirestore(base64));
-  } else {
-    const reader = new FileReader();
-    reader.onload = e => {
-      compressImage(file, 300, 0.8, base64 => savePhotoToFirestore(base64));
-    };
-    reader.readAsDataURL(file);
-  }
+  if (!file.type.startsWith("image/")) { showToast("Selecione uma imagem"); return; }
+  compressImage(file, 300, 0.8, base64 => {
+    if (!base64 || base64.length < 100) { showToast("Erro ao processar imagem"); return; }
+    savePhotoToFirestore(base64);
+  });
 }
 
 function compressImage(file, maxSize, quality, callback) {
@@ -1744,14 +1739,33 @@ function compressImage(file, maxSize, quality, callback) {
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement("canvas");
-      let w = img.width, h = img.height;
-      if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize; } }
-      else { if (h > maxSize) { w = w * maxSize / h; h = maxSize; } }
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-      callback(canvas.toDataURL("image/jpeg", quality));
+      try {
+        const canvas = document.createElement("canvas");
+        let w = img.naturalWidth || img.width;
+        let h = img.naturalHeight || img.height;
+        if (w === 0 || h === 0) { callback(e.target.result); return; }
+        if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
+        else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        const result = canvas.toDataURL("image/jpeg", quality);
+        if (result && result.length > 100) {
+          callback(result);
+        } else {
+          callback(e.target.result);
+        }
+      } catch(err) {
+        console.error("Compress error:", err);
+        callback(e.target.result);
+      }
+    };
+    img.onerror = () => {
+      console.warn("Image load failed, using raw base64");
+      callback(e.target.result);
     };
     img.src = e.target.result;
   };
