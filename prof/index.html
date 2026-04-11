@@ -27,6 +27,7 @@ window.addEventListener("beforeinstallprompt", function(e) {
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -214,7 +215,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <div class="mc-title">Decorações</div>
         <div class="mc-desc">Molduras e banners para alunos</div>
       </div>
-      <div class="menu-card" onclick="window.location.href='../editor/editor.html'" style="position:relative">
+      <div class="menu-card" onclick="showScreen('teacher-editor');loadEditorItems()" style="position:relative">
         <span class="mc-badge">BETA</span>
         <span class="mc-icon">🛒</span>
         <div class="mc-title">Editor de Artes</div>
@@ -902,6 +903,102 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
       <button onclick="saveDecoration()" class="btn-main" id="btn-save-deco">💾 Salvar Decoração</button>
     </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — EDITOR DE ARTES (LOJA CUTS) ════════════════════ -->
+<div class="screen" id="screen-teacher-editor">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" style="font-size:16px">🎨 Editor de Artes</div><div class="t-sub">Criar itens para Loja CUTS</div></div>
+    </div>
+    <div class="top-bar-actions"><span style="background:rgba(34,197,94,.2);color:#22c55e;font-size:10px;font-weight:900;padding:4px 12px;border-radius:8px">BETA</span></div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+
+    <!-- Formulário de criação -->
+    <div class="t-form" style="margin-bottom:24px">
+      <div class="section-title">📤 Criar Novo Item</div>
+
+      <!-- Upload -->
+      <div id="editor-upload-zone" onclick="document.getElementById('editor-file-input').click()" style="border:2px dashed rgba(255,255,255,.15);border-radius:16px;padding:30px 20px;text-align:center;cursor:pointer;transition:.2s;background:rgba(255,255,255,.02);margin-bottom:16px">
+        <div id="editor-upload-content">
+          <span style="font-size:40px;display:block;margin-bottom:8px">📁</span>
+          <span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span>
+          <div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 10MB)</div>
+        </div>
+      </div>
+      <input type="file" id="editor-file-input" accept="image/png,image/gif,image/jpeg,image/webp" style="display:none" onchange="editorHandleFile(this)">
+
+      <!-- Preview da imagem -->
+      <div id="editor-img-preview" style="display:none;text-align:center;margin-bottom:16px">
+        <img id="editor-img-preview-src" src="" style="max-width:200px;border-radius:14px;border:2px solid rgba(245,158,11,.3)">
+      </div>
+
+      <!-- Tipo -->
+      <div style="margin-bottom:18px">
+        <label class="lbl">TIPO DO ITEM</label>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+          <div class="editor-type-opt" data-type="avatar" onclick="editorSelectType('avatar')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s">
+            <span style="font-size:28px;display:block;margin-bottom:6px">🖼️</span>
+            <span style="font-size:12px;font-weight:800;color:#fff">Avatar</span>
+          </div>
+          <div class="editor-type-opt" data-type="moldura" onclick="editorSelectType('moldura')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s">
+            <span style="font-size:28px;display:block;margin-bottom:6px">🖼️</span>
+            <span style="font-size:12px;font-weight:800;color:#fff">Moldura</span>
+          </div>
+          <div class="editor-type-opt" data-type="banner" onclick="editorSelectType('banner')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s">
+            <span style="font-size:28px;display:block;margin-bottom:6px">🌄</span>
+            <span style="font-size:12px;font-weight:800;color:#fff">Banner</span>
+          </div>
+          <div class="editor-type-opt" data-type="emblema" onclick="editorSelectType('emblema')" style="background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s">
+            <span style="font-size:28px;display:block;margin-bottom:6px">🏅</span>
+            <span style="font-size:12px;font-weight:800;color:#fff">Emblema</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nome e preço -->
+      <div style="margin-bottom:16px">
+        <label class="lbl">NOME DO ITEM</label>
+        <input class="inp" id="editor-item-nome" placeholder="Ex: Moldura Dourada">
+      </div>
+      <div style="margin-bottom:20px">
+        <label class="lbl">PREÇO (CUTS)</label>
+        <input type="number" class="inp" id="editor-item-preco" placeholder="Ex: 50" min="0">
+      </div>
+
+      <button onclick="editorPublish()" class="btn-main" id="btn-editor-publish">🚀 Publicar na Loja</button>
+    </div>
+
+    <!-- Preview do perfil simulado -->
+    <div class="t-form" style="margin-bottom:24px">
+      <div class="section-title">👁️ Preview do Perfil</div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;overflow:hidden;margin-bottom:12px">
+        <div id="editor-sim-banner" style="position:relative;padding:28px 20px 20px;text-align:center;background:#1e293b;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background-size:cover;background-position:center">
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:0"></div>
+          <div style="width:90px;height:90px;margin:0 auto 10px;position:relative;z-index:1">
+            <div id="editor-sim-avatar" style="width:100%;height:100%;border-radius:50%;overflow:hidden;border:3px solid rgba(245,158,11,.5);background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff">M</div>
+            <img id="editor-sim-frame" src="" style="position:absolute;inset:-14%;width:128%;height:128%;pointer-events:none;z-index:2;display:none">
+          </div>
+          <div style="font-weight:800;font-size:16px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5);position:relative;z-index:1">Aluno Exemplo</div>
+          <div style="font-size:12px;color:#94a3b8;text-shadow:0 1px 3px rgba(0,0,0,.4);position:relative;z-index:1">@aluno123</div>
+          <div id="editor-sim-emblems" style="display:flex;gap:8px;justify-content:center;margin-top:8px;position:relative;z-index:1"></div>
+        </div>
+        <div style="padding:16px;display:flex;gap:12px;align-items:center;justify-content:center">
+          <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.15);padding:6px 14px;border-radius:20px;font-weight:900;color:#f59e0b;font-size:14px">🪙 150 CUTS</div>
+        </div>
+      </div>
+      <p style="text-align:center;color:#64748b;font-size:12px">Simulação de como o item aparecerá no perfil</p>
+    </div>
+
+    <!-- Itens publicados -->
+    <div class="t-form">
+      <div class="section-title">📦 Itens na Loja</div>
+      <div id="editor-items-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
+    </div>
+
   </div>
 </div>
 
@@ -2687,6 +2784,220 @@ function installProfApp() {
     showToast("⬆️ Toque em Compartilhar (⬆️) → Adicionar à Tela de Início");
   } else {
     showToast("📲 Toque no menu do Chrome (⋮) no canto superior → 'Instalar aplicativo' ou 'Adicionar à tela inicial'");
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ═══ EDITOR DE ARTES — Loja CUTS (módulo embutido) ═══════════════
+// ══════════════════════════════════════════════════════════════════
+
+let editorFile = null;
+let editorFileUrl = null;
+let editorType = null;
+let editorPublishedItems = [];
+let storageRef = null;
+
+try {
+  storageRef = firebase.storage();
+  console.log("[Editor] Firebase Storage OK");
+} catch(e) {
+  console.warn("[Editor] Storage não disponível:", e);
+}
+
+function editorHandleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const allowed = ["image/png", "image/gif", "image/jpeg", "image/webp"];
+  if (!allowed.includes(file.type)) {
+    showToast("❌ Formato não suportado. Use PNG, GIF, JPG ou WebP.");
+    input.value = "";
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showToast("❌ Arquivo muito grande (máx. 10MB)");
+    input.value = "";
+    return;
+  }
+
+  editorFile = file;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    editorFileUrl = e.target.result;
+    // Atualizar UI do upload zone
+    const zone = document.getElementById("editor-upload-content");
+    zone.innerHTML = `<span style="font-size:30px;display:block;margin-bottom:6px">✅</span><span style="color:#22c55e;font-size:13px;font-weight:700">${file.name}</span><div style="color:#64748b;font-size:11px;margin-top:4px">${(file.size / 1024).toFixed(1)} KB — ${file.type}</div>`;
+    document.getElementById("editor-upload-zone").style.borderColor = "#f59e0b";
+    document.getElementById("editor-upload-zone").style.borderStyle = "solid";
+    // Preview
+    const prev = document.getElementById("editor-img-preview");
+    document.getElementById("editor-img-preview-src").src = editorFileUrl;
+    prev.style.display = "block";
+    editorUpdatePreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function editorSelectType(tipo) {
+  editorType = tipo;
+  document.querySelectorAll(".editor-type-opt").forEach(el => {
+    if (el.dataset.type === tipo) {
+      el.style.borderColor = "#f59e0b";
+      el.style.background = "rgba(245,158,11,.1)";
+      el.style.boxShadow = "0 0 16px rgba(245,158,11,.2)";
+    } else {
+      el.style.borderColor = "rgba(255,255,255,.08)";
+      el.style.background = "rgba(255,255,255,.04)";
+      el.style.boxShadow = "none";
+    }
+  });
+  editorUpdatePreview();
+}
+
+function editorUpdatePreview() {
+  if (!editorFileUrl || !editorType) return;
+  const simAvatar = document.getElementById("editor-sim-avatar");
+  const simFrame = document.getElementById("editor-sim-frame");
+  const simBanner = document.getElementById("editor-sim-banner");
+  const simEmblems = document.getElementById("editor-sim-emblems");
+
+  // Reset
+  simFrame.style.display = "none";
+  simBanner.style.backgroundImage = "";
+  simEmblems.innerHTML = "";
+  simAvatar.innerHTML = '<span style="font-size:28px">M</span>';
+
+  switch (editorType) {
+    case "avatar":
+      simAvatar.innerHTML = '<img src="' + editorFileUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      break;
+    case "moldura":
+      simFrame.src = editorFileUrl;
+      simFrame.style.display = "block";
+      break;
+    case "banner":
+      simBanner.style.backgroundImage = 'url(' + editorFileUrl + ')';
+      break;
+    case "emblema":
+      simEmblems.innerHTML = '<img src="' + editorFileUrl + '" style="width:32px;height:32px;object-fit:contain">';
+      break;
+  }
+}
+
+async function editorPublish() {
+  if (!firebaseOk) { showToast("❌ Firebase não disponível"); return; }
+  if (!storageRef) { showToast("❌ Storage não disponível"); return; }
+  if (!editorFile) { showToast("⚠️ Envie uma imagem primeiro"); return; }
+  if (!editorType) { showToast("⚠️ Selecione o tipo do item"); return; }
+
+  const nome = document.getElementById("editor-item-nome").value.trim();
+  const preco = parseInt(document.getElementById("editor-item-preco").value, 10);
+
+  if (!nome) { showToast("⚠️ Informe o nome do item"); return; }
+  if (isNaN(preco) || preco < 0) { showToast("⚠️ Informe um preço válido"); return; }
+
+  const btn = document.getElementById("btn-editor-publish");
+  btn.disabled = true;
+  btn.textContent = "Enviando imagem...";
+
+  try {
+    const ext = editorFile.name.split(".").pop();
+    const fileName = "cuts_" + editorType + "_" + Date.now() + "." + ext;
+    const ref = storageRef.ref("cuts_items/" + fileName);
+
+    const uploadTask = await ref.put(editorFile);
+    const url = await uploadTask.ref.getDownloadURL();
+    console.log("[Editor] Upload OK:", url);
+
+    btn.textContent = "Salvando...";
+
+    await db.collection("cuts_items").add({
+      nome: nome,
+      tipo: editorType,
+      preco: preco,
+      url: url,
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log("[Editor] Publicado:", nome, editorType, preco, "CUTS");
+    showToast('✅ "' + nome + '" publicado na loja!');
+    editorResetForm();
+    await loadEditorItems();
+  } catch(e) {
+    console.error("[Editor] Erro:", e);
+    showToast("❌ Erro ao publicar: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "🚀 Publicar na Loja";
+  }
+}
+
+function editorResetForm() {
+  editorFile = null;
+  editorFileUrl = null;
+  editorType = null;
+  document.getElementById("editor-file-input").value = "";
+  document.getElementById("editor-item-nome").value = "";
+  document.getElementById("editor-item-preco").value = "";
+  document.getElementById("editor-upload-content").innerHTML = '<span style="font-size:40px;display:block;margin-bottom:8px">📁</span><span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span><div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 10MB)</div>';
+  document.getElementById("editor-upload-zone").style.borderColor = "rgba(255,255,255,.15)";
+  document.getElementById("editor-upload-zone").style.borderStyle = "dashed";
+  document.getElementById("editor-img-preview").style.display = "none";
+  document.querySelectorAll(".editor-type-opt").forEach(el => {
+    el.style.borderColor = "rgba(255,255,255,.08)";
+    el.style.background = "rgba(255,255,255,.04)";
+    el.style.boxShadow = "none";
+  });
+  // Reset preview
+  document.getElementById("editor-sim-avatar").innerHTML = '<span style="font-size:28px">M</span>';
+  document.getElementById("editor-sim-frame").style.display = "none";
+  document.getElementById("editor-sim-banner").style.backgroundImage = "";
+  document.getElementById("editor-sim-emblems").innerHTML = "";
+}
+
+async function loadEditorItems() {
+  if (!firebaseOk) return;
+  const container = document.getElementById("editor-items-list");
+  try {
+    const snap = await db.collection("cuts_items").orderBy("criadoEm", "desc").get();
+    editorPublishedItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (editorPublishedItems.length === 0) {
+      container.innerHTML = '<div class="empty"><div class="icon">📦</div><p>Nenhum item publicado</p><small>Crie o primeiro item acima!</small></div>';
+      return;
+    }
+
+    const tipoLabels = { avatar: "Avatar", moldura: "Moldura", banner: "Banner", emblema: "Emblema" };
+
+    container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">' +
+      editorPublishedItems.map(item => {
+        const safeNome = item.nome ? item.nome.replace(/</g,'&lt;') : '';
+        const safeUrl = item.url ? item.url.replace(/"/g,'&quot;') : '';
+        return '<div style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;position:relative">' +
+          '<button onclick="editorDeleteItem(\'' + item.id + '\')" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5">✕</button>' +
+          '<img src="' + safeUrl + '" style="width:100%;aspect-ratio:1;object-fit:contain;background:rgba(255,255,255,.02);padding:8px" loading="lazy">' +
+          '<div style="padding:10px">' +
+            '<div style="font-size:12px;font-weight:700;color:#fff">' + safeNome + '</div>' +
+            '<div style="font-size:10px;color:#64748b;margin-top:2px">' + (tipoLabels[item.tipo] || item.tipo) + ' — 🪙 ' + item.preco + '</div>' +
+          '</div></div>';
+      }).join("") + '</div>';
+
+    console.log("[Editor] Itens carregados:", editorPublishedItems.length);
+  } catch(e) {
+    console.error("[Editor] Erro ao carregar:", e);
+    container.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar itens</p></div>';
+  }
+}
+
+async function editorDeleteItem(itemId) {
+  if (!confirm("Excluir este item da loja?")) return;
+  try {
+    await db.collection("cuts_items").doc(itemId).delete();
+    showToast("🗑️ Item excluído");
+    await loadEditorItems();
+  } catch(e) {
+    console.error("[Editor] Erro ao excluir:", e);
+    showToast("❌ Erro ao excluir");
   }
 }
 </script>
