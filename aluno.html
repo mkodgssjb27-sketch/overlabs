@@ -2331,13 +2331,42 @@ function applySidebarBanner() {
     .get().then(snap => {
       if (snap.empty) {
         bannerBg.style.backgroundImage = "";
+        bannerBg.innerHTML = "";
         return;
       }
       const banner = snap.docs[0].data();
-      const url = banner.url || "";
-      if (url) {
-        bannerBg.style.backgroundImage = "url(" + url + ")";
+      const itemId = banner.itemId;
+      const fallbackUrl = banner.url || "";
+
+      function applyBannerUrl(url) {
+        if (!url) return;
+        // Usar <img> para GIFs animados funcionarem em looping
+        if (url.indexOf("data:image/gif") === 0 || url.indexOf(".gif") !== -1) {
+          bannerBg.style.backgroundImage = "";
+          bannerBg.innerHTML = '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">';
+        } else {
+          bannerBg.innerHTML = "";
+          bannerBg.style.backgroundImage = "url(" + url + ")";
+        }
       }
+
+      // Verificar se o item da loja é chunked e carregar GIF completo
+      db.collection("cuts_items").doc(itemId).get().then(function(itemDoc) {
+        var isChunked = false;
+        if (itemDoc.exists && itemDoc.data().chunked) isChunked = true;
+        if (isChunked) {
+          db.collection("cuts_items").doc(itemId).collection("chunks").get().then(function(chSnap) {
+            if (chSnap.empty) { applyBannerUrl(fallbackUrl); return; }
+            var sorted = chSnap.docs.sort(function(a,b) { return parseInt(a.id) - parseInt(b.id); });
+            var fullUrl = sorted.map(function(d) { return d.data().data; }).join("");
+            applyBannerUrl(fullUrl);
+          }).catch(function() { applyBannerUrl(fallbackUrl); });
+        } else {
+          // Não é chunked — usar url do item da loja ou do inventário
+          var url = (itemDoc.exists && itemDoc.data().url) ? itemDoc.data().url : fallbackUrl;
+          applyBannerUrl(url);
+        }
+      }).catch(function() { applyBannerUrl(fallbackUrl); });
     }).catch(e => {
       console.warn("[Sidebar] Erro ao carregar banner:", e);
     });
