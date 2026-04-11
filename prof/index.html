@@ -27,7 +27,6 @@ window.addEventListener("beforeinstallprompt", function(e) {
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -926,7 +925,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <div id="editor-upload-content">
           <span style="font-size:40px;display:block;margin-bottom:8px">📁</span>
           <span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span>
-          <div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 10MB)</div>
+          <div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 750KB)</div>
         </div>
       </div>
       <input type="file" id="editor-file-input" accept="image/png,image/gif,image/jpeg,image/webp" style="display:none" onchange="editorHandleFile(this)">
@@ -2795,14 +2794,6 @@ let editorFile = null;
 let editorFileUrl = null;
 let editorType = null;
 let editorPublishedItems = [];
-let storageRef = null;
-
-try {
-  storageRef = firebase.storage();
-  console.log("[Editor] Firebase Storage OK");
-} catch(e) {
-  console.warn("[Editor] Storage não disponível:", e);
-}
 
 function editorHandleFile(input) {
   const file = input.files[0];
@@ -2814,8 +2805,8 @@ function editorHandleFile(input) {
     input.value = "";
     return;
   }
-  if (file.size > 10 * 1024 * 1024) {
-    showToast("❌ Arquivo muito grande (máx. 10MB)");
+  if (file.size > 750 * 1024) {
+    showToast("❌ Arquivo muito grande (máx. 750KB)");
     input.value = "";
     return;
   }
@@ -2886,8 +2877,8 @@ function editorUpdatePreview() {
 
 async function editorPublish() {
   if (!firebaseOk) { showToast("❌ Firebase não disponível"); return; }
-  if (!storageRef) { showToast("❌ Storage não disponível"); return; }
   if (!editorFile) { showToast("⚠️ Envie uma imagem primeiro"); return; }
+  if (!editorFileUrl) { showToast("⚠️ Aguarde o carregamento da imagem"); return; }
   if (!editorType) { showToast("⚠️ Selecione o tipo do item"); return; }
 
   const nome = document.getElementById("editor-item-nome").value.trim();
@@ -2898,24 +2889,14 @@ async function editorPublish() {
 
   const btn = document.getElementById("btn-editor-publish");
   btn.disabled = true;
-  btn.textContent = "Enviando imagem...";
+  btn.textContent = "Publicando...";
 
   try {
-    const ext = editorFile.name.split(".").pop();
-    const fileName = "cuts_" + editorType + "_" + Date.now() + "." + ext;
-    const ref = storageRef.ref("cuts_items/" + fileName);
-
-    const uploadTask = await ref.put(editorFile);
-    const url = await uploadTask.ref.getDownloadURL();
-    console.log("[Editor] Upload OK:", url);
-
-    btn.textContent = "Salvando...";
-
     await db.collection("cuts_items").add({
       nome: nome,
       tipo: editorType,
       preco: preco,
-      url: url,
+      url: editorFileUrl,
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -2939,7 +2920,7 @@ function editorResetForm() {
   document.getElementById("editor-file-input").value = "";
   document.getElementById("editor-item-nome").value = "";
   document.getElementById("editor-item-preco").value = "";
-  document.getElementById("editor-upload-content").innerHTML = '<span style="font-size:40px;display:block;margin-bottom:8px">📁</span><span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span><div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 10MB)</div>';
+  document.getElementById("editor-upload-content").innerHTML = '<span style="font-size:40px;display:block;margin-bottom:8px">📁</span><span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span><div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 750KB)</div>';
   document.getElementById("editor-upload-zone").style.borderColor = "rgba(255,255,255,.15)";
   document.getElementById("editor-upload-zone").style.borderStyle = "dashed";
   document.getElementById("editor-img-preview").style.display = "none";
