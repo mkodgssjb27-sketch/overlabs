@@ -150,13 +150,16 @@ function renderInventory() {
     return;
   }
 
-  // Agrupar por tipo
+  // Agrupar por tipo (usa dados salvos no inventário, fallback para allItems para compras antigas)
   const groups = {};
   myInventory.forEach(inv => {
-    const item = allItems.find(i => i.id === inv.itemId);
-    if (!item) return;
-    if (!groups[item.tipo]) groups[item.tipo] = [];
-    groups[item.tipo].push({ ...item, docId: inv.docId, equipado: inv.equipado });
+    const fromShop = allItems.find(i => i.id === inv.itemId);
+    const nome = inv.nome || (fromShop && fromShop.nome) || "Item";
+    const url = inv.url || (fromShop && fromShop.url) || "";
+    const tipo = inv.tipo || (fromShop && fromShop.tipo) || "outro";
+    if (!url) return;
+    if (!groups[tipo]) groups[tipo] = [];
+    groups[tipo].push({ id: inv.itemId, nome, url, tipo, docId: inv.docId, equipado: inv.equipado });
   });
 
   const tipoLabels = { avatar: "🖼️ Avatares", moldura: "🖼️ Molduras", banner: "🌄 Banners", emblema: "🏅 Emblemas" };
@@ -288,11 +291,14 @@ async function confirmPurchase() {
       cuts: firebase.firestore.FieldValue.increment(-selectedItem.preco)
     });
 
-    // Adicionar ao inventário
+    // Adicionar ao inventário (salvar dados completos do item para persistir mesmo se removido da loja)
     const invRef = db.collection("cuts_inventory").doc();
     batch.set(invRef, {
       userId: currentUser.id,
       itemId: selectedItem.id,
+      nome: selectedItem.nome,
+      url: selectedItem.url,
+      tipo: selectedItem.tipo,
       equipado: false,
       compradoEm: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -329,7 +335,9 @@ async function toggleEquip(itemId, tipo) {
     const inv = myInventory.find(i => i.itemId === itemId);
     if (!inv) return;
 
-    const item = allItems.find(a => a.id === itemId);
+    // Dados do item: preferir allItems (loja), fallback para dados salvos no inventário
+    const fromShop = allItems.find(a => a.id === itemId);
+    const itemUrl = (fromShop && fromShop.url) || inv.url || "";
 
     if (inv.equipado) {
       // Desequipar
@@ -357,8 +365,8 @@ async function toggleEquip(itemId, tipo) {
     } else {
       // Desequipar outros do mesmo tipo primeiro
       const sameType = myInventory.filter(i => {
-        const it = allItems.find(a => a.id === i.itemId);
-        return it && it.tipo === tipo && i.equipado;
+        const t = i.tipo || (allItems.find(a => a.id === i.itemId) || {}).tipo;
+        return t === tipo && i.equipado;
       });
 
       const batch = db.batch();
@@ -370,17 +378,17 @@ async function toggleEquip(itemId, tipo) {
       batch.update(db.collection("cuts_inventory").doc(inv.docId), { equipado: true });
 
       // Se for avatar, trocar foto de perfil
-      if (tipo === "avatar" && item && item.url) {
+      if (tipo === "avatar" && itemUrl) {
         const userDoc = await db.collection("users").doc(currentUser.id).get();
         const userData = userDoc.data();
         // Salvar foto pessoal original (nunca sobrescrever com URL de avatar)
-        const updateData = { photoURL: item.url, equippedAvatarItemId: itemId };
+        const updateData = { photoURL: itemUrl, equippedAvatarItemId: itemId };
         if (!userData.originalPhotoURL || !userData.equippedAvatarItemId) {
           // Salvar foto atual como original só se não tem avatar equipado
           if (userData.photoURL) updateData.originalPhotoURL = userData.photoURL;
         }
         batch.update(db.collection("users").doc(currentUser.id), updateData);
-        localStorage.setItem("carolampra_photo", item.url);
+        localStorage.setItem("carolampra_photo", itemUrl);
       }
 
       await batch.commit();
