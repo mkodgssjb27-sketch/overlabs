@@ -460,21 +460,25 @@ input,select{font-family:inherit;outline:none}
 <!-- ══ SIDEBAR DO PERFIL ════════════════════════════════════════════ -->
 <div id="profile-sidebar-overlay" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.6)" onclick="closeSidebar()"></div>
 <div id="profile-sidebar" style="position:fixed;top:0;left:-300px;width:280px;height:100%;background:#0f172a;z-index:501;transition:left .3s ease;overflow-y:auto;border-right:1px solid rgba(255,255,255,.06)">
-  <!-- Área do perfil -->
-  <div style="padding:36px 20px 24px;text-align:center;background:linear-gradient(180deg,rgba(15,23,42,1) 0%,rgba(15,23,42,.95) 100%)">
-    <div style="width:100px;height:100px;border-radius:50%;margin:0 auto 16px;position:relative;cursor:pointer" onclick="document.getElementById('photo-input').click()">
-      <div style="width:100%;height:100%;border-radius:50%;overflow:hidden;border:3px solid #f59e0b;background:#1a1a2e;display:flex;align-items:center;justify-content:center">
-        <div id="sidebar-photo" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff"></div>
+  <!-- Área do perfil / Banner -->
+  <div id="sidebar-banner-area" style="padding:40px 20px 24px;text-align:center;position:relative;overflow:hidden;min-height:200px;background:#1a1a2e">
+    <div id="sidebar-banner-bg" style="position:absolute;inset:0;background-size:cover;background-position:center;z-index:0"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,23,42,.3) 0%,rgba(15,23,42,.85) 100%);z-index:1"></div>
+    <div style="position:relative;z-index:2">
+      <div style="width:150px;height:150px;border-radius:50%;margin:0 auto 16px;position:relative;cursor:pointer" onclick="document.getElementById('photo-input').click()">
+        <div style="width:100%;height:100%;border-radius:50%;overflow:hidden;border:3px solid #f59e0b;background:#1a1a2e;display:flex;align-items:center;justify-content:center">
+          <div id="sidebar-photo" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:800;color:#fff"></div>
+        </div>
+        <img id="sidebar-frame" src="" style="position:absolute;inset:-14%;width:128%;height:128%;pointer-events:none;z-index:2;display:none">
       </div>
-      <img id="sidebar-frame" src="" style="position:absolute;inset:-14%;width:128%;height:128%;pointer-events:none;z-index:2;display:none">
-    </div>
-    <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
-    <div style="font-weight:800;font-size:18px;color:#fff;letter-spacing:-.3px" id="sidebar-name">—</div>
-    <div style="font-size:13px;color:#64748b;margin-top:3px" id="sidebar-username">—</div>
-    <div style="margin-top:14px;display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.12);border:1.5px solid rgba(245,158,11,.25);border-radius:20px;padding:6px 16px">
-      <span style="font-size:16px">🪙</span>
-      <span style="font-weight:900;font-size:16px;color:#f59e0b" id="sidebar-cuts">0</span>
-      <span style="font-size:11px;font-weight:700;color:#f59e0b">CUTS</span>
+      <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
+      <div style="font-weight:800;font-size:18px;color:#fff;letter-spacing:-.3px;text-shadow:0 1px 4px rgba(0,0,0,.5)" id="sidebar-name">—</div>
+      <div style="font-size:13px;color:#94a3b8;margin-top:3px;text-shadow:0 1px 3px rgba(0,0,0,.4)" id="sidebar-username">—</div>
+      <div style="margin-top:14px;display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.12);border:1.5px solid rgba(245,158,11,.25);border-radius:20px;padding:6px 16px;backdrop-filter:blur(8px)">
+        <span style="font-size:16px">🪙</span>
+        <span style="font-weight:900;font-size:16px;color:#f59e0b" id="sidebar-cuts">0</span>
+        <span style="font-size:11px;font-weight:700;color:#f59e0b">CUTS</span>
+      </div>
     </div>
     <script>try{var _c=localStorage.getItem("carolampra_cuts");if(_c!=null)document.getElementById("sidebar-cuts").textContent=_c}catch(e){}</script>
   </div>
@@ -2235,6 +2239,34 @@ function applySidebarCustomization() {
     if (frame) { sidebarFrame.src = frame.imageURL; sidebarFrame.style.display = "block"; }
     else { sidebarFrame.style.display = "none"; }
   }
+
+  // Banner equipado do inventário (cuts_inventory)
+  applySidebarBanner();
+}
+
+function applySidebarBanner() {
+  const bannerBg = document.getElementById("sidebar-banner-bg");
+  if (!bannerBg) return;
+  // Buscar banner equipado do cuts_inventory
+  if (!firebaseOk || !currentUser) return;
+  db.collection("cuts_inventory")
+    .where("userId", "==", currentUser.id)
+    .where("tipo", "==", "banner")
+    .where("equipado", "==", true)
+    .limit(1)
+    .get().then(snap => {
+      if (snap.empty) {
+        bannerBg.style.backgroundImage = "";
+        return;
+      }
+      const banner = snap.docs[0].data();
+      const url = banner.url || "";
+      if (url) {
+        bannerBg.style.backgroundImage = "url(" + url + ")";
+      }
+    }).catch(e => {
+      console.warn("[Sidebar] Erro ao carregar banner:", e);
+    });
 }
 
 function loadUserCustomization() {
