@@ -445,6 +445,10 @@ input,select,textarea{font-family:inherit;outline:none}
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
       <div style="margin-bottom:18px">
+        <label class="lbl">TÍTULO DO TREINO</label>
+        <input type="text" class="inp" id="pres-title" placeholder="Ex: Arena Grussaí" maxlength="60" style="color-scheme:dark">
+      </div>
+      <div style="margin-bottom:18px">
         <label class="lbl">DATA DO TREINO</label>
         <input type="date" class="inp" id="pres-date" style="color-scheme:dark">
       </div>
@@ -516,6 +520,10 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
+      <div style="margin-bottom:18px">
+        <label class="lbl">TÍTULO DO TREINO</label>
+        <input type="text" class="inp" id="edit-pres-title" placeholder="Ex: Arena Grussaí" maxlength="60" style="color-scheme:dark">
+      </div>
       <div style="margin-bottom:18px">
         <label class="lbl">DATA DO TREINO</label>
         <input type="date" class="inp" id="edit-pres-date" style="color-scheme:dark">
@@ -2021,10 +2029,12 @@ function loadPresencaHistory() {
       if (!list) return;
       list.innerHTML = recent.map(a => {
         const cutsTag = a.cutsAwarded ? `<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:8px">🪙 +${a.cutsAwarded}</span>` : '';
+        const titleTag = a.title ? `<div style="color:#94a3b8;font-size:12px;font-weight:600;margin-top:2px">📍 ${a.title}</div>` : '';
         return `
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
           <div>
             <div style="font-weight:700;font-size:14px;color:#fff">${fmtShort(a.date)}${cutsTag}</div>
+            ${titleTag}
             <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} — ${a.timeEnd || ''}</div>
           </div>
           <button onclick="deletePresenca('${a.id}')" style="background:rgba(239,68,68,.12);color:#f87171;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">🗑</button>
@@ -2048,6 +2058,7 @@ async function savePresenca() {
   errEl.textContent = "";
 
   const cutsVal = parseInt(document.getElementById("pres-cuts").value) || 0;
+  const title = (document.getElementById("pres-title").value || "").trim();
 
   const btn = document.getElementById("btn-save-presenca");
   btn.disabled = true; btn.textContent = "Salvando...";
@@ -2060,6 +2071,7 @@ async function savePresenca() {
       timeEnd,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
+    if (title) presData.title = title;
     if (cutsVal > 0) presData.cutsAwarded = cutsVal;
     await db.collection("attendance").add(presData);
 
@@ -2076,6 +2088,7 @@ async function savePresenca() {
     }
 
     showToast(cutsVal > 0 ? `✅ Presença salva! 🪙 +${cutsVal} CUTS` : "✅ Presença salva!");
+    document.getElementById("pres-title").value = "";
     document.getElementById("pres-date").value = "";
     document.getElementById("pres-time-start").value = "";
     document.getElementById("pres-time-end").value = "";
@@ -2130,14 +2143,17 @@ function loadAllPresencas() {
       if (!list) return;
       list.innerHTML = items.map(a => {
         const cutsTag = a.cutsAwarded ? `<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:8px">🪙 +${a.cutsAwarded}</span>` : '';
+        const titleTag = a.title ? `<div style="color:#94a3b8;font-size:12px;font-weight:600;margin-top:2px">📍 ${a.title}</div>` : '';
+        const safeTitle = (a.title || '').replace(/'/g, "\\'");
         return `
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
           <div>
             <div style="font-weight:700;font-size:14px;color:#fff">${fmtShort(a.date)}${cutsTag}</div>
+            ${titleTag}
             <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} — ${a.timeEnd || ''}</div>
           </div>
           <div style="display:flex;gap:6px">
-            <button onclick="openEditPresenca('${a.id}','${a.date}','${a.timeStart || ''}','${a.timeEnd || ''}')" style="background:rgba(56,189,248,.12);color:#38bdf8;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">✏️</button>
+            <button onclick="openEditPresenca('${a.id}','${a.date}','${a.timeStart || ''}','${a.timeEnd || ''}','${safeTitle}')" style="background:rgba(56,189,248,.12);color:#38bdf8;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">✏️</button>
             <button onclick="deletePresencaFromList('${a.id}')" style="background:rgba(239,68,68,.12);color:#f87171;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">🗑</button>
           </div>
         </div>`;
@@ -2145,8 +2161,9 @@ function loadAllPresencas() {
     }).catch(e => console.error(e));
 }
 
-function openEditPresenca(id, date, timeStart, timeEnd) {
+function openEditPresenca(id, date, timeStart, timeEnd, title) {
   editPresencaId = id;
+  document.getElementById("edit-pres-title").value = title || '';
   document.getElementById("edit-pres-date").value = date;
   document.getElementById("edit-pres-time-start").value = timeStart;
   document.getElementById("edit-pres-time-end").value = timeEnd;
@@ -2169,7 +2186,11 @@ async function updatePresenca() {
   const btn = document.getElementById("btn-update-presenca");
   btn.disabled = true; btn.textContent = "Salvando...";
   try {
-    await db.collection("attendance").doc(editPresencaId).update({ date, timeStart, timeEnd });
+    const updateData = { date, timeStart, timeEnd };
+    const editTitle = (document.getElementById("edit-pres-title").value || "").trim();
+    if (editTitle) updateData.title = editTitle;
+    else updateData.title = firebase.firestore.FieldValue.delete();
+    await db.collection("attendance").doc(editPresencaId).update(updateData);
     showToast("✅ Presença atualizada!");
     openGerenciarPresencas();
   } catch(e) {
@@ -2242,14 +2263,18 @@ function loadRelatorio() {
       }
 
       if (list) {
-        list.innerHTML = items.map(a => `
+        list.innerHTML = items.map(a => {
+          const titleTag = a.title ? `<div style="color:#94a3b8;font-size:12px;font-weight:600;margin-top:2px">📍 ${a.title}</div>` : '';
+          return `
           <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
             <div>
               <div style="font-weight:700;font-size:14px;color:#fff">${fmtShort(a.date)}</div>
+              ${titleTag}
               <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} — ${a.timeEnd || ''}</div>
             </div>
             <span style="color:#22c55e;font-size:13px;font-weight:700">✅ Presente</span>
-          </div>`).join("");
+          </div>`;
+        }).join("");
       }
     }).catch(e => {
       console.error(e);
