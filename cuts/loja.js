@@ -408,13 +408,17 @@ async function toggleEquip(itemId, tipo) {
       if (tipo === "avatar" && itemUrl) {
         const userDoc = await db.collection("users").doc(currentUser.id).get();
         const userData = userDoc.data();
+        // Para GIFs com chunks: salvar thumbnail no Firestore, guardar GIF completo no localStorage
+        const isChunked = fromShop && fromShop.chunked;
+        const photoForFirestore = isChunked ? (fromShop.url || itemUrl) : itemUrl;
         // Salvar foto pessoal original (nunca sobrescrever com URL de avatar)
-        const updateData = { photoURL: itemUrl, equippedAvatarItemId: itemId };
+        const updateData = { photoURL: photoForFirestore, equippedAvatarItemId: itemId };
         if (!userData.originalPhotoURL || !userData.equippedAvatarItemId) {
           // Salvar foto atual como original só se não tem avatar equipado
           if (userData.photoURL) updateData.originalPhotoURL = userData.photoURL;
         }
         batch.update(db.collection("users").doc(currentUser.id), updateData);
+        // No localStorage, salvar GIF completo para exibição animada
         localStorage.setItem("carolampra_photo", itemUrl);
       }
 

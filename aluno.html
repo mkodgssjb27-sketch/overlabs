@@ -684,14 +684,45 @@ function closeLojaOverlay() {
   // Atualizar foto caso tenha mudado na loja
   if (firebaseOk && currentUser) {
     db.collection('users').doc(currentUser.id).get().then(doc => {
-      if (doc.exists && doc.data().photoURL) {
-        localStorage.setItem('carolampra_photo', doc.data().photoURL);
+      if (!doc.exists) return;
+      const data = doc.data();
+      if (data.equippedAvatarItemId) {
+        // Avatar equipado — se o localStorage tem GIF completo (salvo pelo iframe da loja), manter
+        // Caso contrário, carregar chunks do avatar equipado
+        loadEquippedAvatarGif(data.equippedAvatarItemId, data.photoURL);
+      } else if (data.photoURL) {
+        localStorage.setItem('carolampra_photo', data.photoURL);
         updateAllAvatars();
-      } else if (doc.exists && !doc.data().photoURL) {
+      } else {
         localStorage.removeItem('carolampra_photo');
         updateAllAvatars();
       }
     });
+  }
+}
+
+// Carrega GIF completo de avatar equipado (com chunks) para exibir animado
+async function loadEquippedAvatarGif(itemId, fallbackUrl) {
+  try {
+    // Verificar se o item tem chunks
+    const itemDoc = await db.collection('cuts_items').doc(itemId).get();
+    if (itemDoc.exists && itemDoc.data().chunked) {
+      const snap = await db.collection('cuts_items').doc(itemId).collection('chunks').get();
+      if (!snap.empty) {
+        const sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+        const fullGif = sorted.map(d => d.data().data).join('');
+        localStorage.setItem('carolampra_photo', fullGif);
+        updateAllAvatars();
+        return;
+      }
+    }
+    // Sem chunks — usar URL direto
+    if (fallbackUrl) localStorage.setItem('carolampra_photo', fallbackUrl);
+    updateAllAvatars();
+  } catch(e) {
+    console.error('[Avatar] Erro ao carregar GIF:', e);
+    if (fallbackUrl) localStorage.setItem('carolampra_photo', fallbackUrl);
+    updateAllAvatars();
   }
 }
 const firebaseConfig = {
@@ -916,10 +947,15 @@ function enterStudentApp() {
       const cutsEl = document.getElementById("sidebar-cuts");
       if (cutsEl) cutsEl.textContent = cutsVal;
       localStorage.setItem("carolampra_cuts", cutsVal);
-      // Foto
-      if (d.photoURL) {
+      // Foto — se avatar equipado com chunks, não sobrescrever GIF do localStorage com thumbnail
+      if (d.photoURL && !d.equippedAvatarItemId) {
         localStorage.setItem("carolampra_photo", d.photoURL);
         updateAllAvatars();
+      } else if (d.photoURL && d.equippedAvatarItemId) {
+        // Tem avatar equipado: só atualizar se localStorage estiver vazio
+        if (!localStorage.getItem("carolampra_photo")) {
+          loadEquippedAvatarGif(d.equippedAvatarItemId, d.photoURL);
+        }
       }
     }, () => {});
     // Ao voltar do background, forçar refresh dos dados
@@ -2273,7 +2309,9 @@ if (currentUser && firebaseOk) {
     registerFCMToken();
     // Load photo from Firestore if not in localStorage
     if (!localStorage.getItem("carolampra_photo")) {
-      if (doc.data().photoURL) {
+      if (doc.data().equippedAvatarItemId) {
+        loadEquippedAvatarGif(doc.data().equippedAvatarItemId, doc.data().photoURL);
+      } else if (doc.data().photoURL) {
         localStorage.setItem("carolampra_photo", doc.data().photoURL);
         updateAllAvatars();
       }
