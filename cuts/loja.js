@@ -127,7 +127,7 @@ function renderItems() {
     const owned = ownedIds.has(item.id);
     return `
       <div class="loja-item ${owned ? 'owned' : ''}" onclick="openBuyModal('${item.id}')">
-        <img class="item-img" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}" loading="lazy">
+        <img class="item-img" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}">
         <div class="item-info">
           <div class="item-name">${escapeHtml(item.nome)}</div>
           <div class="item-type">${escapeHtml(item.tipo)}</div>
@@ -167,7 +167,7 @@ function renderInventory() {
     items.forEach(item => {
       html += `
         <div class="inv-item ${item.equipado ? 'equipped' : ''}" onclick="toggleEquip('${item.id}', '${tipo}')">
-          <img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}" loading="lazy">
+          <img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}">
           <div class="inv-name">${escapeHtml(item.nome)}</div>
         </div>
       `;
