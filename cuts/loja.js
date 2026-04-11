@@ -79,18 +79,22 @@ function updateSaldoUI() {
 
 // ── Listener tempo real dos itens da loja (cuts_items) ──
 function loadItems() {
-  if (!firebaseOk) return;
-  db.collection("cuts_items").orderBy("criadoEm", "desc").onSnapshot(snap => {
-    allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    console.log("[Loja] Itens atualizados:", allItems.length);
-    renderItems();
-    if (myInventory.length) renderInventory();
-    // Carregar chunks de itens grandes em background
-    loadChunkedUrls();
-  }, err => {
-    console.error("[Loja] Erro ao ouvir itens:", err);
-    document.getElementById("items-grid").innerHTML =
-      '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar itens</p></div>';
+  if (!firebaseOk) return Promise.resolve();
+  return new Promise(function(resolve) {
+    var first = true;
+    db.collection("cuts_items").orderBy("criadoEm", "desc").onSnapshot(snap => {
+      allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      console.log("[Loja] Itens atualizados:", allItems.length);
+      renderItems();
+      if (myInventory.length) renderInventory();
+      loadChunkedUrls();
+      if (first) { first = false; resolve(); }
+    }, err => {
+      console.error("[Loja] Erro ao ouvir itens:", err);
+      document.getElementById("items-grid").innerHTML =
+        '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar itens</p></div>';
+      if (first) { first = false; resolve(); }
+    });
   });
 }
 
@@ -139,18 +143,23 @@ async function loadInventoryChunks() {
 
 // ── Listener tempo real do inventário do usuário ──
 function loadInventory() {
-  if (!firebaseOk || !currentUser) return;
-  db.collection("cuts_inventory")
-    .where("userId", "==", currentUser.id)
-    .onSnapshot(snap => {
-      myInventory = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
-      console.log("[Loja] Inventário atualizado:", myInventory.length, "itens");
-      renderInventory();
-      renderItems(); // Atualizar badges de "owned"
-      loadInventoryChunks(); // Carregar GIFs de itens removidos da loja
-    }, err => {
-      console.error("[Loja] Erro ao ouvir inventário:", err);
-    });
+  if (!firebaseOk || !currentUser) return Promise.resolve();
+  return new Promise(function(resolve) {
+    var first = true;
+    db.collection("cuts_inventory")
+      .where("userId", "==", currentUser.id)
+      .onSnapshot(snap => {
+        myInventory = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+        console.log("[Loja] Inventário atualizado:", myInventory.length, "itens");
+        renderInventory();
+        renderItems();
+        loadInventoryChunks();
+        if (first) { first = false; resolve(); }
+      }, err => {
+        console.error("[Loja] Erro ao ouvir inventário:", err);
+        if (first) { first = false; resolve(); }
+      });
+  });
 }
 
 // ── Render itens na grid ──
