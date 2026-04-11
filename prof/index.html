@@ -1110,6 +1110,8 @@ function startTeacherListener() {
         const r = allRides.find(r => r.id === currentDetailRideId);
         if (r) renderTeacherDetail(r);
       }
+      // Auto-fix: promover da fila de espera se houver vagas
+      allRides.forEach(r => autoFixWaitlist(r));
     }, err => {
       console.error(err);
       showToast("Erro ao carregar caronas");
@@ -1202,6 +1204,31 @@ async function createRide() {
     console.error(e);
   }
   btn.disabled = false; btn.textContent = "✓ Criar Carona";
+}
+
+// ── Auto-fix: promover fila de espera quando há vagas livres ──
+const _autoFixRunning = {};
+async function autoFixWaitlist(ride) {
+  if (!ride || !ride.id) return;
+  const booked = ride.booked || [], wl = ride.waitlist || [];
+  if (booked.length >= ride.seats || wl.length === 0) return;
+  if (_autoFixRunning[ride.id]) return;
+  _autoFixRunning[ride.id] = true;
+  try {
+    const rideRef = db.collection("rides").doc(ride.id);
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) return;
+      const d = doc.data();
+      const cb = d.booked || [], cw = d.waitlist || [];
+      const free = (d.seats || 0) - cb.length;
+      if (free <= 0 || cw.length === 0) return;
+      const qty = Math.min(free, cw.length);
+      tx.update(rideRef, { booked: [...cb, ...cw.slice(0, qty)], waitlist: cw.slice(qty) });
+      console.log("[AutoFix] Promovidos", qty, "aluno(s) na carona", d.title);
+    });
+  } catch(e) { console.warn("[AutoFix]", e); }
+  finally { delete _autoFixRunning[ride.id]; }
 }
 
 // ── Detalhe da Carona ──
