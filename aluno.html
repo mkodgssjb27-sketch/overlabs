@@ -1735,6 +1735,26 @@ function handlePhotoUpload(event) {
 }
 
 function compressImage(file, maxSize, quality, callback) {
+  // Método moderno: createImageBitmap (melhor em celulares)
+  if (typeof createImageBitmap === "function") {
+    createImageBitmap(file).then(bmp => {
+      const canvas = document.createElement("canvas");
+      let w = bmp.width, h = bmp.height;
+      if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
+      else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(bmp, 0, 0, w, h);
+      bmp.close();
+      const result = canvas.toDataURL("image/jpeg", quality);
+      callback(result);
+    }).catch(() => compressImageFallback(file, maxSize, quality, callback));
+    return;
+  }
+  compressImageFallback(file, maxSize, quality, callback);
+}
+
+function compressImageFallback(file, maxSize, quality, callback) {
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
@@ -1748,25 +1768,15 @@ function compressImage(file, maxSize, quality, callback) {
         else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
         canvas.width = w;
         canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, w, h);
-        ctx.drawImage(img, 0, 0, w, h);
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
         const result = canvas.toDataURL("image/jpeg", quality);
-        if (result && result.length > 100) {
-          callback(result);
-        } else {
-          callback(e.target.result);
-        }
+        callback(result);
       } catch(err) {
         console.error("Compress error:", err);
         callback(e.target.result);
       }
     };
-    img.onerror = () => {
-      console.warn("Image load failed, using raw base64");
-      callback(e.target.result);
-    };
+    img.onerror = () => callback(e.target.result);
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
