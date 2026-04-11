@@ -1770,6 +1770,35 @@ function compressImage(file, maxSize, quality, callback) {
 }
 
 function readFileRaw(file, callback) {
+  // Se for GIF, forçar conversão para JPEG estático (primeiro frame)
+  if (file.type === "image/gif") {
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function() {
+      try {
+        var c = document.createElement("canvas");
+        c.width = img.naturalWidth || 300;
+        c.height = img.naturalHeight || 300;
+        c.getContext("2d").drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        if (c.toBlob) {
+          c.toBlob(function(blob) {
+            if (!blob) { doRaw(); return; }
+            var fr = new FileReader();
+            fr.onload = function() { callback(fr.result); };
+            fr.onerror = function() { doRaw(); };
+            fr.readAsDataURL(blob);
+          }, "image/jpeg", 0.85);
+        } else {
+          callback(c.toDataURL("image/jpeg", 0.85));
+        }
+      } catch(e) { URL.revokeObjectURL(url); doRaw(); }
+    };
+    img.onerror = function() { URL.revokeObjectURL(url); doRaw(); };
+    img.src = url;
+    function doRaw() { var r = new FileReader(); r.onload = function(){ callback(r.result); }; r.onerror = function(){ callback(""); }; r.readAsDataURL(file); }
+    return;
+  }
   var r = new FileReader();
   r.onload = function() { callback(r.result); };
   r.onerror = function() { callback(""); };
