@@ -1764,20 +1764,36 @@ function handlePhotoUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
   if (!file.type.startsWith("image/")) { showToast("Selecione uma imagem"); return; }
-  compressImage(file, 300, 0.8, base64 => {
-    if (!base64 || base64.length < 100) { showToast("Erro ao processar imagem"); return; }
-    savePhotoToFirestore(base64);
-  });
+  // Ler via FileReader primeiro (confiável em todos os dispositivos)
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var raw = e.target.result;
+    if (!raw || raw.length < 100) { showToast("Erro ao processar imagem"); return; }
+    // Se for GIF, forçar estático via canvas
+    if (file.type === "image/gif") {
+      readFileRaw(file, function(b64) {
+        if (!b64 || b64.length < 100) { showToast("Erro ao processar imagem"); return; }
+        savePhotoToFirestore(b64);
+      });
+      return;
+    }
+    // Comprimir a partir do base64 (não do objectURL)
+    compressImageFromBase64(raw, 300, 0.8, function(compressed) {
+      var final64 = (compressed && compressed.length > 100) ? compressed : raw;
+      savePhotoToFirestore(final64);
+    });
+  };
+  reader.onerror = function() { showToast("Erro ao ler imagem"); };
+  reader.readAsDataURL(file);
 }
 
-function compressImage(file, maxSize, quality, callback) {
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = () => {
+function compressImageFromBase64(base64src, maxSize, quality, callback) {
+  var img = new Image();
+  img.onload = function() {
     try {
-      const canvas = document.createElement("canvas");
-      let w = img.naturalWidth, h = img.naturalHeight;
-      if (!w || !h) { URL.revokeObjectURL(url); readFileRaw(file, callback); return; }
+      var canvas = document.createElement("canvas");
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) { callback(""); return; }
       if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
       else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
       canvas.width = w;
@@ -1786,26 +1802,21 @@ function compressImage(file, maxSize, quality, callback) {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
-      URL.revokeObjectURL(url);
-      // toBlob é mais confiável que toDataURL em Android
       if (canvas.toBlob) {
         canvas.toBlob(function(blob) {
-          if (!blob) { readFileRaw(file, callback); return; }
+          if (!blob) { callback(""); return; }
           var r = new FileReader();
           r.onload = function() { callback(r.result); };
-          r.onerror = function() { readFileRaw(file, callback); };
+          r.onerror = function() { callback(""); };
           r.readAsDataURL(blob);
         }, "image/jpeg", quality);
       } else {
         callback(canvas.toDataURL("image/jpeg", quality));
       }
-    } catch(e) {
-      URL.revokeObjectURL(url);
-      readFileRaw(file, callback);
-    }
+    } catch(e) { callback(""); }
   };
-  img.onerror = () => { URL.revokeObjectURL(url); readFileRaw(file, callback); };
-  img.src = url;
+  img.onerror = function() { callback(""); };
+  img.src = base64src;
 }
 
 function readFileRaw(file, callback) {
