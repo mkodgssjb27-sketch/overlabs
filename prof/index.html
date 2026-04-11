@@ -3122,10 +3122,10 @@ function editorApplyFrameAdjust() {
   // Aplicar no preview — tamanho e posição via CSS
   simFrame.style.width = sc + "%";
   simFrame.style.height = sc + "%";
+  simFrame.style.inset = "auto";
   var offset = -(sc - 100) / 2;
   simFrame.style.left = (offset + ox) + "%";
   simFrame.style.top = (offset + oy) + "%";
-  simFrame.style.inset = "auto";
   simFrame.style.transform = rot ? ("rotate(" + rot + "deg)") : "";
 }
 
