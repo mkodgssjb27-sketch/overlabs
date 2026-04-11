@@ -2897,18 +2897,8 @@ function editorHandleFile(input) {
 
   editorFile = file;
 
-  // GIF: ler direto (preservar animação)
-  if (file.type === "image/gif") {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      editorFileUrl = e.target.result;
-      editorShowUploadResult(file);
-    };
-    reader.readAsDataURL(file);
-    return;
-  }
-
-  // PNG/JPG/WebP: ler como base64 primeiro, comprimir só se necessário
+  // Todos os tipos (PNG/JPG/WebP/GIF): ler direto via FileReader
+  // O sistema de chunks no publish cuida de arquivos grandes automaticamente
   var reader = new FileReader();
   reader.onload = function(e) {
     var base64 = e.target.result;
@@ -2917,67 +2907,14 @@ function editorHandleFile(input) {
       input.value = ""; editorFile = null;
       return;
     }
-    // Se cabe no Firestore, usar direto sem compressão
-    if (base64.length <= 800000) {
-      editorFileUrl = base64;
-      editorShowUploadResult(file);
-      return;
-    }
-    // Grande: comprimir via canvas
-    editorCompressImage(base64, 800, 0.85, function(compressed) {
-      if (!compressed || compressed.length < 100) {
-        // Fallback: usar original (será salvo com chunks)
-        editorFileUrl = base64;
-        editorShowUploadResult(file);
-        return;
-      }
-      if (compressed.length > 800000) {
-        // Ainda grande: usar original (será salvo com chunks pelo publish)
-        editorFileUrl = base64;
-        editorShowUploadResult(file);
-        return;
-      }
-      editorFileUrl = compressed;
-      editorShowUploadResult(file);
-    });
+    editorFileUrl = base64;
+    editorShowUploadResult(file);
   };
   reader.onerror = function() {
     showToast("❌ Erro ao ler arquivo");
     input.value = ""; editorFile = null;
   };
   reader.readAsDataURL(file);
-}
-
-function editorCompressImage(base64src, maxSize, quality, callback) {
-  var img = new Image();
-  img.onload = function() {
-    try {
-      var canvas = document.createElement("canvas");
-      var w = img.naturalWidth, h = img.naturalHeight;
-      if (!w || !h) { callback(""); return; }
-      if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
-      else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
-      canvas.width = w;
-      canvas.height = h;
-      var ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0, w, h);
-      if (canvas.toBlob) {
-        canvas.toBlob(function(blob) {
-          if (!blob) { callback(""); return; }
-          var r = new FileReader();
-          r.onload = function() { callback(r.result); };
-          r.onerror = function() { callback(""); };
-          r.readAsDataURL(blob);
-        }, "image/jpeg", quality);
-      } else {
-        callback(canvas.toDataURL("image/jpeg", quality));
-      }
-    } catch(e) { callback(""); }
-  };
-  img.onerror = function() { callback(""); };
-  img.src = base64src;
 }
 
 function editorShowUploadResult(file) {
