@@ -408,9 +408,20 @@ async function toggleEquip(itemId, tipo) {
       if (tipo === "avatar" && itemUrl) {
         const userDoc = await db.collection("users").doc(currentUser.id).get();
         const userData = userDoc.data();
-        // Para GIFs com chunks: salvar thumbnail no Firestore, guardar GIF completo no localStorage
-        const isChunked = fromShop && fromShop.chunked;
-        const photoForFirestore = isChunked ? (fromShop.url || itemUrl) : itemUrl;
+        // Detectar se é chunked: chunkCache tem a URL completa, ou o item da loja tem flag chunked
+        const isChunked = !!chunkCache[itemId] || (fromShop && fromShop.chunked);
+        // Para chunked: salvar thumbnail (do doc principal) no Firestore; para normal: salvar url direto
+        let photoForFirestore;
+        if (isChunked) {
+          // Thumbnail: pegar do fromShop.url (que é o thumbnail), ou do inv.url
+          photoForFirestore = (fromShop && fromShop.url) || inv.url || "";
+        } else {
+          photoForFirestore = itemUrl;
+        }
+        // Segurança: se photoURL ainda é muito grande (>800KB), não salvar no Firestore
+        if (photoForFirestore.length > 800000) {
+          photoForFirestore = "";
+        }
         // Salvar foto pessoal original (nunca sobrescrever com URL de avatar)
         const updateData = { photoURL: photoForFirestore, equippedAvatarItemId: itemId };
         if (!userData.originalPhotoURL || !userData.equippedAvatarItemId) {
