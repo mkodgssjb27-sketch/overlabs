@@ -28,7 +28,7 @@ messaging.onBackgroundMessage(payload => {
   return self.registration.showNotification(title, options);
 });
 
-const CACHE_NAME = "overlabs-v82";
+const CACHE_NAME = "overlabs-v83";
 const URLS_TO_CACHE = [
   "./aluno.html",
   "./manifest.json",
@@ -48,11 +48,13 @@ self.addEventListener("install", event => {
   );
 });
 
-// Remove apenas caches antigos do aluno (overlabs-*)
+// Remove apenas caches antigos do aluno (overlabs-*) e limpa entradas de /prof/
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k.startsWith("overlabs-") && k !== CACHE_NAME).map(k => caches.delete(k)))
+    ).then(() => caches.open(CACHE_NAME)).then(cache =>
+      cache.keys().then(reqs => Promise.all(reqs.filter(r => r.url.includes("/prof/")).map(r => cache.delete(r))))
     ).then(() => self.clients.claim())
   );
 });
@@ -77,8 +79,9 @@ self.addEventListener("notificationclick", event => {
   );
 });
 
-// Network first, fallback to cache
+// Network first, fallback to cache (ignora requests do /prof/)
 self.addEventListener("fetch", event => {
+  if (event.request.url.includes("/prof/")) return;
   event.respondWith(
     fetch(event.request)
       .then(response => {
