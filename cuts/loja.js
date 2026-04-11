@@ -404,9 +404,36 @@ async function toggleEquip(itemId, tipo) {
     const inv = myInventory.find(i => i.itemId === itemId);
     if (!inv) return;
 
+    // Se é chunked e não está no cache, carregar agora antes de tudo
+    let isChunked = inv.chunked || (allItems.find(a => a.id === itemId) || {}).chunked;
+    if (isChunked && !chunkCache[itemId]) {
+      // Tentar da loja primeiro
+      let loaded = false;
+      try {
+        const shopSnap = await db.collection("cuts_items").doc(itemId).collection("chunks").get();
+        if (!shopSnap.empty) {
+          const sorted = shopSnap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+          chunkCache[itemId] = sorted.map(d => d.data().data).join("");
+          loaded = true;
+        }
+      } catch(e) {}
+      // Fallback: chunks do inventário
+      if (!loaded) {
+        try {
+          const invSnap = await db.collection("cuts_inventory").doc(inv.docId).collection("chunks").get();
+          if (!invSnap.empty) {
+            const sorted = invSnap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+            chunkCache[itemId] = sorted.map(d => d.data().data).join("");
+          }
+        } catch(e) {}
+      }
+    }
+
     // Dados do item: preferir chunkCache (URL completa), depois allItems, fallback para inventário
     const fromShop = allItems.find(a => a.id === itemId);
     const itemUrl = chunkCache[itemId] || (fromShop && fromShop.url) || inv.url || "";
+    // Atualizar flag após possível carregamento de chunks
+    if (chunkCache[itemId]) isChunked = true;
 
     if (inv.equipado) {
       // Desequipar
@@ -451,7 +478,6 @@ async function toggleEquip(itemId, tipo) {
         const userDoc = await db.collection("users").doc(currentUser.id).get();
         const userData = userDoc.data();
         // Detectar se é chunked: chunkCache tem a URL completa, ou o item da loja/inventário tem flag chunked
-        const isChunked = !!chunkCache[itemId] || (fromShop && fromShop.chunked) || inv.chunked;
         // Para chunked: salvar thumbnail (do doc principal) no Firestore; para normal: salvar url direto
         let photoForFirestore;
         if (isChunked) {
