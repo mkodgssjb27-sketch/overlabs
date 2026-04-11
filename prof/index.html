@@ -940,7 +940,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <div id="editor-upload-content">
           <span style="font-size:40px;display:block;margin-bottom:8px">📁</span>
           <span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span>
-          <div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 750KB)</div>
+          <div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 5MB)</div>
         </div>
       </div>
       <input type="file" id="editor-file-input" accept="image/png,image/gif,image/jpeg,image/webp" style="display:none" onchange="editorHandleFile(this)">
@@ -2889,28 +2889,99 @@ function editorHandleFile(input) {
     input.value = "";
     return;
   }
-  if (file.size > 750 * 1024) {
-    showToast("❌ Arquivo muito grande (máx. 750KB)");
+  if (file.size > 5 * 1024 * 1024) {
+    showToast("❌ Arquivo muito grande (máx. 5MB)");
     input.value = "";
     return;
   }
 
   editorFile = file;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    editorFileUrl = e.target.result;
-    // Atualizar UI do upload zone
-    const zone = document.getElementById("editor-upload-content");
-    zone.innerHTML = `<span style="font-size:30px;display:block;margin-bottom:6px">✅</span><span style="color:#22c55e;font-size:13px;font-weight:700">${file.name}</span><div style="color:#64748b;font-size:11px;margin-top:4px">${(file.size / 1024).toFixed(1)} KB — ${file.type}</div>`;
-    document.getElementById("editor-upload-zone").style.borderColor = "#f59e0b";
-    document.getElementById("editor-upload-zone").style.borderStyle = "solid";
-    // Preview
-    const prev = document.getElementById("editor-img-preview");
-    document.getElementById("editor-img-preview-src").src = editorFileUrl;
-    prev.style.display = "block";
-    editorUpdatePreview();
+
+  // GIF: ler direto (preservar animação), mas limitar base64 a ~900KB
+  if (file.type === "image/gif") {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (e.target.result.length > 900 * 1024) {
+        showToast("❌ GIF muito grande para a loja. Reduza para menos de ~700KB.");
+        input.value = ""; editorFile = null;
+        return;
+      }
+      editorFileUrl = e.target.result;
+      editorShowUploadResult(file);
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+
+  // PNG/JPG/WebP: comprimir via canvas para caber no Firestore
+  editorCompressImage(file, 800, 0.85, function(base64) {
+    if (!base64 || base64.length < 100) {
+      showToast("❌ Erro ao processar imagem");
+      input.value = ""; editorFile = null;
+      return;
+    }
+    // Se ainda grande, tentar com qualidade menor
+    if (base64.length > 900 * 1024) {
+      editorCompressImage(file, 600, 0.7, function(base64b) {
+        if (base64b.length > 900 * 1024) {
+          showToast("❌ Imagem muito grande mesmo comprimida. Use uma menor.");
+          input.value = ""; editorFile = null;
+          return;
+        }
+        editorFileUrl = base64b;
+        editorShowUploadResult(file);
+      });
+      return;
+    }
+    editorFileUrl = base64;
+    editorShowUploadResult(file);
+  });
+}
+
+function editorCompressImage(file, maxSize, quality, callback) {
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+  img.onload = function() {
+    try {
+      var canvas = document.createElement("canvas");
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) { URL.revokeObjectURL(url); callback(""); return; }
+      if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
+      else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
+      canvas.width = w;
+      canvas.height = h;
+      var ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      if (canvas.toBlob) {
+        canvas.toBlob(function(blob) {
+          if (!blob) { callback(""); return; }
+          var r = new FileReader();
+          r.onload = function() { callback(r.result); };
+          r.onerror = function() { callback(""); };
+          r.readAsDataURL(blob);
+        }, "image/jpeg", quality);
+      } else {
+        callback(canvas.toDataURL("image/jpeg", quality));
+      }
+    } catch(e) { URL.revokeObjectURL(url); callback(""); }
   };
-  reader.readAsDataURL(file);
+  img.onerror = function() { URL.revokeObjectURL(url); callback(""); };
+  img.src = url;
+}
+
+function editorShowUploadResult(file) {
+  var zone = document.getElementById("editor-upload-content");
+  var sizeKB = editorFileUrl ? (editorFileUrl.length / 1024).toFixed(1) : (file.size / 1024).toFixed(1);
+  zone.innerHTML = '<span style="font-size:30px;display:block;margin-bottom:6px">✅</span><span style="color:#22c55e;font-size:13px;font-weight:700">' + file.name + '</span><div style="color:#64748b;font-size:11px;margin-top:4px">' + sizeKB + ' KB (processado) — ' + file.type + '</div>';
+  document.getElementById("editor-upload-zone").style.borderColor = "#f59e0b";
+  document.getElementById("editor-upload-zone").style.borderStyle = "solid";
+  var prev = document.getElementById("editor-img-preview");
+  document.getElementById("editor-img-preview-src").src = editorFileUrl;
+  prev.style.display = "block";
+  editorUpdatePreview();
 }
 
 function editorSelectType(tipo) {
@@ -3004,7 +3075,7 @@ function editorResetForm() {
   document.getElementById("editor-file-input").value = "";
   document.getElementById("editor-item-nome").value = "";
   document.getElementById("editor-item-preco").value = "";
-  document.getElementById("editor-upload-content").innerHTML = '<span style="font-size:40px;display:block;margin-bottom:8px">📁</span><span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span><div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 750KB)</div>';
+  document.getElementById("editor-upload-content").innerHTML = '<span style="font-size:40px;display:block;margin-bottom:8px">📁</span><span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span><div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 5MB)</div>';
   document.getElementById("editor-upload-zone").style.borderColor = "rgba(255,255,255,.15)";
   document.getElementById("editor-upload-zone").style.borderStyle = "dashed";
   document.getElementById("editor-img-preview").style.display = "none";
