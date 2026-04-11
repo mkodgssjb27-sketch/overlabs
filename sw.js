@@ -28,10 +28,12 @@ messaging.onBackgroundMessage(payload => {
   return self.registration.showNotification(title, options);
 });
 
-const CACHE_NAME = "overlabs-v63";
+const CACHE_NAME = "overlabs-v64";
 const URLS_TO_CACHE = [
   "./aluno.html",
+  "./professor.html",
   "./manifest.json",
+  "./manifest-prof.json",
   "./logo.png",
   "./icon-192.png",
   "./icon-512.png",
