@@ -1,4 +1,4 @@
-const CACHE_NAME_PROF = "overlabs-prof-v12";
+const CACHE_NAME_PROF = "overlabs-prof-v13";
 const URLS_TO_CACHE_PROF = [
   "./professor.html",
   "./manifest-prof.json",

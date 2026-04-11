@@ -2269,7 +2269,7 @@ async function submitInscricao() {
 if ("serviceWorker" in navigator) {
   const hadController = !!navigator.serviceWorker.controller;
 
-  navigator.serviceWorker.register("sw.js", { scope: "./aluno", updateViaCache: "none" }).then(reg => {
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
     setInterval(() => reg.update(), 60000);
     reg.update();
     document.addEventListener("visibilitychange", () => {
