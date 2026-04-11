@@ -116,6 +116,27 @@ async function loadChunkedUrls() {
   }
 }
 
+// ── Carrega chunks de itens do inventário (para itens removidos da loja) ──
+async function loadInventoryChunks() {
+  const need = myInventory.filter(inv => inv.chunked && !chunkCache[inv.itemId]);
+  if (!need.length) return;
+  for (const inv of need) {
+    try {
+      const snap = await db.collection("cuts_inventory").doc(inv.docId)
+        .collection("chunks").get();
+      if (snap.empty) continue;
+      const sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+      chunkCache[inv.itemId] = sorted.map(d => d.data().data).join("");
+      console.log("[Loja] Chunks inventário carregados:", inv.nome);
+      document.querySelectorAll('img[data-item-id="' + inv.itemId + '"]').forEach(img => {
+        img.src = chunkCache[inv.itemId];
+      });
+    } catch(e) {
+      console.error("[Loja] Erro chunks inventário:", inv.docId, e);
+    }
+  }
+}
+
 // ── Listener tempo real do inventário do usuário ──
 function loadInventory() {
   if (!firebaseOk || !currentUser) return;
@@ -126,6 +147,7 @@ function loadInventory() {
       console.log("[Loja] Inventário atualizado:", myInventory.length, "itens");
       renderInventory();
       renderItems(); // Atualizar badges de "owned"
+      loadInventoryChunks(); // Carregar GIFs de itens removidos da loja
     }, err => {
       console.error("[Loja] Erro ao ouvir inventário:", err);
     });
@@ -320,7 +342,7 @@ async function confirmPurchase() {
     const invRef = db.collection("cuts_inventory").doc();
     // Para itens com chunks, salvar thumbnail (url do doc principal) no inventário
     const invUrl = selectedItem.chunked ? selectedItem.url : (chunkCache[selectedItem.id] || selectedItem.url);
-    batch.set(invRef, {
+    const invData = {
       userId: currentUser.id,
       itemId: selectedItem.id,
       nome: selectedItem.nome,
@@ -328,7 +350,9 @@ async function confirmPurchase() {
       tipo: selectedItem.tipo,
       equipado: false,
       compradoEm: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
+    if (selectedItem.chunked) invData.chunked = true;
+    batch.set(invRef, invData);
 
     // Registrar transação
     const txRef = db.collection("cuts_transactions").doc();
@@ -344,6 +368,24 @@ async function confirmPurchase() {
     await batch.commit();
 
     console.log("[Loja] Compra OK:", selectedItem.nome, "por", selectedItem.preco, "CUTS");
+
+    // Copiar chunks para o inventário (preserva GIF mesmo se removido da loja)
+    if (selectedItem.chunked) {
+      try {
+        const chunksSnap = await db.collection("cuts_items").doc(selectedItem.id)
+          .collection("chunks").get();
+        if (!chunksSnap.empty) {
+          for (const chunkDoc of chunksSnap.docs) {
+            await db.collection("cuts_inventory").doc(invRef.id)
+              .collection("chunks").doc(chunkDoc.id).set(chunkDoc.data());
+          }
+          console.log("[Loja] Chunks copiados para inventário:", chunksSnap.size);
+        }
+      } catch(e) {
+        console.error("[Loja] Erro copiando chunks para inventário:", e);
+      }
+    }
+
     showToast(`✅ ${selectedItem.nome} adquirido!`);
     closeBuyModal();
   } catch (e) {
@@ -408,8 +450,8 @@ async function toggleEquip(itemId, tipo) {
       if (tipo === "avatar" && itemUrl) {
         const userDoc = await db.collection("users").doc(currentUser.id).get();
         const userData = userDoc.data();
-        // Detectar se é chunked: chunkCache tem a URL completa, ou o item da loja tem flag chunked
-        const isChunked = !!chunkCache[itemId] || (fromShop && fromShop.chunked);
+        // Detectar se é chunked: chunkCache tem a URL completa, ou o item da loja/inventário tem flag chunked
+        const isChunked = !!chunkCache[itemId] || (fromShop && fromShop.chunked) || inv.chunked;
         // Para chunked: salvar thumbnail (do doc principal) no Firestore; para normal: salvar url direto
         let photoForFirestore;
         if (isChunked) {

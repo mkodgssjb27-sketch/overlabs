@@ -704,7 +704,7 @@ function closeLojaOverlay() {
 // Carrega GIF completo de avatar equipado (com chunks) para exibir animado
 async function loadEquippedAvatarGif(itemId, fallbackUrl) {
   try {
-    // Verificar se o item tem chunks
+    // 1. Tentar chunks da loja (cuts_items)
     const itemDoc = await db.collection('cuts_items').doc(itemId).get();
     if (itemDoc.exists && itemDoc.data().chunked) {
       const snap = await db.collection('cuts_items').doc(itemId).collection('chunks').get();
@@ -716,7 +716,26 @@ async function loadEquippedAvatarGif(itemId, fallbackUrl) {
         return;
       }
     }
-    // Sem chunks — usar URL direto
+    // 2. Item removido da loja — tentar chunks do inventário (cuts_inventory)
+    const invSnap = await db.collection('cuts_inventory')
+      .where('userId', '==', currentUser.id)
+      .where('itemId', '==', itemId)
+      .get();
+    if (!invSnap.empty) {
+      const invDoc = invSnap.docs[0];
+      if (invDoc.data().chunked) {
+        const chunkSnap = await db.collection('cuts_inventory').doc(invDoc.id)
+          .collection('chunks').get();
+        if (!chunkSnap.empty) {
+          const sorted = chunkSnap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+          const fullGif = sorted.map(d => d.data().data).join('');
+          localStorage.setItem('carolampra_photo', fullGif);
+          updateAllAvatars();
+          return;
+        }
+      }
+    }
+    // 3. Sem chunks — usar URL direto
     if (fallbackUrl) localStorage.setItem('carolampra_photo', fallbackUrl);
     updateAllAvatars();
   } catch(e) {
