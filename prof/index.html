@@ -2606,9 +2606,9 @@ function deleteDecoration(id) {
 
 // ── Service Worker & PWA Install ──
 if ("serviceWorker" in navigator) {
-  // Forçar limpeza de caches antigos ao carregar
+  // Forçar limpeza de todos os caches do prof (SW recria o correto)
   caches.keys().then(keys => {
-    keys.forEach(k => { if (k.startsWith("overhost-") && k !== "overhost-v5") caches.delete(k); });
+    keys.forEach(k => { if (k.startsWith("overhost-")) caches.delete(k); });
   });
   const hadController = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
