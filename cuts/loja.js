@@ -106,13 +106,14 @@ async function loadChunkedUrls() {
       const sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
       chunkCache[item.id] = sorted.map(d => d.data().data).join("");
       console.log("[Loja] Chunks carregados para:", item.nome);
+      // Atualizar imagens sem re-renderizar toda a grid (preserva animação GIF)
+      document.querySelectorAll('img[data-item-id="' + item.id + '"]').forEach(img => {
+        img.src = chunkCache[item.id];
+      });
     } catch(e) {
       console.error("[Loja] Erro chunks:", item.id, e);
     }
   }
-  // Re-renderizar com URLs completas
-  renderItems();
-  if (myInventory.length) renderInventory();
 }
 
 // ── Listener tempo real do inventário do usuário ──
@@ -153,7 +154,7 @@ function renderItems() {
     const imgUrl = chunkCache[item.id] || item.url;
     return `
       <div class="loja-item ${owned ? 'owned' : ''}" onclick="openBuyModal('${item.id}')">
-        <img class="item-img" src="${escapeHtml(imgUrl)}" alt="${escapeHtml(item.nome)}">
+        <img class="item-img" data-item-id="${item.id}" src="${escapeHtml(imgUrl)}" alt="${escapeHtml(item.nome)}">
         <div class="item-info">
           <div class="item-name">${escapeHtml(item.nome)}</div>
           <div class="item-type">${escapeHtml(item.tipo)}</div>
@@ -196,7 +197,7 @@ function renderInventory() {
     items.forEach(item => {
       html += `
         <div class="inv-item ${item.equipado ? 'equipped' : ''}" onclick="toggleEquip('${item.id}', '${tipo}')">
-          <img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}">
+          <img data-item-id="${item.id}" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}">
           <div class="inv-name">${escapeHtml(item.nome)}</div>
         </div>
       `;

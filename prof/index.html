@@ -3174,7 +3174,7 @@ async function loadEditorItems() {
         const chunkedLabel = item.chunked ? ' 📦' : '';
         return '<div style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;position:relative">' +
           '<button onclick="editorDeleteItem(\'' + item.id + '\')" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5">✕</button>' +
-          '<img src="' + safeUrl + '" style="width:100%;aspect-ratio:1;object-fit:contain;background:rgba(255,255,255,.02);padding:8px" loading="lazy">' +
+          '<img id="editor-thumb-' + item.id + '" src="' + safeUrl + '" style="width:100%;aspect-ratio:1;object-fit:contain;background:rgba(255,255,255,.02);padding:8px">' +
           '<div style="padding:10px">' +
             '<div style="font-size:12px;font-weight:700;color:#fff">' + safeNome + '</div>' +
             '<div style="font-size:10px;color:#64748b;margin-top:2px">' + (tipoLabels[item.tipo] || item.tipo) + chunkedLabel + ' — 🪙 ' + item.preco + '</div>' +
@@ -3182,9 +3182,25 @@ async function loadEditorItems() {
       }).join("") + '</div>';
 
     console.log("[Editor] Itens carregados:", editorPublishedItems.length);
+    // Carregar GIFs completos de itens com chunks
+    editorLoadChunkedPreviews();
   } catch(e) {
     console.error("[Editor] Erro ao carregar:", e);
     container.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar itens</p></div>';
+  }
+}
+
+async function editorLoadChunkedPreviews() {
+  const chunked = editorPublishedItems.filter(i => i.chunked);
+  for (const item of chunked) {
+    try {
+      const snap = await db.collection("cuts_items").doc(item.id).collection("chunks").get();
+      if (snap.empty) continue;
+      const sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+      const fullUrl = sorted.map(d => d.data().data).join("");
+      const imgEl = document.getElementById("editor-thumb-" + item.id);
+      if (imgEl) imgEl.src = fullUrl;
+    } catch(e) { console.error("[Editor] Erro chunks preview:", item.id, e); }
   }
 }
 
