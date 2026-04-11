@@ -28,12 +28,10 @@ messaging.onBackgroundMessage(payload => {
   return self.registration.showNotification(title, options);
 });
 
-const CACHE_NAME = "overlabs-v77";
+const CACHE_NAME = "overlabs-v78";
 const URLS_TO_CACHE = [
   "./aluno.html",
-  "./professor.html",
   "./manifest.json",
-  "./manifest-prof.json",
   "./logo.png",
   "./icon-192.png",
   "./icon-512.png",
@@ -50,11 +48,11 @@ self.addEventListener("install", event => {
   );
 });
 
-// Remove caches antigos
+// Remove apenas caches antigos do aluno (overlabs-*)
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k.startsWith("overlabs-") && k !== CACHE_NAME).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
