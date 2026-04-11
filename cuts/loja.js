@@ -368,26 +368,29 @@ async function confirmPurchase() {
     await batch.commit();
 
     console.log("[Loja] Compra OK:", selectedItem.nome, "por", selectedItem.preco, "CUTS");
-
-    // Copiar chunks para o inventário (preserva GIF mesmo se removido da loja)
-    if (selectedItem.chunked) {
-      try {
-        const chunksSnap = await db.collection("cuts_items").doc(selectedItem.id)
-          .collection("chunks").get();
-        if (!chunksSnap.empty) {
-          for (const chunkDoc of chunksSnap.docs) {
-            await db.collection("cuts_inventory").doc(invRef.id)
-              .collection("chunks").doc(chunkDoc.id).set(chunkDoc.data());
-          }
-          console.log("[Loja] Chunks copiados para inventário:", chunksSnap.size);
-        }
-      } catch(e) {
-        console.error("[Loja] Erro copiando chunks para inventário:", e);
-      }
-    }
-
+    const purchasedItemId = selectedItem.id;
+    const purchasedChunked = selectedItem.chunked;
     showToast(`✅ ${selectedItem.nome} adquirido!`);
     closeBuyModal();
+
+    // Copiar chunks para o inventário em background (preserva GIF mesmo se removido da loja)
+    if (purchasedChunked) {
+      (async function() {
+        try {
+          const chunksSnap = await db.collection("cuts_items").doc(purchasedItemId)
+            .collection("chunks").get();
+          if (!chunksSnap.empty) {
+            for (const chunkDoc of chunksSnap.docs) {
+              await db.collection("cuts_inventory").doc(invRef.id)
+                .collection("chunks").doc(chunkDoc.id).set(chunkDoc.data());
+            }
+            console.log("[Loja] Chunks copiados para inventário:", chunksSnap.size);
+          }
+        } catch(e) {
+          console.error("[Loja] Erro copiando chunks para inventário:", e);
+        }
+      })();
+    }
   } catch (e) {
     console.error("[Loja] Erro na compra:", e);
     showToast("❌ Erro ao comprar. Tente novamente.");
@@ -513,7 +516,7 @@ async function toggleEquip(itemId, tipo) {
 
   } catch (e) {
     console.error("[Loja] Erro ao equipar:", e);
-    showToast("❌ Erro ao equipar");
+    showToast("❌ Erro: " + (e.message || e));
   }
 }
 
