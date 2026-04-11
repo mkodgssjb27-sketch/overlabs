@@ -1764,59 +1764,65 @@ function handlePhotoUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
   if (!file.type.startsWith("image/")) { showToast("Selecione uma imagem"); return; }
-  // Ler via FileReader primeiro (confiável em todos os dispositivos)
+
+  // GIF: forçar estático
+  if (file.type === "image/gif") {
+    readFileRaw(file, function(b64) {
+      if (!b64 || b64.length < 100) { showToast("Erro ao processar imagem"); return; }
+      savePhotoToFirestore(b64);
+    });
+    return;
+  }
+
+  // Tentar createImageBitmap (mais confiável em mobile que Image+base64)
+  if (typeof createImageBitmap === "function") {
+    createImageBitmap(file).then(function(bitmap) {
+      var w = bitmap.width, h = bitmap.height;
+      if (w > h) { if (w > 300) { h = Math.round(h * 300 / w); w = 300; } }
+      else { if (h > 300) { w = Math.round(w * 300 / h); h = 300; } }
+      var canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext("2d");
+      // Desenhar SEM fundo branco primeiro para testar se drawImage funciona
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      if (bitmap.close) bitmap.close();
+      var px = ctx.getImageData(Math.floor(w / 2), Math.floor(h / 2), 1, 1).data;
+      if (px[3] === 0) {
+        // drawImage falhou silenciosamente - usar base64 puro
+        photoFallbackRaw(file);
+        return;
+      }
+      // Sucesso! Adicionar fundo branco ATRÁS da imagem
+      ctx.globalCompositeOperation = "destination-over";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = "source-over";
+      canvas.toBlob(function(blob) {
+        if (!blob) { photoFallbackRaw(file); return; }
+        var r = new FileReader();
+        r.onload = function() { savePhotoToFirestore(r.result); };
+        r.onerror = function() { photoFallbackRaw(file); };
+        r.readAsDataURL(blob);
+      }, "image/jpeg", 0.8);
+    }).catch(function() { photoFallbackRaw(file); });
+  } else {
+    photoFallbackRaw(file);
+  }
+}
+
+function photoFallbackRaw(file) {
   var reader = new FileReader();
   reader.onload = function(e) {
     var raw = e.target.result;
     if (!raw || raw.length < 100) { showToast("Erro ao processar imagem"); return; }
-    // Se for GIF, forçar estático via canvas
-    if (file.type === "image/gif") {
-      readFileRaw(file, function(b64) {
-        if (!b64 || b64.length < 100) { showToast("Erro ao processar imagem"); return; }
-        savePhotoToFirestore(b64);
-      });
+    if (raw.length > 900000) {
+      showToast("⚠️ Imagem muito grande. Use uma foto menor.");
       return;
     }
-    // Comprimir a partir do base64 (não do objectURL)
-    compressImageFromBase64(raw, 300, 0.8, function(compressed) {
-      var final64 = (compressed && compressed.length > 100) ? compressed : raw;
-      savePhotoToFirestore(final64);
-    });
+    savePhotoToFirestore(raw);
   };
   reader.onerror = function() { showToast("Erro ao ler imagem"); };
   reader.readAsDataURL(file);
-}
-
-function compressImageFromBase64(base64src, maxSize, quality, callback) {
-  var img = new Image();
-  img.onload = function() {
-    try {
-      var canvas = document.createElement("canvas");
-      var w = img.naturalWidth, h = img.naturalHeight;
-      if (!w || !h) { callback(""); return; }
-      if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
-      else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
-      canvas.width = w;
-      canvas.height = h;
-      var ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0, w, h);
-      if (canvas.toBlob) {
-        canvas.toBlob(function(blob) {
-          if (!blob) { callback(""); return; }
-          var r = new FileReader();
-          r.onload = function() { callback(r.result); };
-          r.onerror = function() { callback(""); };
-          r.readAsDataURL(blob);
-        }, "image/jpeg", quality);
-      } else {
-        callback(canvas.toDataURL("image/jpeg", quality));
-      }
-    } catch(e) { callback(""); }
-  };
-  img.onerror = function() { callback(""); };
-  img.src = base64src;
 }
 
 function readFileRaw(file, callback) {
