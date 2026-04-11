@@ -168,9 +168,9 @@ function renderItems() {
   const loading = document.getElementById("loja-loading");
   if (loading) loading.style.display = "none";
 
-  let filtered = allItems;
+  let filtered = allItems.filter(i => !i.hidden);
   if (currentTab !== "todos") {
-    filtered = allItems.filter(i => i.tipo === currentTab);
+    filtered = filtered.filter(i => i.tipo === currentTab);
   }
 
   if (filtered.length === 0) {
@@ -380,6 +380,15 @@ async function confirmPurchase() {
     const purchasedItemId = selectedItem.id;
     const purchasedChunked = selectedItem.chunked;
     showToast(`✅ ${selectedItem.nome} adquirido!`);
+    // Log de atividade
+    db.collection('activity_log').add({
+      userId: currentUser.id,
+      userName: currentUser.firstName || '',
+      action: 'compra_loja',
+      detail: 'Comprou: ' + selectedItem.nome + ' por ' + selectedItem.preco + ' CUTS',
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      extra: { itemId: selectedItem.id, itemNome: selectedItem.nome, preco: selectedItem.preco }
+    }).catch(function(e) { console.warn('[Log]', e); });
     closeBuyModal();
 
     // Copiar chunks para o inventário em background (preserva GIF mesmo se removido da loja)

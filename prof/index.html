@@ -215,6 +215,11 @@ input,select,textarea{font-family:inherit;outline:none}
         <div class="mc-title">Editor de Artes</div>
         <div class="mc-desc">Criar itens para Loja CUTS</div>
       </div>
+      <div class="menu-card" onclick="showScreen('teacher-log');loadActivityLog()">
+        <span class="mc-icon">📊</span>
+        <div class="mc-title">Registro de Log</div>
+        <div class="mc-desc">Atividades e estatísticas</div>
+      </div>
     </div>
   </div>
 </div>
@@ -835,7 +840,30 @@ input,select,textarea{font-family:inherit;outline:none}
       <div style="font-size:13px;color:#64748b;margin-top:4px" id="inv-modal-count">0 itens</div>
     </div>
     <div id="inv-modal-content" style="flex:1;overflow-y:auto;min-height:60px;margin-bottom:16px"></div>
-    <button onclick="closeInventoryModal()" style="flex-shrink:0;width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#94a3b8;font-weight:700;font-size:14px;cursor:pointer">Fechar</button>
+    <div style="display:flex;gap:10px;flex-shrink:0">
+      <button onclick="openGiftModal()" style="flex:1;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:700;font-size:14px;cursor:pointer">🎁 Presentear</button>
+      <button onclick="closeInventoryModal()" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#94a3b8;font-weight:700;font-size:14px;cursor:pointer">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL PRESENTEAR ITEM ═══════════════════════════════════════ -->
+<div id="gift-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.8);align-items:center;justify-content:center">
+  <div style="background:#1e293b;border-radius:18px;padding:28px 24px;max-width:520px;width:94%;max-height:85vh;border:1px solid rgba(245,158,11,.2);display:flex;flex-direction:column">
+    <div style="text-align:center;margin-bottom:16px;flex-shrink:0">
+      <span style="font-size:40px">🎁</span>
+      <div style="font-size:18px;font-weight:800;color:#e2e8f0;margin-top:8px" id="gift-modal-title">Presentear</div>
+      <div style="font-size:13px;color:#64748b;margin-top:4px">Selecione um item para dar de presente (sem custo de CUTS)</div>
+    </div>
+    <div id="gift-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;flex-shrink:0">
+      <button onclick="giftFilter('todos')" class="gift-filter-btn active" data-gfilter="todos" style="padding:6px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">Todos</button>
+      <button onclick="giftFilter('avatar')" class="gift-filter-btn" data-gfilter="avatar" style="padding:6px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">Avatar</button>
+      <button onclick="giftFilter('moldura')" class="gift-filter-btn" data-gfilter="moldura" style="padding:6px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">Moldura</button>
+      <button onclick="giftFilter('banner')" class="gift-filter-btn" data-gfilter="banner" style="padding:6px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">Banner</button>
+      <button onclick="giftFilter('emblema')" class="gift-filter-btn" data-gfilter="emblema" style="padding:6px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">Emblema</button>
+    </div>
+    <div id="gift-items-grid" style="flex:1;overflow-y:auto;min-height:60px;margin-bottom:16px"></div>
+    <button onclick="closeGiftModal()" style="flex-shrink:0;width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#94a3b8;font-weight:700;font-size:14px;cursor:pointer">Cancelar</button>
   </div>
 </div>
 
@@ -924,6 +952,64 @@ input,select,textarea{font-family:inherit;outline:none}
         <p class="err-txt" id="deco-file-err"></p>
       </div>
       <button onclick="saveDecoration()" class="btn-main" id="btn-save-deco">💾 Salvar Decoração</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — REGISTRO DE LOG ════════════════════════════════ -->
+<div class="screen" id="screen-teacher-log">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" style="font-size:16px">📊 Registro de Log</div><div class="t-sub">Atividades dos usuários</div></div>
+    </div>
+  </div>
+  <div class="t-content">
+    <!-- Tabs: Log / Ranking -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button onclick="switchLogTab('log')" id="log-tab-log" style="flex:1;padding:12px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">📋 Log de Atividades</button>
+      <button onclick="switchLogTab('ranking')" id="log-tab-ranking" style="flex:1;padding:12px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🏆 Estatísticas Ranking</button>
+    </div>
+
+    <!-- Tab: Log de Atividades -->
+    <div id="log-view-log">
+      <!-- Filtros -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button onclick="logFilterAction('todos')" class="log-action-btn active" data-logaction="todos" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">Todos</button>
+        <button onclick="logFilterAction('compra_loja')" class="log-action-btn" data-logaction="compra_loja" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🛒 Compras</button>
+        <button onclick="logFilterAction('perfil')" class="log-action-btn" data-logaction="perfil" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">👤 Perfil</button>
+        <button onclick="logFilterAction('carona')" class="log-action-btn" data-logaction="carona" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🚗 Caronas</button>
+        <button onclick="logFilterAction('presente')" class="log-action-btn" data-logaction="presente" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🎁 Presentes</button>
+      </div>
+      <div id="log-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
+      <div style="text-align:center;margin-top:12px">
+        <button onclick="loadMoreLogs()" id="log-load-more" style="display:none;padding:10px 24px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-weight:700;font-size:13px;cursor:pointer">Carregar mais...</button>
+      </div>
+    </div>
+
+    <!-- Tab: Estatísticas do Ranking -->
+    <div id="log-view-ranking" style="display:none">
+      <div class="t-form" style="margin-bottom:20px">
+        <div class="section-title">🏆 Ranking Atual</div>
+        <div id="ranking-stats-current"><div class="loading"><div class="spin"></div>Carregando...</div></div>
+      </div>
+      <div class="t-form" style="margin-bottom:20px">
+        <div class="section-title">📊 Tempo no Pódio</div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <div>
+            <label class="lbl">DE</label>
+            <input type="date" class="inp" id="ranking-date-from" style="width:auto;padding:8px 12px;font-size:13px">
+          </div>
+          <div>
+            <label class="lbl">ATÉ</label>
+            <input type="date" class="inp" id="ranking-date-to" style="width:auto;padding:8px 12px;font-size:13px">
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button onclick="loadRankingStats()" style="padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Analisar</button>
+          </div>
+        </div>
+        <div id="ranking-stats-podium"><div style="color:#64748b;font-size:13px">Selecione um período e clique em "Analisar"</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1044,6 +1130,13 @@ input,select,textarea{font-family:inherit;outline:none}
     <!-- Itens publicados -->
     <div class="t-form">
       <div class="section-title">📦 Itens na Loja</div>
+      <div id="editor-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        <button onclick="editorFilter('todos')" class="editor-filter-btn active" data-filter="todos" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">Todos</button>
+        <button onclick="editorFilter('avatar')" class="editor-filter-btn" data-filter="avatar" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🖼️ Avatar</button>
+        <button onclick="editorFilter('moldura')" class="editor-filter-btn" data-filter="moldura" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🖼️ Moldura</button>
+        <button onclick="editorFilter('banner')" class="editor-filter-btn" data-filter="banner" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🌄 Banner</button>
+        <button onclick="editorFilter('emblema')" class="editor-filter-btn" data-filter="emblema" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🏅 Emblema</button>
+      </div>
       <div id="editor-items-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
     </div>
 
@@ -1822,6 +1915,16 @@ async function saveCuts() {
     // update card UI
     const el = document.getElementById("cuts-" + cutsModalUserId);
     if (el) el.textContent = finalVal;
+    // Log da alteração de CUTS
+    const modeLabels = { add: 'Adicionou', remove: 'Removeu', set: 'Definiu' };
+    db.collection('activity_log').add({
+      userId: cutsModalUserId,
+      userName: s ? s.firstName : '',
+      action: 'cuts_alterado',
+      detail: (modeLabels[cutsModalMode] || 'Alterou') + ' CUTS: ' + val + ' (novo saldo: ' + finalVal + ')',
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      extra: { mode: cutsModalMode, valor: val, novoSaldo: finalVal, porProfessor: true }
+    }).catch(function(e) { console.warn('[Log]', e); });
     showToast("🪙 CUTS atualizado: " + finalVal);
     closeCutsModal();
   } catch(e) {
@@ -1915,6 +2018,140 @@ async function removeInventoryItem(docId, itemName) {
   } catch(e) {
     showToast('Erro ao remover item');
     console.error('[Inventário] Erro ao remover:', e);
+  }
+}
+
+// ── PRESENTEAR ITEM ──
+let giftAllItems = [];
+let giftCurrentFilter = 'todos';
+
+async function openGiftModal() {
+  if (!invModalUserId) return;
+  const student = allStudents.find(s => s.id === invModalUserId);
+  const name = student ? student.firstName : 'Aluno';
+  document.getElementById('gift-modal-title').textContent = '🎁 Presentear — ' + name;
+  document.getElementById('gift-items-grid').innerHTML = '<div class="loading"><div class="spin"></div>Carregando itens...</div>';
+  document.getElementById('gift-modal').style.display = 'flex';
+  giftCurrentFilter = 'todos';
+  document.querySelectorAll('.gift-filter-btn').forEach(btn => {
+    const active = btn.dataset.gfilter === 'todos';
+    btn.classList.toggle('active', active);
+    btn.style.background = active ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.06)';
+    btn.style.color = active ? '#f59e0b' : '#94a3b8';
+  });
+
+  try {
+    const snap = await db.collection('cuts_items').orderBy('criadoEm', 'desc').get();
+    giftAllItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Carregar inventário atual do aluno para saber o que ele já tem
+    const invSnap = await db.collection('cuts_inventory').where('userId', '==', invModalUserId).get();
+    const ownedIds = new Set(invSnap.docs.map(d => d.data().itemId));
+    giftAllItems.forEach(item => { item._owned = ownedIds.has(item.id); });
+    renderGiftItems();
+  } catch(e) {
+    console.error('[Gift] Erro:', e);
+    document.getElementById('gift-items-grid').innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar itens</p></div>';
+  }
+}
+
+function closeGiftModal() {
+  document.getElementById('gift-modal').style.display = 'none';
+}
+
+function giftFilter(filter) {
+  giftCurrentFilter = filter;
+  document.querySelectorAll('.gift-filter-btn').forEach(btn => {
+    const active = btn.dataset.gfilter === filter;
+    btn.classList.toggle('active', active);
+    btn.style.background = active ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.06)';
+    btn.style.color = active ? '#f59e0b' : '#94a3b8';
+  });
+  renderGiftItems();
+}
+
+function renderGiftItems() {
+  const container = document.getElementById('gift-items-grid');
+  let items = giftAllItems;
+  if (giftCurrentFilter !== 'todos') {
+    items = items.filter(i => i.tipo === giftCurrentFilter);
+  }
+  if (!items.length) {
+    container.innerHTML = '<div class="empty"><div class="icon">🎁</div><p>Nenhum item disponível</p></div>';
+    return;
+  }
+  const tipoLabels = { avatar: "Avatar", moldura: "Moldura", banner: "Banner", emblema: "Emblema" };
+  container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">' +
+    items.map(item => {
+      const isHidden = item.hidden === true;
+      const hiddenBadge = isHidden ? '<div style="position:absolute;top:3px;left:3px;background:rgba(239,68,68,.9);color:#fff;font-size:8px;font-weight:900;padding:1px 5px;border-radius:6px">OCULTO</div>' : '';
+      const ownedBadge = item._owned ? '<div style="position:absolute;top:3px;right:3px;background:rgba(34,197,94,.9);color:#fff;font-size:8px;font-weight:900;padding:1px 5px;border-radius:6px">TEM</div>' : '';
+      return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:8px;text-align:center;cursor:pointer;position:relative;transition:.2s" onclick="confirmGift(\'' + item.id + '\')">' +
+        hiddenBadge + ownedBadge +
+        '<img src="' + escapeHtml(item.url || '') + '" style="width:50px;height:50px;object-fit:contain;border-radius:8px;margin-bottom:4px">' +
+        '<div style="font-size:10px;font-weight:700;color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(item.nome || 'Item') + '</div>' +
+        '<div style="font-size:9px;color:#64748b">' + (tipoLabels[item.tipo] || item.tipo) + '</div>' +
+      '</div>';
+    }).join('') + '</div>';
+}
+
+async function confirmGift(itemId) {
+  const item = giftAllItems.find(i => i.id === itemId);
+  if (!item) return;
+  if (item._owned) {
+    if (!confirm('Este aluno já possui "' + item.nome + '". Deseja presentear mesmo assim?')) return;
+  } else {
+    if (!confirm('Presentear "' + item.nome + '" para este aluno? (sem custo de CUTS)')) return;
+  }
+
+  try {
+    // Adicionar ao inventário do aluno
+    const invRef = db.collection('cuts_inventory').doc();
+    const invUrl = item.chunked ? item.url : item.url;
+    const invData = {
+      userId: invModalUserId,
+      itemId: item.id,
+      nome: item.nome,
+      url: invUrl,
+      tipo: item.tipo,
+      equipado: false,
+      compradoEm: firebase.firestore.FieldValue.serverTimestamp(),
+      presenteado: true
+    };
+    if (item.chunked) invData.chunked = true;
+    await invRef.set(invData);
+
+    // Copiar chunks se necessário
+    if (item.chunked) {
+      const chunksSnap = await db.collection('cuts_items').doc(item.id).collection('chunks').get();
+      if (!chunksSnap.empty) {
+        for (const chunkDoc of chunksSnap.docs) {
+          await db.collection('cuts_inventory').doc(invRef.id).collection('chunks').doc(chunkDoc.id).set(chunkDoc.data());
+        }
+      }
+    }
+
+    // Registrar no log de atividades
+    const student = allStudents.find(s => s.id === invModalUserId);
+    await db.collection('activity_log').add({
+      userId: invModalUserId,
+      userName: student ? student.firstName : 'Aluno',
+      action: 'presente_recebido',
+      detail: 'Recebeu de presente: ' + item.nome + ' (' + item.tipo + ')',
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Notificar o aluno
+    await db.collection('notifications').doc(invModalUserId).collection('items').add({
+      msg: '🎁 Você recebeu um presente: ' + item.nome + '!',
+      read: false,
+      at: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    showToast('🎁 Item presenteado com sucesso!');
+    closeGiftModal();
+  } catch(e) {
+    console.error('[Gift] Erro:', e);
+    showToast('❌ Erro ao presentear item');
   }
 }
 
@@ -2994,6 +3231,295 @@ function installProfApp() {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// ═══ REGISTRO DE LOG — Atividades e Ranking ══════════════════════
+// ══════════════════════════════════════════════════════════════════
+
+let logAllEntries = [];
+let logLastDoc = null;
+let logCurrentFilter = 'todos';
+const LOG_PAGE_SIZE = 50;
+
+function switchLogTab(tab) {
+  const tabLog = document.getElementById('log-tab-log');
+  const tabRanking = document.getElementById('log-tab-ranking');
+  const viewLog = document.getElementById('log-view-log');
+  const viewRanking = document.getElementById('log-view-ranking');
+  if (tab === 'log') {
+    tabLog.style.background = 'rgba(245,158,11,.15)'; tabLog.style.color = '#f59e0b';
+    tabRanking.style.background = 'rgba(255,255,255,.06)'; tabRanking.style.color = '#94a3b8';
+    viewLog.style.display = 'block'; viewRanking.style.display = 'none';
+  } else {
+    tabRanking.style.background = 'rgba(245,158,11,.15)'; tabRanking.style.color = '#f59e0b';
+    tabLog.style.background = 'rgba(255,255,255,.06)'; tabLog.style.color = '#94a3b8';
+    viewLog.style.display = 'none'; viewRanking.style.display = 'block';
+    loadCurrentRanking();
+  }
+}
+
+function logFilterAction(filter) {
+  logCurrentFilter = filter;
+  document.querySelectorAll('.log-action-btn').forEach(btn => {
+    const active = btn.dataset.logaction === filter;
+    btn.classList.toggle('active', active);
+    btn.style.background = active ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.06)';
+    btn.style.color = active ? '#f59e0b' : '#94a3b8';
+  });
+  logAllEntries = [];
+  logLastDoc = null;
+  loadActivityLog();
+}
+
+async function loadActivityLog() {
+  if (!firebaseOk) return;
+  const container = document.getElementById('log-list');
+  if (!logLastDoc) {
+    container.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
+  }
+
+  try {
+    let query = db.collection('activity_log').orderBy('timestamp', 'desc').limit(LOG_PAGE_SIZE);
+    if (logLastDoc) query = query.startAfter(logLastDoc);
+    const snap = await query.get();
+    if (snap.empty && logAllEntries.length === 0) {
+      container.innerHTML = '<div class="empty"><div class="icon">📋</div><p>Nenhuma atividade registrada</p><small>As atividades dos alunos aparecerão aqui</small></div>';
+      document.getElementById('log-load-more').style.display = 'none';
+      return;
+    }
+
+    const newEntries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    logAllEntries = logAllEntries.concat(newEntries);
+    logLastDoc = snap.docs[snap.docs.length - 1] || null;
+
+    renderLogEntries();
+    document.getElementById('log-load-more').style.display = snap.docs.length >= LOG_PAGE_SIZE ? 'inline-block' : 'none';
+  } catch(e) {
+    console.error('[Log] Erro:', e);
+    container.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar log</p></div>';
+  }
+}
+
+function loadMoreLogs() {
+  loadActivityLog();
+}
+
+function renderLogEntries() {
+  const container = document.getElementById('log-list');
+  let filtered = logAllEntries;
+  if (logCurrentFilter !== 'todos') {
+    if (logCurrentFilter === 'perfil') {
+      filtered = filtered.filter(e => e.action && e.action.startsWith('perfil'));
+    } else if (logCurrentFilter === 'carona') {
+      filtered = filtered.filter(e => e.action && e.action.startsWith('carona'));
+    } else if (logCurrentFilter === 'presente') {
+      filtered = filtered.filter(e => e.action && e.action.includes('presente'));
+    } else {
+      filtered = filtered.filter(e => e.action === logCurrentFilter);
+    }
+  }
+
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty"><div class="icon">📋</div><p>Nenhuma atividade nesta categoria</p></div>';
+    return;
+  }
+
+  const actionIcons = {
+    compra_loja: '🛒',
+    perfil_dados: '✏️',
+    perfil_foto: '📷',
+    carona_reserva: '🚗',
+    carona_cancelamento: '❌',
+    presente_recebido: '🎁'
+  };
+  const actionColors = {
+    compra_loja: '#f59e0b',
+    perfil_dados: '#38bdf8',
+    perfil_foto: '#a78bfa',
+    carona_reserva: '#22c55e',
+    carona_cancelamento: '#f87171',
+    presente_recebido: '#f59e0b'
+  };
+
+  container.innerHTML = filtered.map(entry => {
+    const icon = actionIcons[entry.action] || '📝';
+    const color = actionColors[entry.action] || '#94a3b8';
+    const time = entry.timestamp ? new Date(entry.timestamp.seconds * 1000).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+    return `
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:8px;display:flex;gap:12px;align-items:center">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13px;color:${color}">${escapeHtml(entry.userName || 'Usuário')}</div>
+          <div style="font-size:12px;color:#e2e8f0;margin-top:2px">${escapeHtml(entry.detail || entry.action || '')}</div>
+        </div>
+        <div style="font-size:10px;color:#64748b;white-space:nowrap;flex-shrink:0">${time}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── ESTATÍSTICAS DO RANKING ──
+async function loadCurrentRanking() {
+  if (!firebaseOk) return;
+  const container = document.getElementById('ranking-stats-current');
+  container.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
+
+  try {
+    const snap = await db.collection('users').get();
+    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .filter(u => u.username && u.username !== 'teste');
+
+    users.sort((a, b) => {
+      const ca = a.cuts || 0, cb = b.cuts || 0;
+      if (cb !== ca) return cb - ca;
+      if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
+      const ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
+      const tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
+      return ta - tb;
+    });
+
+    if (!users.length) {
+      container.innerHTML = '<div class="empty"><div class="icon">🏆</div><p>Nenhum aluno cadastrado</p></div>';
+      return;
+    }
+
+    const medals = ['🥇', '🥈', '🥉'];
+    const colors = ['#f59e0b', '#94a3b8', '#cd7f32'];
+    let html = '';
+    users.forEach((u, i) => {
+      const pos = i + 1;
+      const medal = medals[i] || '';
+      const c = colors[i] || '#64748b';
+      const isPodium = i < 3;
+      const photo = u.photoURL ? '<img src="' + escapeHtml(u.photoURL) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : '<span style="font-size:14px;font-weight:800;color:#fff">' + ((u.firstName || '?')[0]) + '</span>';
+      html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:4px;border-radius:12px;background:' + (isPodium ? 'rgba(245,158,11,.06)' : 'rgba(255,255,255,.02)') + ';border:1px solid ' + (isPodium ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.04)') + '">' +
+        '<span style="font-weight:900;font-size:14px;color:' + c + ';min-width:28px;text-align:center">' + (medal || pos + 'º') + '</span>' +
+        '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">' + photo + '</div>' +
+        '<div style="flex:1;font-weight:700;font-size:13px;color:#e2e8f0">' + escapeHtml(u.firstName || '—') + '</div>' +
+        '<span style="font-weight:900;font-size:14px;color:#f59e0b">🪙 ' + (u.cuts || 0) + '</span>' +
+      '</div>';
+    });
+    container.innerHTML = html;
+
+    // Salvar snapshot do ranking para estatísticas
+    saveRankingSnapshot(users);
+  } catch(e) {
+    console.error('[Ranking] Erro:', e);
+    container.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar ranking</p></div>';
+  }
+}
+
+async function saveRankingSnapshot(users) {
+  try {
+    const top = users.slice(0, 10).map((u, i) => ({
+      userId: u.id,
+      firstName: u.firstName || '',
+      cuts: u.cuts || 0,
+      rank: i + 1
+    }));
+    await db.collection('ranking_snapshots').add({
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      positions: top
+    });
+  } catch(e) { console.warn('[Ranking] Erro ao salvar snapshot:', e); }
+}
+
+async function loadRankingStats() {
+  const fromDate = document.getElementById('ranking-date-from').value;
+  const toDate = document.getElementById('ranking-date-to').value;
+  const container = document.getElementById('ranking-stats-podium');
+
+  if (!fromDate || !toDate) {
+    showToast('Selecione as datas do período');
+    return;
+  }
+
+  const from = new Date(fromDate + 'T00:00:00');
+  const to = new Date(toDate + 'T23:59:59');
+
+  if (from > to) {
+    showToast('Data inicial deve ser anterior à final');
+    return;
+  }
+
+  container.innerHTML = '<div class="loading"><div class="spin"></div>Analisando período...</div>';
+
+  try {
+    const snap = await db.collection('ranking_snapshots')
+      .where('timestamp', '>=', from)
+      .where('timestamp', '<=', to)
+      .orderBy('timestamp', 'asc')
+      .get();
+
+    if (snap.empty) {
+      container.innerHTML = '<div class="empty"><div class="icon">📊</div><p>Nenhum dado neste período</p><small>Os snapshots são registrados ao abrir esta tela</small></div>';
+      return;
+    }
+
+    const snapshots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Calcular tempo no pódio (top 3) para cada usuário
+    const podiumTime = {}; // userId -> { firstName, days: count of snapshots in top3, top1: count, top2: count, top3: count }
+
+    snapshots.forEach(s => {
+      if (!s.positions) return;
+      s.positions.forEach(p => {
+        if (p.rank > 3) return;
+        if (!podiumTime[p.userId]) {
+          podiumTime[p.userId] = { firstName: p.firstName, top1: 0, top2: 0, top3: 0, total: 0 };
+        }
+        podiumTime[p.userId].firstName = p.firstName;
+        if (p.rank === 1) podiumTime[p.userId].top1++;
+        if (p.rank === 2) podiumTime[p.userId].top2++;
+        if (p.rank === 3) podiumTime[p.userId].top3++;
+        podiumTime[p.userId].total++;
+      });
+    });
+
+    const sorted = Object.entries(podiumTime)
+      .map(([userId, data]) => ({ userId, ...data }))
+      .sort((a, b) => b.total - a.total || b.top1 - a.top1);
+
+    if (!sorted.length) {
+      container.innerHTML = '<div class="empty"><div class="icon">🏆</div><p>Ninguém esteve no pódio neste período</p></div>';
+      return;
+    }
+
+    let html = '<div style="font-size:12px;color:#64748b;margin-bottom:12px">' + snapshots.length + ' snapshots no período (' + new Date(fromDate).toLocaleDateString('pt-BR') + ' — ' + new Date(toDate).toLocaleDateString('pt-BR') + ')</div>';
+    sorted.forEach((u, i) => {
+      const pctTop1 = snapshots.length > 0 ? Math.round(u.top1 / snapshots.length * 100) : 0;
+      const pctTotal = snapshots.length > 0 ? Math.round(u.total / snapshots.length * 100) : 0;
+      html += `
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-weight:900;font-size:16px;color:#f59e0b">${i + 1}º</span>
+            <span style="font-weight:800;font-size:15px;color:#fff">${escapeHtml(u.firstName)}</span>
+            <span style="margin-left:auto;font-size:12px;color:#64748b">${pctTotal}% do tempo no pódio</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1;background:rgba(245,158,11,.1);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:18px">🥇</div>
+              <div style="font-size:16px;font-weight:900;color:#f59e0b">${u.top1}</div>
+              <div style="font-size:10px;color:#64748b">${pctTop1}%</div>
+            </div>
+            <div style="flex:1;background:rgba(148,163,184,.08);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:18px">🥈</div>
+              <div style="font-size:16px;font-weight:900;color:#94a3b8">${u.top2}</div>
+              <div style="font-size:10px;color:#64748b">${snapshots.length > 0 ? Math.round(u.top2 / snapshots.length * 100) : 0}%</div>
+            </div>
+            <div style="flex:1;background:rgba(205,127,50,.08);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:18px">🥉</div>
+              <div style="font-size:16px;font-weight:900;color:#cd7f32">${u.top3}</div>
+              <div style="font-size:10px;color:#64748b">${snapshots.length > 0 ? Math.round(u.top3 / snapshots.length * 100) : 0}%</div>
+            </div>
+          </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+  } catch(e) {
+    console.error('[Ranking Stats] Erro:', e);
+    container.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao analisar período</p></div>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
 // ═══ EDITOR DE ARTES — Loja CUTS (módulo embutido) ═══════════════
 // ══════════════════════════════════════════════════════════════════
 
@@ -3284,6 +3810,63 @@ function editorResetForm() {
   editorResetFrameAdjust();
 }
 
+let editorCurrentFilter = 'todos';
+
+function editorFilter(filter) {
+  editorCurrentFilter = filter;
+  document.querySelectorAll('.editor-filter-btn').forEach(btn => {
+    const active = btn.dataset.filter === filter;
+    btn.classList.toggle('active', active);
+    btn.style.background = active ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.06)';
+    btn.style.color = active ? '#f59e0b' : '#94a3b8';
+  });
+  renderEditorItemsList();
+}
+
+function renderEditorItemsList() {
+  const container = document.getElementById("editor-items-list");
+  let items = editorPublishedItems;
+  if (editorCurrentFilter !== 'todos') {
+    items = items.filter(i => i.tipo === editorCurrentFilter);
+  }
+
+  if (items.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="icon">📦</div><p>Nenhum item' + (editorCurrentFilter !== 'todos' ? ' deste tipo' : ' publicado') + '</p></div>';
+    return;
+  }
+
+  const tipoLabels = { avatar: "Avatar", moldura: "Moldura", banner: "Banner", emblema: "Emblema" };
+
+  container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">' +
+    items.map(item => {
+      const safeNome = item.nome ? item.nome.replace(/</g,'&lt;').replace(/"/g,'&quot;') : '';
+      const safeUrl = item.url ? item.url.replace(/"/g,'&quot;') : '';
+      const chunkedLabel = item.chunked ? ' 📦' : '';
+      const tipoLabel = tipoLabels[item.tipo] || item.tipo;
+      const isHidden = item.hidden === true;
+      const hiddenLabel = isHidden ? '<div style="position:absolute;top:8px;left:8px;background:rgba(239,68,68,.9);color:#fff;font-size:9px;font-weight:900;padding:2px 8px;border-radius:8px;z-index:5">OCULTO</div>' : '';
+      const hiddenBorder = isHidden ? 'border-color:rgba(239,68,68,.3);opacity:.7' : '';
+      return '<div style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;position:relative;' + hiddenBorder + '">' +
+        hiddenLabel +
+        '<button onclick="editorDeleteItem(\'' + item.id + '\')" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5">✕</button>' +
+        '<img id="editor-thumb-' + item.id + '" src="' + safeUrl + '" style="width:100%;aspect-ratio:1;object-fit:contain;background:rgba(255,255,255,.02);padding:8px">' +
+        '<div style="padding:10px">' +
+          '<div style="font-size:10px;color:#64748b;margin-bottom:6px">' + tipoLabel + chunkedLabel + '</div>' +
+          '<input id="edit-nome-' + item.id + '" value="' + safeNome + '" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#e2e8f0;font-size:12px;font-weight:700;margin-bottom:6px;font-family:inherit">' +
+          '<div style="display:flex;align-items:center;gap:4px;margin-bottom:8px">' +
+            '<span style="font-size:12px">🪙</span>' +
+            '<input id="edit-preco-' + item.id + '" type="number" value="' + (item.preco || 0) + '" min="0" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#f59e0b;font-size:12px;font-weight:900;font-family:inherit">' +
+          '</div>' +
+          '<div style="display:flex;gap:6px">' +
+            '<button onclick="editorSaveItem(\'' + item.id + '\')" style="flex:1;padding:7px;border-radius:8px;border:none;background:rgba(34,197,94,.15);color:#22c55e;font-weight:700;font-size:11px;cursor:pointer">💾 Salvar</button>' +
+            '<button onclick="editorToggleHidden(\'' + item.id + '\',' + isHidden + ')" style="flex:1;padding:7px;border-radius:8px;border:none;background:' + (isHidden ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.12)') + ';color:' + (isHidden ? '#22c55e' : '#f87171') + ';font-weight:700;font-size:11px;cursor:pointer">' + (isHidden ? '👁 Mostrar' : '🙈 Ocultar') + '</button>' +
+          '</div>' +
+        '</div></div>';
+    }).join("") + '</div>';
+
+  editorLoadChunkedPreviews();
+}
+
 async function loadEditorItems() {
   if (!firebaseOk) return;
   const container = document.getElementById("editor-items-list");
@@ -3296,31 +3879,8 @@ async function loadEditorItems() {
       return;
     }
 
-    const tipoLabels = { avatar: "Avatar", moldura: "Moldura", banner: "Banner", emblema: "Emblema" };
-
-    container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">' +
-      editorPublishedItems.map(item => {
-        const safeNome = item.nome ? item.nome.replace(/</g,'&lt;').replace(/"/g,'&quot;') : '';
-        const safeUrl = item.url ? item.url.replace(/"/g,'&quot;') : '';
-        const chunkedLabel = item.chunked ? ' 📦' : '';
-        const tipoLabel = tipoLabels[item.tipo] || item.tipo;
-        return '<div style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;position:relative">' +
-          '<button onclick="editorDeleteItem(\'' + item.id + '\')" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5">✕</button>' +
-          '<img id="editor-thumb-' + item.id + '" src="' + safeUrl + '" style="width:100%;aspect-ratio:1;object-fit:contain;background:rgba(255,255,255,.02);padding:8px">' +
-          '<div style="padding:10px">' +
-            '<div style="font-size:10px;color:#64748b;margin-bottom:6px">' + tipoLabel + chunkedLabel + '</div>' +
-            '<input id="edit-nome-' + item.id + '" value="' + safeNome + '" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#e2e8f0;font-size:12px;font-weight:700;margin-bottom:6px;font-family:inherit">' +
-            '<div style="display:flex;align-items:center;gap:4px;margin-bottom:8px">' +
-              '<span style="font-size:12px">🪙</span>' +
-              '<input id="edit-preco-' + item.id + '" type="number" value="' + (item.preco || 0) + '" min="0" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#f59e0b;font-size:12px;font-weight:900;font-family:inherit">' +
-            '</div>' +
-            '<button onclick="editorSaveItem(\'' + item.id + '\')" style="width:100%;padding:7px;border-radius:8px;border:none;background:rgba(34,197,94,.15);color:#22c55e;font-weight:700;font-size:11px;cursor:pointer">💾 Salvar</button>' +
-          '</div></div>';
-      }).join("") + '</div>';
-
+    renderEditorItemsList();
     console.log("[Editor] Itens carregados:", editorPublishedItems.length);
-    // Carregar GIFs completos de itens com chunks
-    editorLoadChunkedPreviews();
   } catch(e) {
     console.error("[Editor] Erro ao carregar:", e);
     container.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar itens</p></div>';
@@ -3373,6 +3933,19 @@ async function editorDeleteItem(itemId) {
   } catch(e) {
     console.error("[Editor] Erro ao excluir:", e);
     showToast("❌ Erro ao excluir");
+  }
+}
+
+async function editorToggleHidden(itemId, currentlyHidden) {
+  try {
+    await db.collection("cuts_items").doc(itemId).update({ hidden: !currentlyHidden });
+    showToast(currentlyHidden ? "👁 Item visível na loja" : "🙈 Item oculto da loja");
+    const item = editorPublishedItems.find(i => i.id === itemId);
+    if (item) item.hidden = !currentlyHidden;
+    renderEditorItemsList();
+  } catch(e) {
+    console.error("[Editor] Erro ao ocultar:", e);
+    showToast("❌ Erro ao atualizar");
   }
 }
 </script>

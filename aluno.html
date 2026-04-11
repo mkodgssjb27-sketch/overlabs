@@ -860,6 +860,19 @@ function requireFirebase() {
   return true;
 }
 
+function logActivity(action, detail, extra) {
+  if (!firebaseOk || !currentUser) return;
+  var data = {
+    userId: currentUser.id,
+    userName: currentUser.firstName || '',
+    action: action,
+    detail: detail,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  if (extra) data.extra = extra;
+  db.collection('activity_log').add(data).catch(function(e) { console.warn('[Log] Erro:', e); });
+}
+
 // ── Auth ──
 async function studentRegister() {
   if (!requireFirebase()) return;
@@ -1353,6 +1366,7 @@ async function bookSeat(rideId, seatIndex) {
       tx.update(rideRef, { booked: [...booked, entry] });
     });
     showToast("✅ Vaga reservada!");
+    logActivity('carona_reserva', 'Reservou vaga na carona', { rideId: rideId, seatIndex: seatIndex });
   } catch(e) {
     if (typeof e === "string") showToast(e);
     else { showToast("Erro. Tente novamente."); console.error(e); }
@@ -1404,6 +1418,7 @@ async function cancelRide(rideId) {
     }
 
     showToast("Reserva cancelada");
+    logActivity('carona_cancelamento', 'Cancelou reserva na carona' + (rideTitle ? ': ' + rideTitle : ''), { rideId: rideId });
     showScreen("student-list");
   } catch(e) { showToast("Erro. Tente novamente."); console.error(e); }
 }
@@ -1920,6 +1935,7 @@ async function savePhotoToFirestore(base64) {
     if (photoEl) photoEl.innerHTML = `<img src="${base64}" alt="Foto">`;
     updateAllAvatars();
     showToast("📷 Foto atualizada!");
+    logActivity('perfil_foto', 'Alterou foto de perfil');
   } catch(e) {
     showToast("Erro ao salvar foto");
     console.error(e);
@@ -1947,6 +1963,7 @@ async function saveProfile() {
       updateAllAvatars();
     }
     showToast("✅ Perfil salvo!");
+    logActivity('perfil_dados', 'Atualizou dados pessoais', { fullName: fullName, nickname: nickname });
   } catch(e) {
     showToast("Erro ao salvar perfil");
     console.error(e);
