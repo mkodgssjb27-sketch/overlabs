@@ -76,33 +76,35 @@ function updateSaldoUI() {
   if (el) el.textContent = userCuts;
 }
 
-// ── Carregar itens da loja (cuts_items) ──
-async function loadItems() {
+// ── Listener tempo real dos itens da loja (cuts_items) ──
+function loadItems() {
   if (!firebaseOk) return;
-  try {
-    const snap = await db.collection("cuts_items").orderBy("criadoEm", "desc").get();
+  db.collection("cuts_items").orderBy("criadoEm", "desc").onSnapshot(snap => {
     allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    console.log("[Loja] Itens carregados:", allItems.length);
+    console.log("[Loja] Itens atualizados:", allItems.length);
     renderItems();
-  } catch (e) {
-    console.error("[Loja] Erro ao carregar itens:", e);
+    // Atualizar inventário também (pode ter item removido)
+    if (myInventory.length) renderInventory();
+  }, err => {
+    console.error("[Loja] Erro ao ouvir itens:", err);
     document.getElementById("items-grid").innerHTML =
       '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar itens</p></div>';
-  }
+  });
 }
 
-// ── Carregar inventário do usuário ──
-async function loadInventory() {
+// ── Listener tempo real do inventário do usuário ──
+function loadInventory() {
   if (!firebaseOk || !currentUser) return;
-  try {
-    const snap = await db.collection("cuts_inventory")
-      .where("userId", "==", currentUser.id)
-      .get();
-    myInventory = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
-    console.log("[Loja] Inventário:", myInventory.length, "itens");
-  } catch (e) {
-    console.error("[Loja] Erro ao carregar inventário:", e);
-  }
+  db.collection("cuts_inventory")
+    .where("userId", "==", currentUser.id)
+    .onSnapshot(snap => {
+      myInventory = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+      console.log("[Loja] Inventário atualizado:", myInventory.length, "itens");
+      renderInventory();
+      renderItems(); // Atualizar badges de "owned"
+    }, err => {
+      console.error("[Loja] Erro ao ouvir inventário:", err);
+    });
 }
 
 // ── Render itens na grid ──
@@ -274,8 +276,6 @@ async function confirmPurchase() {
     if (!existCheck.empty) {
       showToast("⚠️ Você já possui este item!");
       closeBuyModal();
-      await loadInventory();
-      renderItems();
       return;
     }
 
@@ -313,10 +313,6 @@ async function confirmPurchase() {
     console.log("[Loja] Compra OK:", selectedItem.nome, "por", selectedItem.preco, "CUTS");
     showToast(`✅ ${selectedItem.nome} adquirido!`);
     closeBuyModal();
-
-    // Atualizar dados locais
-    await loadInventory();
-    renderItems();
   } catch (e) {
     console.error("[Loja] Erro na compra:", e);
     showToast("❌ Erro ao comprar. Tente novamente.");
@@ -397,8 +393,6 @@ async function toggleEquip(itemId, tipo) {
       }
     }
 
-    await loadInventory();
-    renderInventory();
   } catch (e) {
     console.error("[Loja] Erro ao equipar:", e);
     showToast("❌ Erro ao equipar");
