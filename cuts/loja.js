@@ -455,7 +455,7 @@ async function toggleEquip(itemId, tipo) {
         }
         await db.collection("users").doc(currentUser.id).update(updates);
         if (updates.photoURL) {
-          localStorage.setItem("carolampra_photo", updates.photoURL);
+          try { localStorage.setItem("carolampra_photo", updates.photoURL); } catch(lsErr) {}
         }
         showToast("Foto de perfil restaurada");
       } else {
@@ -498,13 +498,12 @@ async function toggleEquip(itemId, tipo) {
             if (userData.photoURL) updateData.originalPhotoURL = userData.photoURL;
           }
           await db.collection("users").doc(currentUser.id).update(updateData);
-          // No localStorage, salvar GIF completo para exibição animada
-          localStorage.setItem("carolampra_photo", itemUrl);
+          // Salvar GIF no localStorage (pode falhar por quota — ok, aluno.html recarrega dos chunks)
+          try { localStorage.removeItem("carolampra_photo"); localStorage.setItem("carolampra_photo", itemUrl); } catch(lsErr) { console.warn("[Loja] localStorage cheio para GIF, aluno.html carregará dos chunks"); }
           console.log("[Loja] Foto de perfil atualizada para avatar:", itemId);
         } catch(photoErr) {
           console.error("[Loja] Erro ao atualizar foto (item já equipado):", photoErr);
-          // Item já está marcado como equipado no inventário, só a foto falhou
-          localStorage.setItem("carolampra_photo", itemUrl);
+          try { localStorage.removeItem("carolampra_photo"); localStorage.setItem("carolampra_photo", itemUrl); } catch(lsErr) {}
         }
       }
 
