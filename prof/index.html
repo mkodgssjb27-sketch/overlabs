@@ -3236,8 +3236,7 @@ function editorMakeThumbnail(base64) {
         canvas.width = w;
         canvas.height = h;
         var ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, w, h);
+        ctx.clearRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0, w, h);
         if (canvas.toBlob) {
           canvas.toBlob(function(blob) {
@@ -3246,9 +3245,9 @@ function editorMakeThumbnail(base64) {
             r.onload = function() { resolve(r.result); };
             r.onerror = function() { resolve(base64.substring(0, 800000)); };
             r.readAsDataURL(blob);
-          }, "image/jpeg", 0.7);
+          }, "image/png");
         } else {
-          resolve(canvas.toDataURL("image/jpeg", 0.7));
+          resolve(canvas.toDataURL("image/png"));
         }
       } catch(e) { resolve(base64.substring(0, 800000)); }
     };

@@ -2264,34 +2264,53 @@ function applySidebarFrame() {
       return db.collection("cuts_items").doc(itemId).get().then(function(itemDoc) {
         var url = inv.url || "";
         var adj = null;
+        var isChunked = false;
         if (itemDoc.exists) {
           var data = itemDoc.data();
           if (data.url) url = data.url;
           adj = data.frameAdjust || null;
+          isChunked = !!data.chunked;
         }
-        if (!url) return;
-        sidebarFrame.src = url;
-        sidebarFrame.style.display = "block";
-        // Aplicar ajustes de posição
-        if (adj) {
-          var sc = adj.scale || 128;
-          var ox = adj.offsetX || 0;
-          var oy = adj.offsetY || 0;
-          var rot = adj.rotation || 0;
-          var offset = -(sc - 100) / 2;
-          sidebarFrame.style.inset = "auto";
-          sidebarFrame.style.width = sc + "%";
-          sidebarFrame.style.height = sc + "%";
-          sidebarFrame.style.left = (offset + ox) + "%";
-          sidebarFrame.style.top = (offset + oy) + "%";
-          sidebarFrame.style.transform = rot ? ("rotate(" + rot + "deg)") : "";
+        if (!url && !isChunked) return;
+
+        // Função para aplicar a moldura no sidebar
+        function applyFrame(frameUrl) {
+          if (!frameUrl) return;
+          sidebarFrame.src = frameUrl;
+          sidebarFrame.style.display = "block";
+          // Aplicar ajustes de posição
+          if (adj) {
+            var sc = adj.scale || 128;
+            var ox = adj.offsetX || 0;
+            var oy = adj.offsetY || 0;
+            var rot = adj.rotation || 0;
+            var offset = -(sc - 100) / 2;
+            sidebarFrame.style.inset = "auto";
+            sidebarFrame.style.width = sc + "%";
+            sidebarFrame.style.height = sc + "%";
+            sidebarFrame.style.left = (offset + ox) + "%";
+            sidebarFrame.style.top = (offset + oy) + "%";
+            sidebarFrame.style.transform = rot ? ("rotate(" + rot + "deg)") : "";
+          } else {
+            sidebarFrame.style.inset = "-14%";
+            sidebarFrame.style.width = "128%";
+            sidebarFrame.style.height = "128%";
+            sidebarFrame.style.left = "";
+            sidebarFrame.style.top = "";
+            sidebarFrame.style.transform = "";
+          }
+        }
+
+        // Se for chunked, carregar imagem completa dos chunks (preserva transparência)
+        if (isChunked) {
+          db.collection("cuts_items").doc(itemId).collection("chunks").get().then(function(chSnap) {
+            if (chSnap.empty) { applyFrame(url); return; }
+            var sorted = chSnap.docs.sort(function(a, b) { return parseInt(a.id) - parseInt(b.id); });
+            var fullUrl = sorted.map(function(d) { return d.data().data; }).join("");
+            applyFrame(fullUrl);
+          }).catch(function() { applyFrame(url); });
         } else {
-          sidebarFrame.style.inset = "-14%";
-          sidebarFrame.style.width = "128%";
-          sidebarFrame.style.height = "128%";
-          sidebarFrame.style.left = "";
-          sidebarFrame.style.top = "";
-          sidebarFrame.style.transform = "";
+          applyFrame(url);
         }
       });
     }).catch(function(e) {
