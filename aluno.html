@@ -459,31 +459,32 @@ input,select{font-family:inherit;outline:none}
 
 <!-- ══ SIDEBAR DO PERFIL ════════════════════════════════════════════ -->
 <div id="profile-sidebar-overlay" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.6)" onclick="closeSidebar()"></div>
-<div id="profile-sidebar" style="position:fixed;top:0;left:-300px;width:280px;height:100%;background:#1e293b;z-index:501;transition:left .3s ease;overflow-y:auto;border-right:1px solid rgba(255,255,255,.08)">
-  <div class="sidebar-banner" id="sidebar-banner-wrap">
-    <div class="banner-overlay" id="sidebar-banner-overlay"></div>
-    <div style="width:80px;height:80px;border-radius:50%;margin:0 auto 12px;position:relative" onclick="document.getElementById('photo-input').click()">
-      <div style="width:100%;height:100%;border-radius:50%;overflow:hidden;border:3px solid rgba(245,158,11,.5);background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center">
-        <div id="sidebar-photo" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff"></div>
+<div id="profile-sidebar" style="position:fixed;top:0;left:-300px;width:280px;height:100%;background:#0f172a;z-index:501;transition:left .3s ease;overflow-y:auto;border-right:1px solid rgba(255,255,255,.06)">
+  <!-- Área do perfil -->
+  <div style="padding:36px 20px 24px;text-align:center;background:linear-gradient(180deg,rgba(15,23,42,1) 0%,rgba(15,23,42,.95) 100%)">
+    <div style="width:100px;height:100px;border-radius:50%;margin:0 auto 16px;position:relative;cursor:pointer" onclick="document.getElementById('photo-input').click()">
+      <div style="width:100%;height:100%;border-radius:50%;overflow:hidden;border:3px solid #f59e0b;background:#1a1a2e;display:flex;align-items:center;justify-content:center">
+        <div id="sidebar-photo" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff"></div>
       </div>
       <img id="sidebar-frame" src="" style="position:absolute;inset:-14%;width:128%;height:128%;pointer-events:none;z-index:2;display:none">
     </div>
     <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
-    <div style="font-weight:800;font-size:16px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)" id="sidebar-name">—</div>
-    <div style="font-size:12px;color:#94a3b8;margin-top:2px;text-shadow:0 1px 3px rgba(0,0,0,.5)" id="sidebar-username">—</div>
-    <div style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:20px;padding:5px 14px">
+    <div style="font-weight:800;font-size:18px;color:#fff;letter-spacing:-.3px" id="sidebar-name">—</div>
+    <div style="font-size:13px;color:#64748b;margin-top:3px" id="sidebar-username">—</div>
+    <div style="margin-top:14px;display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.12);border:1.5px solid rgba(245,158,11,.25);border-radius:20px;padding:6px 16px">
       <span style="font-size:16px">🪙</span>
-      <span style="font-weight:900;font-size:15px;color:#f59e0b;text-shadow:0 1px 3px rgba(0,0,0,.5)" id="sidebar-cuts">0</span>
-      <span style="font-size:11px;font-weight:700;color:#f59e0b;text-shadow:0 1px 3px rgba(0,0,0,.5)">CUTS</span>
+      <span style="font-weight:900;font-size:16px;color:#f59e0b" id="sidebar-cuts">0</span>
+      <span style="font-size:11px;font-weight:700;color:#f59e0b">CUTS</span>
     </div>
     <script>try{var _c=localStorage.getItem("carolampra_cuts");if(_c!=null)document.getElementById("sidebar-cuts").textContent=_c}catch(e){}</script>
   </div>
-  <div style="padding:12px 14px">
+  <!-- Menu -->
+  <div style="padding:8px 14px 20px">
     <button onclick="closeSidebar();showScreen('student-personal');loadProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
       <span style="font-size:18px">👤</span> Dados Pessoais
     </button>
     <button disabled style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.02);color:#475569;font-weight:700;font-size:14px;cursor:not-allowed;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
-      <span style="font-size:18px">🎨</span> Customização
+      <span style="font-size:18px">🤪</span> Customização
       <span style="position:absolute;top:10px;right:12px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:9px;font-weight:900;padding:2px 8px;border-radius:8px">EM BREVE</span>
     </button>
     <button id="btn-loja-cuts" disabled style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.02);color:#475569;font-weight:700;font-size:14px;cursor:not-allowed;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
@@ -500,8 +501,7 @@ input,select{font-family:inherit;outline:none}
     <button onclick="closeSidebar();showScreen('student-patchnotes');loadStudentPatchNotes()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
       <span style="font-size:18px">📋</span> Notas de Patch
     </button>
-    <div style="border-top:1px solid rgba(255,255,255,.06);margin:12px 0"></div>
-    <button onclick="closeSidebar();studentLogout()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(239,68,68,.08);color:#f87171;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:12px">
+    <button onclick="closeSidebar();studentLogout()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(239,68,68,.1);color:#f87171;font-weight:700;font-size:14px;cursor:pointer;margin-top:4px;display:flex;align-items:center;gap:12px">
       <span style="font-size:18px">🚪</span> Sair
     </button>
   </div>
@@ -2116,24 +2116,12 @@ async function saveCustomization() {
 function applySidebarCustomization() {
   const custom = userCustomization || {};
   const sidebarFrame = document.getElementById("sidebar-frame");
-  const bannerWrap = document.getElementById("sidebar-banner-wrap");
-  const bannerOverlay = document.getElementById("sidebar-banner-overlay");
 
   // Frame
   const frame = custom.frameId ? allDecorations.find(d => d.id === custom.frameId) : null;
   if (sidebarFrame) {
     if (frame) { sidebarFrame.src = frame.imageURL; sidebarFrame.style.display = "block"; }
     else { sidebarFrame.style.display = "none"; }
-  }
-
-  // Banner
-  const banner = custom.bannerId ? allDecorations.find(d => d.id === custom.bannerId) : null;
-  if (bannerWrap) {
-    if (banner) { bannerWrap.style.backgroundImage = `url(${banner.imageURL})`; }
-    else { bannerWrap.style.backgroundImage = "none"; }
-  }
-  if (bannerOverlay) {
-    bannerOverlay.style.display = banner ? "block" : "none";
   }
 }
 
