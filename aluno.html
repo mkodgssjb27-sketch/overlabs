@@ -482,16 +482,16 @@ input,select{font-family:inherit;outline:none}
     <button onclick="closeSidebar();showScreen('student-personal');loadProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
       <span style="font-size:18px">👤</span> Dados Pessoais
     </button>
-    <button onclick="closeSidebar();showScreen('student-customization');loadCustomization()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+    <button disabled style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.02);color:#475569;font-weight:700;font-size:14px;cursor:not-allowed;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
       <span style="font-size:18px">🎨</span> Customização
+      <span style="position:absolute;top:10px;right:12px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:9px;font-weight:900;padding:2px 8px;border-radius:8px">EM BREVE</span>
     </button>
     <button disabled style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.02);color:#475569;font-weight:700;font-size:14px;cursor:not-allowed;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
       <span style="font-size:18px">🛒</span> Loja de CUTS
       <span style="position:absolute;top:10px;right:12px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:9px;font-weight:900;padding:2px 8px;border-radius:8px">EM BREVE</span>
     </button>
-    <button disabled style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.02);color:#475569;font-weight:700;font-size:14px;cursor:not-allowed;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
+    <button onclick="closeSidebar();showScreen('student-ranking');loadRanking()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
       <span style="font-size:18px">🏆</span> Ranking de Moedas
-      <span style="position:absolute;top:10px;right:12px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:9px;font-weight:900;padding:2px 8px;border-radius:8px">EM BREVE</span>
     </button>
     <button disabled style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.02);color:#475569;font-weight:700;font-size:14px;cursor:not-allowed;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
       <span style="font-size:18px">⚙️</span> Configurações
@@ -597,6 +597,21 @@ input,select{font-family:inherit;outline:none}
   </div>
 </div>
 
+<!-- ══ ALUNO — RANKING DE MOEDAS ═══════════════════════════════════ -->
+<div class="screen" id="screen-student-ranking">
+  <div class="app-wrap">
+    <div class="s-header" style="display:flex;align-items:center;gap:14px">
+      <button onclick="if(unsubRanking){unsubRanking();unsubRanking=null}showScreen('student-home')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div class="s-htitle" style="flex:1;font-size:16px">🏆 Ranking de Moedas</div>
+    </div>
+    <div class="s-content" style="padding-top:20px">
+      <div id="ranking-podium"></div>
+      <div id="ranking-list"></div>
+      <div class="loading" id="ranking-loading"><div class="spin"></div>Carregando ranking...</div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ ALUNO — NOTAS DE PATCH ══════════════════════════════════════ -->
 <div class="screen" id="screen-student-patchnotes">
   <div class="app-wrap">
@@ -676,6 +691,7 @@ let unsubAlerts = null;
 let unsubFeed = null;
 let unsubPresence = null;
 let unsubUserDoc = null;
+let unsubRanking = null;
 let currentUser = JSON.parse(localStorage.getItem("carolampra_user") || "null");
 let allRides = [];
 let allFeedItems = [];
@@ -894,6 +910,7 @@ function studentLogout() {
   if (unsubFeed)     { unsubFeed();     unsubFeed     = null; }
   if (unsubPresence) { unsubPresence(); unsubPresence = null; }
   if (unsubUserDoc)  { unsubUserDoc();  unsubUserDoc  = null; }
+  if (unsubRanking)  { unsubRanking();  unsubRanking  = null; }
   if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
   localStorage.removeItem("carolampra_user");
   localStorage.removeItem("carolampra_photo");
@@ -1788,6 +1805,107 @@ function loadStudentPatchNotes() {
       if (loading) loading.style.display = "none";
       console.error(e);
     });
+}
+
+// ── Ranking de Moedas ──
+function loadRanking() {
+  const podiumEl = document.getElementById("ranking-podium");
+  const listEl = document.getElementById("ranking-list");
+  const loadingEl = document.getElementById("ranking-loading");
+  if (loadingEl) loadingEl.style.display = "block";
+  if (podiumEl) podiumEl.innerHTML = "";
+  if (listEl) listEl.innerHTML = "";
+
+  if (unsubRanking) { unsubRanking(); unsubRanking = null; }
+  if (!firebaseOk) return;
+
+  unsubRanking = db.collection("users").onSnapshot(snap => {
+    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .filter(u => u.username && u.username !== "teste");
+
+    // Ordenar: CUTS desc, desempate por cutsUpdatedAt ASC (quem atingiu primeiro fica acima), 0 CUTS = alfabético
+    users.sort((a, b) => {
+      const ca = a.cuts || 0, cb = b.cuts || 0;
+      if (cb !== ca) return cb - ca;
+      // Empate
+      if (ca === 0) return (a.firstName || "").localeCompare(b.firstName || "", "pt-BR");
+      // Ambos > 0 com mesmo valor: quem atualizou primeiro fica acima
+      const ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
+      const tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
+      return ta - tb;
+    });
+
+    if (loadingEl) loadingEl.style.display = "none";
+    renderRanking(users, podiumEl, listEl);
+  }, () => { if (loadingEl) loadingEl.style.display = "none"; });
+}
+
+function renderRanking(users, podiumEl, listEl) {
+  const top3 = users.slice(0, 3);
+  const rest = users.slice(3);
+
+  // Pódio
+  if (top3.length > 0) {
+    const positions = [null, null, null]; // [2nd, 1st, 3rd] for display order
+    if (top3[0]) positions[1] = { ...top3[0], pos: 1 };
+    if (top3[1]) positions[0] = { ...top3[1], pos: 2 };
+    if (top3[2]) positions[2] = { ...top3[2], pos: 3 };
+
+    const heights = { 1: 130, 2: 100, 3: 80 };
+    const colors = { 1: "#f59e0b", 2: "#94a3b8", 3: "#cd7f32" };
+    const medals = { 1: "🥇", 2: "🥈", 3: "🥉" };
+    const bgGrad = { 1: "linear-gradient(to top,rgba(245,158,11,.3),rgba(245,158,11,.08))", 2: "linear-gradient(to top,rgba(148,163,184,.25),rgba(148,163,184,.06))", 3: "linear-gradient(to top,rgba(205,127,50,.25),rgba(205,127,50,.06))" };
+
+    let html = '<div style="display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:28px;padding:0 10px">';
+    positions.forEach(p => {
+      if (!p) return;
+      const h = heights[p.pos];
+      const c = colors[p.pos];
+      const initial = (p.firstName || "?")[0].toUpperCase();
+      const photo = p.photoURL ? `<img src="${p.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : `<span style="font-size:20px;font-weight:900;color:#fff">${initial}</span>`;
+      html += `
+        <div style="display:flex;flex-direction:column;align-items:center;flex:1;max-width:120px">
+          <div style="font-size:24px;margin-bottom:4px">${medals[p.pos]}</div>
+          <div style="width:52px;height:52px;border-radius:50%;border:3px solid ${c};overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);margin-bottom:6px">${photo}</div>
+          <div style="font-weight:800;font-size:13px;color:#fff;text-align:center;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.firstName || "—"}</div>
+          <div style="font-weight:900;font-size:15px;color:${c};margin-top:2px">🪙 ${p.cuts || 0}</div>
+          <div style="width:100%;height:${h}px;border-radius:14px 14px 0 0;background:${bgGrad[p.pos]};border:1px solid ${c}33;margin-top:8px;display:flex;align-items:center;justify-content:center">
+            <span style="font-size:28px;font-weight:900;color:${c};opacity:.5">${p.pos}º</span>
+          </div>
+        </div>`;
+    });
+    html += '</div>';
+    podiumEl.innerHTML = html;
+  }
+
+  // Lista (4º em diante)
+  if (rest.length > 0) {
+    listEl.innerHTML = '<div style="font-size:14px;font-weight:800;color:#94a3b8;margin-bottom:12px">Demais posições</div>' +
+      rest.map((u, i) => {
+        const pos = i + 4;
+        const initial = (u.firstName || "?")[0].toUpperCase();
+        const photo = u.photoURL ? `<img src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : `<span style="font-size:14px;font-weight:800;color:#fff">${initial}</span>`;
+        const isMe = currentUser && u.id === currentUser.id;
+        const meBorder = isMe ? "border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06)" : "border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03)";
+        return `
+        <div style="${meBorder};border-radius:14px;padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px">
+          <span style="font-weight:900;font-size:14px;color:#64748b;min-width:28px;text-align:center">${pos}º</span>
+          <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">${photo}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.firstName || "—"}${isMe ? ' <span style="font-size:10px;color:#f59e0b;font-weight:800">(você)</span>' : ''}</div>
+          </div>
+          <div style="font-weight:800;font-size:14px;color:#f59e0b">🪙 ${u.cuts || 0}</div>
+        </div>`;
+      }).join("");
+  }
+
+  // Destacar posição do usuário atual no pódio
+  if (currentUser && podiumEl) {
+    const myPos = users.findIndex(u => u.id === currentUser.id);
+    if (myPos >= 0 && myPos < 3) {
+      // Já está no pódio - nada extra necessário
+    }
+  }
 }
 
 // ── Customização de Perfil ──

@@ -1571,11 +1571,11 @@ async function saveCuts() {
   try {
     let updateData;
     if (cutsModalMode === "add") {
-      updateData = { cuts: firebase.firestore.FieldValue.increment(val) };
+      updateData = { cuts: firebase.firestore.FieldValue.increment(val), cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() };
     } else if (cutsModalMode === "remove") {
-      updateData = { cuts: firebase.firestore.FieldValue.increment(-val) };
+      updateData = { cuts: firebase.firestore.FieldValue.increment(-val), cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() };
     } else {
-      updateData = { cuts: val };
+      updateData = { cuts: val, cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() };
     }
     await db.collection("users").doc(cutsModalUserId).update(updateData);
 
@@ -2087,7 +2087,8 @@ async function savePresenca() {
     // Award CUTS to student
     if (cutsVal > 0) {
       await db.collection("users").doc(presenceStudentId).update({
-        cuts: firebase.firestore.FieldValue.increment(cutsVal)
+        cuts: firebase.firestore.FieldValue.increment(cutsVal),
+        cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       // Notificar aluno no sininho
       await db.collection("notifications").doc(presenceStudentId).collection("items").add({
