@@ -11,8 +11,9 @@ param(
 $ErrorActionPreference = "Stop"
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 $swFile = Join-Path $PSScriptRoot "sw.js"
+$swProfFile = Join-Path $PSScriptRoot "sw-prof.js"
 
-# Bump versao SW (unico para aluno + professor)
+# Bump versao SW aluno
 $content = Get-Content $swFile -Raw
 if ($content -match 'overlabs-v(\d+)') {
   $oldVersion = [int]$Matches[1]
@@ -21,10 +22,22 @@ if ($content -match 'overlabs-v(\d+)') {
   Set-Content $swFile $content -NoNewline
   Write-Host ""
   Write-Host "  OVER LABS - Deploy" -ForegroundColor Yellow
-  Write-Host "  SW: v$oldVersion -> v$newVersion" -ForegroundColor Cyan
+  Write-Host "  Aluno SW: v$oldVersion -> v$newVersion" -ForegroundColor Cyan
 } else {
   Write-Host "  ERRO: Nao encontrei a versao no sw.js" -ForegroundColor Red
   exit 1
+}
+
+# Bump versao SW professor
+$contentProf = Get-Content $swProfFile -Raw
+if ($contentProf -match 'overlabs-prof-v(\d+)') {
+  $oldProf = [int]$Matches[1]
+  $newProf = $oldProf + 1
+  $contentProf = $contentProf -replace "overlabs-prof-v$oldProf", "overlabs-prof-v$newProf"
+  Set-Content $swProfFile $contentProf -NoNewline
+  Write-Host "  Prof  SW: v$oldProf -> v$newProf" -ForegroundColor Cyan
+} else {
+  Write-Host "  AVISO: Nao encontrei a versao no sw-prof.js" -ForegroundColor Yellow
 }
 
 Write-Host "  Enviando para GitHub..." -ForegroundColor Gray

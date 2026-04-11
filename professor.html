@@ -2606,7 +2606,7 @@ function deleteDecoration(id) {
 // ── Service Worker & PWA Install ──
 if ("serviceWorker" in navigator) {
   const hadController = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
+  navigator.serviceWorker.register("sw-prof.js", { updateViaCache: "none" }).then(reg => {
     setInterval(() => reg.update(), 60000);
     reg.update();
     document.addEventListener("visibilitychange", () => {
