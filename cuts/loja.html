@@ -17,7 +17,7 @@
 
   <!-- ── Header ── -->
   <div class="loja-header">
-    <button class="back-btn" onclick="window.location.href='../aluno.html'">←</button>
+    <button class="back-btn" onclick="if(window.parent!==window){window.parent.closeLojaOverlay()}else{window.location.href='../aluno.html'}">←</button>
     <div class="title">🛒 Loja CUTS</div>
     <div class="saldo-badge">
       <span class="coin">🪙</span>

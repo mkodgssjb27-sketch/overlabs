@@ -661,10 +661,39 @@ input,select{font-family:inherit;outline:none}
   </div>
 </div>
 
+<!-- Loja CUTS — Iframe Overlay -->
+<div id="loja-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#0a0a0f">
+  <iframe id="loja-iframe" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
+function openLojaOverlay(hash) {
+  const overlay = document.getElementById('loja-overlay');
+  const iframe = document.getElementById('loja-iframe');
+  iframe.src = 'cuts/loja.html' + (hash || '');
+  overlay.style.display = 'block';
+}
+function closeLojaOverlay() {
+  const overlay = document.getElementById('loja-overlay');
+  const iframe = document.getElementById('loja-iframe');
+  overlay.style.display = 'none';
+  iframe.src = 'about:blank';
+  // Atualizar foto caso tenha mudado na loja
+  if (firebaseOk && currentUser) {
+    db.collection('users').doc(currentUser.id).get().then(doc => {
+      if (doc.exists && doc.data().photoURL) {
+        localStorage.setItem('carolampra_photo', doc.data().photoURL);
+        updateAllAvatars();
+      } else if (doc.exists && !doc.data().photoURL) {
+        localStorage.removeItem('carolampra_photo');
+        updateAllAvatars();
+      }
+    });
+  }
+}
 const firebaseConfig = {
   apiKey:            "AIzaSyAc9Ews7WVz6GSBp9vzXF4sFI1SMwzklX0",
   authDomain:        "carolampra.firebaseapp.com",
@@ -861,7 +890,7 @@ function enterStudentApp() {
   // Liberar Loja de CUTS + Inventário (BETA — apenas para Mayko)
   if (currentUser.firstName === "Mayko") {
     const btn = document.getElementById("btn-loja-cuts");
-    if (btn) { btn.disabled = false; btn.style.background = "rgba(255,255,255,.04)"; btn.style.color = "#e2e8f0"; btn.style.cursor = "pointer"; btn.onclick = function(){ closeSidebar(); window.location.href = "cuts/loja.html"; }; }
+    if (btn) { btn.disabled = false; btn.style.background = "rgba(255,255,255,.04)"; btn.style.color = "#e2e8f0"; btn.style.cursor = "pointer"; btn.onclick = function(){ closeSidebar(); openLojaOverlay(); }; }
     const badge = document.getElementById("loja-cuts-badge");
     if (badge) { badge.textContent = "BETA"; badge.style.background = "rgba(34,197,94,.2)"; badge.style.color = "#22c55e"; }
   }

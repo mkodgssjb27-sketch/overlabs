@@ -344,12 +344,16 @@ async function toggleEquip(itemId, tipo) {
       if (tipo === "avatar") {
         const userDoc = await db.collection("users").doc(currentUser.id).get();
         const userData = userDoc.data();
-        const originalPhoto = userData.originalPhotoURL || "";
-        await db.collection("users").doc(currentUser.id).update({
-          photoURL: originalPhoto,
-          equippedAvatarItemId: ""
-        });
-        localStorage.setItem("carolampra_photo", originalPhoto);
+        // Usar originalPhotoURL se existir, senão manter photoURL atual (sem avatar)
+        const originalPhoto = userData.originalPhotoURL || userData.photoURL || "";
+        const updates = { equippedAvatarItemId: "" };
+        if (userData.originalPhotoURL) {
+          updates.photoURL = userData.originalPhotoURL;
+        }
+        await db.collection("users").doc(currentUser.id).update(updates);
+        if (updates.photoURL) {
+          localStorage.setItem("carolampra_photo", updates.photoURL);
+        }
         showToast("Foto de perfil restaurada");
       } else {
         showToast("Item desequipado");
@@ -373,19 +377,13 @@ async function toggleEquip(itemId, tipo) {
       if (tipo === "avatar" && item && item.url) {
         const userDoc = await db.collection("users").doc(currentUser.id).get();
         const userData = userDoc.data();
-        // Salvar foto original apenas se não existe ou se não é um avatar de loja
-        if (!userData.originalPhotoURL && userData.photoURL) {
-          batch.update(db.collection("users").doc(currentUser.id), {
-            originalPhotoURL: userData.photoURL,
-            photoURL: item.url,
-            equippedAvatarItemId: itemId
-          });
-        } else {
-          batch.update(db.collection("users").doc(currentUser.id), {
-            photoURL: item.url,
-            equippedAvatarItemId: itemId
-          });
+        // Salvar foto pessoal original (nunca sobrescrever com URL de avatar)
+        const updateData = { photoURL: item.url, equippedAvatarItemId: itemId };
+        if (!userData.originalPhotoURL || !userData.equippedAvatarItemId) {
+          // Salvar foto atual como original só se não tem avatar equipado
+          if (userData.photoURL) updateData.originalPhotoURL = userData.photoURL;
         }
+        batch.update(db.collection("users").doc(currentUser.id), updateData);
         localStorage.setItem("carolampra_photo", item.url);
       }
 
