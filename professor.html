@@ -2566,7 +2566,7 @@ function deleteDecoration(id) {
 // ── Service Worker & PWA Install ──
 if ("serviceWorker" in navigator) {
   const hadController = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register("sw-prof.js", { updateViaCache: "none" }).then(reg => {
+  navigator.serviceWorker.register("sw-prof.js", { scope: "./professor", updateViaCache: "none" }).then(reg => {
     setInterval(() => reg.update(), 60000);
     reg.update();
     document.addEventListener("visibilitychange", () => {
@@ -2626,16 +2626,9 @@ function installProfApp() {
       if (r.outcome === "accepted") showToast("✅ OVER HOST instalado!");
     });
   } else if (isProfIOS()) {
-    showToast("⬆️ Compartilhar → Adicionar à Tela de Início");
+    showToast("⬆️ Toque em Compartilhar (⬆️) → Adicionar à Tela de Início");
   } else {
-    // Tentar redirecionar para a URL de manifest para forçar prompt
-    // Se não funcionar, o Chrome mostrará a barra de instalação nativa
-    window.location.reload();
-    setTimeout(() => {
-      if (!deferredPromptProf) {
-        showToast("📲 Para instalar: menu do Chrome (⋮) → Instalar aplicativo");
-      }
-    }, 2000);
+    showToast("📲 Toque no menu do Chrome (⋮) no canto superior → 'Instalar aplicativo' ou 'Adicionar à tela inicial'");
   }
 }
 </script>
