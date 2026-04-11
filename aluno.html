@@ -476,6 +476,7 @@ input,select{font-family:inherit;outline:none}
       <span style="font-weight:900;font-size:15px;color:#f59e0b;text-shadow:0 1px 3px rgba(0,0,0,.5)" id="sidebar-cuts">0</span>
       <span style="font-size:11px;font-weight:700;color:#f59e0b;text-shadow:0 1px 3px rgba(0,0,0,.5)">CUTS</span>
     </div>
+    <script>try{var _c=localStorage.getItem("carolampra_cuts");if(_c!=null)document.getElementById("sidebar-cuts").textContent=_c}catch(e){}</script>
   </div>
   <div style="padding:12px 14px">
     <button onclick="closeSidebar();showScreen('student-personal');loadProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
@@ -2047,23 +2048,10 @@ if (currentUser && firebaseOk) {
     if (freshData.fullName) currentUser.fullName = freshData.fullName;
     if (freshData.nickname) currentUser.nickname = freshData.nickname;
     localStorage.setItem("carolampra_user", JSON.stringify(currentUser));
-    document.getElementById("sl-greeting").textContent = `Olá, ${currentUser.firstName}!`;
-    const sh = document.getElementById("sh-greeting");
-    const sp = document.getElementById("sp-greeting");
-    const st = document.getElementById("st-greeting");
-    if (sh) sh.textContent = `Olá, ${currentUser.firstName}!`;
-    if (sp) sp.textContent = `Olá, ${currentUser.firstName}!`;
-    if (st) st.textContent = `Olá, ${currentUser.firstName}!`;
-    showScreen("student-home");
-    startStudentListeners();
-    initPullToRefresh();
-    showPermissionDialog();
-    if (localStorage.getItem("carolampra_perms_granted")) {
-      startLocationTracking();
-    }
+    // Usar enterStudentApp() para garantir que CUTS listener e tudo mais seja configurado
+    enterStudentApp();
     // Sempre tentar registrar FCM token (caso notificações já estejam permitidas)
     registerFCMToken();
-    updateAllAvatars();
     // Load photo from Firestore if not in localStorage
     if (!localStorage.getItem("carolampra_photo")) {
       if (doc.data().photoURL) {
@@ -2073,10 +2061,7 @@ if (currentUser && firebaseOk) {
     }
   }).catch(e => {
     console.log("Error checking blocked status:", e);
-    document.getElementById("sl-greeting").textContent = `Olá, ${currentUser.firstName}!`;
-    showScreen("student-home");
-    startStudentListeners();
-    initPullToRefresh();
+    enterStudentApp();
   });
 }
 
