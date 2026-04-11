@@ -1732,7 +1732,23 @@ function compressImage(file, maxSize, quality, callback) {
 async function savePhotoToFirestore(base64) {
   if (!currentUser || !firebaseOk) return;
   try {
-    await db.collection("users").doc(currentUser.id).update({ photoURL: base64 });
+    // Se tinha avatar equipado, desequipar e atualizar originalPhotoURL
+    const userDoc = await db.collection("users").doc(currentUser.id).get();
+    const userData = userDoc.data();
+    const updates = { photoURL: base64, originalPhotoURL: base64, equippedAvatarItemId: "" };
+
+    // Desequipar avatar da loja se houver
+    if (userData.equippedAvatarItemId) {
+      const invSnap = await db.collection("cuts_inventory")
+        .where("userId", "==", currentUser.id)
+        .where("itemId", "==", userData.equippedAvatarItemId)
+        .get();
+      if (!invSnap.empty) {
+        await invSnap.docs[0].ref.update({ equipado: false });
+      }
+    }
+
+    await db.collection("users").doc(currentUser.id).update(updates);
     localStorage.setItem("carolampra_photo", base64);
     const photoEl = document.getElementById("profile-photo-display");
     if (photoEl) photoEl.innerHTML = `<img src="${base64}" alt="Foto">`;

@@ -333,16 +333,32 @@ async function toggleEquip(itemId, tipo) {
     const inv = myInventory.find(i => i.itemId === itemId);
     if (!inv) return;
 
+    const item = allItems.find(a => a.id === itemId);
+
     if (inv.equipado) {
       // Desequipar
       await db.collection("cuts_inventory").doc(inv.docId).update({ equipado: false });
       console.log("[Loja] Desequipado:", itemId);
-      showToast("Item desequipado");
+
+      // Se for avatar, restaurar foto original
+      if (tipo === "avatar") {
+        const userDoc = await db.collection("users").doc(currentUser.id).get();
+        const userData = userDoc.data();
+        const originalPhoto = userData.originalPhotoURL || "";
+        await db.collection("users").doc(currentUser.id).update({
+          photoURL: originalPhoto,
+          equippedAvatarItemId: ""
+        });
+        localStorage.setItem("carolampra_photo", originalPhoto);
+        showToast("Foto de perfil restaurada");
+      } else {
+        showToast("Item desequipado");
+      }
     } else {
       // Desequipar outros do mesmo tipo primeiro
       const sameType = myInventory.filter(i => {
-        const item = allItems.find(a => a.id === i.itemId);
-        return item && item.tipo === tipo && i.equipado;
+        const it = allItems.find(a => a.id === i.itemId);
+        return it && it.tipo === tipo && i.equipado;
       });
 
       const batch = db.batch();
@@ -352,10 +368,35 @@ async function toggleEquip(itemId, tipo) {
 
       // Equipar este
       batch.update(db.collection("cuts_inventory").doc(inv.docId), { equipado: true });
+
+      // Se for avatar, trocar foto de perfil
+      if (tipo === "avatar" && item && item.url) {
+        const userDoc = await db.collection("users").doc(currentUser.id).get();
+        const userData = userDoc.data();
+        // Salvar foto original apenas se não existe ou se não é um avatar de loja
+        if (!userData.originalPhotoURL && userData.photoURL) {
+          batch.update(db.collection("users").doc(currentUser.id), {
+            originalPhotoURL: userData.photoURL,
+            photoURL: item.url,
+            equippedAvatarItemId: itemId
+          });
+        } else {
+          batch.update(db.collection("users").doc(currentUser.id), {
+            photoURL: item.url,
+            equippedAvatarItemId: itemId
+          });
+        }
+        localStorage.setItem("carolampra_photo", item.url);
+      }
+
       await batch.commit();
 
       console.log("[Loja] Equipado:", itemId, "(tipo:", tipo, ")");
-      showToast("✅ Item equipado!");
+      if (tipo === "avatar") {
+        showToast("✅ Avatar equipado como foto de perfil!");
+      } else {
+        showToast("✅ Item equipado!");
+      }
     }
 
     await loadInventory();
