@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Corrigir Apps — OVER LABS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#fff;font-family:system-ui,sans-serif;min-height:100vh;padding:24px}
+.container{max-width:420px;margin:0 auto}
+h1{font-size:22px;font-weight:900;text-align:center;margin-bottom:8px;margin-top:24px}
+.sub{text-align:center;color:#64748b;font-size:13px;margin-bottom:32px}
+.step{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:24px;margin-bottom:16px;position:relative}
+.step-num{position:absolute;top:-12px;left:20px;background:#f59e0b;color:#000;font-weight:900;font-size:13px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.step h2{font-size:16px;font-weight:800;margin-bottom:8px;margin-top:4px}
+.step p{color:#94a3b8;font-size:13px;line-height:1.5}
+.step .done{display:none;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;padding:10px;border-radius:12px;font-size:13px;font-weight:700;margin-top:12px}
+.btn{width:100%;padding:15px;border-radius:14px;font-weight:800;font-size:15px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn-red{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;box-shadow:0 4px 20px rgba(239,68,68,.3)}
+.btn-amber{background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;box-shadow:0 4px 20px rgba(245,158,11,.3)}
+.btn-teal{background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;box-shadow:0 4px 20px rgba(13,148,136,.3)}
+.btn-outline{background:transparent;border:2px solid rgba(255,255,255,.15);color:#94a3b8;font-size:13px;padding:12px}
+.links{margin-top:24px}
+.links a{display:block;color:#0d9488;font-weight:700;font-size:14px;text-decoration:none;padding:14px;text-align:center;border:1px solid rgba(13,148,136,.2);border-radius:14px;margin-bottom:10px}
+.warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:16px;margin-bottom:24px;text-align:center}
+.warn p{color:#f59e0b;font-size:14px;font-weight:700}
+.warn small{color:#94a3b8;font-size:12px;display:block;margin-top:6px}
+.hidden{display:none}
+.progress{height:4px;background:rgba(255,255,255,.08);border-radius:4px;margin-top:12px;overflow:hidden}
+.progress-bar{height:100%;background:#22c55e;border-radius:4px;transition:width .5s}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔧 Corrigir Apps</h1>
+  <div class="sub">Separar OVER LABS (Aluno) e OVER HOST (Professor)</div>
+
+  <!-- PASSO 1: Limpar cache -->
+  <div class="step" id="step1">
+    <div class="step-num">1</div>
+    <h2>🗑️ Limpar dados do navegador</h2>
+    <p>Isso remove os caches antigos que estão causando conflito entre os dois apps.</p>
+    <button class="btn btn-red" id="btnClean" onclick="cleanAll()">Limpar Agora</button>
+    <div class="progress hidden" id="cleanProgress"><div class="progress-bar" style="width:0%"></div></div>
+    <div class="done" id="done1">✅ Caches e Service Workers removidos!</div>
+  </div>
+
+  <!-- PASSO 2: Remover app antigo -->
+  <div class="step" id="step2">
+    <div class="step-num">2</div>
+    <h2>📱 Remover o app OVER LABS da tela inicial</h2>
+    <p>Na tela inicial do celular, <strong style="color:#fff">segure o ícone</strong> do OVER LABS → <strong style="color:#fff">Desinstalar</strong> ou <strong style="color:#fff">Remover</strong>.</p>
+    <p style="margin-top:8px;color:#f59e0b;font-weight:700">⚠️ Seus dados NÃO serão perdidos! Estão no Firebase.</p>
+    <button class="btn btn-outline" onclick="confirmStep2()">Já removi o app ✓</button>
+    <div class="done" id="done2">✅ Perfeito!</div>
+  </div>
+
+  <!-- PASSO 3: Reinstalar aluno -->
+  <div class="step" id="step3">
+    <div class="step-num">3</div>
+    <h2>📲 Instalar OVER LABS (Aluno)</h2>
+    <p>Abra o link abaixo <strong style="color:#fff">no Chrome</strong>. Depois toque nos <strong style="color:#fff">⋮ (3 pontinhos)</strong> → <strong style="color:#fff">"Instalar aplicativo"</strong></p>
+    <a class="btn btn-amber" href="./aluno.html" target="_blank">Abrir OVER LABS →</a>
+    <button class="btn btn-outline" onclick="confirmStep3()" style="margin-top:8px">Já instalei ✓</button>
+    <div class="done" id="done3">✅ OVER LABS instalado!</div>
+  </div>
+
+  <!-- PASSO 4: Instalar professor -->
+  <div class="step" id="step4">
+    <div class="step-num">4</div>
+    <h2>📲 Instalar OVER HOST (Professor)</h2>
+    <p>Abra o link abaixo <strong style="color:#fff">no Chrome</strong>. Depois toque nos <strong style="color:#fff">⋮ (3 pontinhos)</strong> → <strong style="color:#fff">"Instalar aplicativo"</strong></p>
+    <a class="btn btn-teal" href="./prof/" target="_blank">Abrir OVER HOST →</a>
+    <button class="btn btn-outline" onclick="confirmStep4()" style="margin-top:8px">Já instalei ✓</button>
+    <div class="done" id="done4">✅ OVER HOST instalado!</div>
+  </div>
+
+  <!-- Sucesso final -->
+  <div class="step hidden" id="stepDone" style="text-align:center;border-color:rgba(34,197,94,.3)">
+    <h2 style="color:#22c55e;font-size:20px">🎉 Tudo pronto!</h2>
+    <p style="margin-top:8px">Agora você tem dois apps separados na tela inicial:<br><strong style="color:#f59e0b">OVER LABS</strong> (Aluno) e <strong style="color:#0d9488">OVER HOST</strong> (Professor)</p>
+  </div>
+</div>
+
+<script>
+async function cleanAll() {
+  var btn = document.getElementById("btnClean");
+  var prog = document.getElementById("cleanProgress");
+  var bar = prog.querySelector(".progress-bar");
+  btn.textContent = "Limpando...";
+  btn.disabled = true;
+  prog.classList.remove("hidden");
+  bar.style.width = "30%";
+
+  try {
+    // Deletar todos os caches
+    var keys = await caches.keys();
+    await Promise.all(keys.map(function(k){ return caches.delete(k); }));
+    bar.style.width = "60%";
+
+    // Desregistrar todos os service workers
+    if ("serviceWorker" in navigator) {
+      var regs = await navigator.serviceWorker.getRegistrations();
+      for (var i = 0; i < regs.length; i++) {
+        await regs[i].unregister();
+      }
+    }
+    bar.style.width = "100%";
+  } catch(e) {
+    bar.style.width = "100%";
+  }
+
+  setTimeout(function(){
+    btn.style.display = "none";
+    prog.style.display = "none";
+    document.getElementById("done1").style.display = "block";
+  }, 500);
+}
+
+function confirmStep2() {
+  document.getElementById("done2").style.display = "block";
+  event.target.style.display = "none";
+}
+function confirmStep3() {
+  document.getElementById("done3").style.display = "block";
+  event.target.style.display = "none";
+}
+function confirmStep4() {
+  document.getElementById("done4").style.display = "block";
+  event.target.style.display = "none";
+  document.getElementById("stepDone").classList.remove("hidden");
+}
+</script>
+</body>
+</html>
