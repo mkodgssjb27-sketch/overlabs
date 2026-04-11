@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Instalar OVER HOST</title>
 <meta name="theme-color" content="#0d9488">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="OVER HOST">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="../icon-192.png">
 <style>
@@ -18,17 +15,20 @@ body{background:#0a0a0f;color:#fff;font-family:system-ui,sans-serif;display:flex
 h1{font-size:26px;font-weight:900;letter-spacing:2px;margin-bottom:4px}
 .sub{color:#0d9488;font-size:14px;font-weight:700;margin-bottom:8px}
 .desc{color:#64748b;font-size:13px;margin-bottom:32px}
-.btn-install{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;font-weight:800;font-size:16px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(13,148,136,.4);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px}
-.btn-install:active{transform:scale(.98)}
-.btn-enter{width:100%;padding:14px;border-radius:14px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;font-weight:800;font-size:14px;cursor:pointer;text-decoration:none;display:block;text-align:center}
+.btn{width:100%;padding:16px;border-radius:14px;font-weight:800;font-size:16px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn-install{background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;box-shadow:0 4px 20px rgba(13,148,136,.4)}
+.btn-chrome{background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;box-shadow:0 4px 20px rgba(245,158,11,.3)}
+.btn-enter{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;font-size:14px;padding:14px}
+.warn{padding:16px;border-radius:14px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);margin-bottom:16px}
+.warn p{color:#f59e0b;font-size:13px;font-weight:600;margin-bottom:8px}
+.warn small{color:#94a3b8;font-size:12px}
+.status{margin-top:16px;padding:12px;border-radius:12px;font-size:13px;font-weight:600;display:none}
+.status.ok{display:block;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e}
 .ios-hint{margin-top:16px;padding:14px;border-radius:14px;background:rgba(13,148,136,.08);border:1px solid rgba(13,148,136,.2);display:none}
 .ios-hint .t{font-size:13px;font-weight:700;color:#0d9488;margin-bottom:6px}
 .ios-hint .d{font-size:12px;color:#94a3b8}
 .ios-hint .d strong{color:#fff}
-.status{margin-top:16px;padding:12px;border-radius:12px;font-size:13px;font-weight:600;display:none}
-.status.ok{display:block;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e}
-.spin{width:32px;height:32px;border:3px solid rgba(255,255,255,.1);border-top-color:#0d9488;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px;display:none}
-@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -36,98 +36,110 @@ h1{font-size:26px;font-weight:900;letter-spacing:2px;margin-bottom:4px}
   <img src="../logo.png" alt="OVER HOST">
   <h1>OVER HOST</h1>
   <div class="sub">Painel do Professor</div>
-  <div class="desc">Instale o app no seu telefone para acesso rápido</div>
-  
-  <div class="spin" id="loading"></div>
-  
-  <button class="btn-install" id="installBtn" onclick="doInstall()">
-    📲 Instalar OVER HOST
-  </button>
-  
-  <div class="ios-hint" id="iosHint">
-    <div class="t">📲 Para instalar no iPhone:</div>
-    <div class="d">Toque em <strong>⬆️ Compartilhar</strong> (barra do Safari) → <strong>Adicionar à Tela de Início</strong></div>
+
+  <!-- CASO 1: Abriu dentro do app aluno (standalone) -->
+  <div id="wrongApp" style="display:none">
+    <div class="warn">
+      <p>⚠️ Este link abriu dentro do app OVER LABS (aluno).</p>
+      <small>Para instalar o OVER HOST como app separado, abra no Chrome.</small>
+    </div>
+    <a id="chromeLink" class="btn btn-chrome" href="#" target="_blank">
+      🌐 Abrir no Chrome para Instalar
+    </a>
   </div>
-  
-  <div class="status" id="statusMsg"></div>
-  
-  <a class="btn-enter" href="./" style="margin-top:20px">Entrar no Painel →</a>
+
+  <!-- CASO 2: Abriu no Chrome (correto) -->
+  <div id="chromeView" style="display:none">
+    <div class="desc">Instale o app no seu telefone para acesso rápido</div>
+    <button class="btn btn-install" id="installBtn" onclick="doInstall()">
+      📲 Instalar OVER HOST
+    </button>
+    <div class="ios-hint" id="iosHint">
+      <div class="t">📲 Para instalar no iPhone:</div>
+      <div class="d">Toque em <strong>⬆️ Compartilhar</strong> (barra do Safari) → <strong>Adicionar à Tela de Início</strong></div>
+    </div>
+    <div class="status" id="statusMsg"></div>
+    <a class="btn btn-enter" href="./" style="margin-top:8px">Entrar no Painel →</a>
+  </div>
 </div>
 
 <script>
-// Limpar caches antigos ao abrir esta pagina
-(async function cleanUp() {
-  try {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k.startsWith("overhost-")).map(k => caches.delete(k)));
-    const regs = await navigator.serviceWorker.getRegistrations();
-    for (const r of regs) {
-      if (r.scope.includes("/prof")) await r.unregister();
-    }
-  } catch(e) {}
-  // Re-registrar SW limpo
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
-  }
-})();
+var INSTALL_URL = "https://mkodgssjb27-sketch.github.io/overlabs/prof/reset.html";
 
-// Capturar prompt de instalacao
-let deferredPrompt = null;
-window.addEventListener("beforeinstallprompt", e => {
-  e.preventDefault();
-  deferredPrompt = e;
-});
-
-window.addEventListener("appinstalled", () => {
-  deferredPrompt = null;
-  const s = document.getElementById("statusMsg");
-  s.className = "status ok";
-  s.style.display = "block";
-  s.textContent = "✅ OVER HOST instalado com sucesso! Procure o ícone na sua tela inicial.";
-  document.getElementById("installBtn").style.display = "none";
-});
-
-// Detectar iOS
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-}
 function isStandalone() {
   return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
 }
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
 
-// Se ja instalado
 if (isStandalone()) {
-  document.getElementById("installBtn").style.display = "none";
-  const s = document.getElementById("statusMsg");
+  // Estamos dentro de um app instalado (provavelmente o aluno) - mostrar aviso
+  document.getElementById("wrongApp").style.display = "block";
+  // Intent para forcar abrir no Chrome do Android
+  var intentUrl = "intent://" + INSTALL_URL.replace("https://","") + "#Intent;scheme=https;package=com.android.chrome;end";
+  document.getElementById("chromeLink").href = intentUrl;
+} else {
+  // Estamos no navegador - mostrar botao de instalar
+  document.getElementById("chromeView").style.display = "block";
+
+  // Limpar caches antigos
+  (async function() {
+    try {
+      var keys = await caches.keys();
+      await Promise.all(keys.filter(function(k){return k.startsWith("overhost-")}).map(function(k){return caches.delete(k)}));
+      var regs = await navigator.serviceWorker.getRegistrations();
+      for (var i=0;i<regs.length;i++) {
+        if (regs[i].scope.includes("/prof")) await regs[i].unregister();
+      }
+    } catch(e) {}
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
+    }
+  })();
+
+  // iOS
+  if (isIOS()) {
+    document.getElementById("iosHint").style.display = "block";
+  }
+}
+
+// Capturar prompt
+var deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+window.addEventListener("appinstalled", function() {
+  deferredPrompt = null;
+  var s = document.getElementById("statusMsg");
   s.className = "status ok";
   s.style.display = "block";
-  s.textContent = "✅ App já está instalado!";
-}
-// iOS hint
-if (isIOS() && !isStandalone()) {
-  document.getElementById("iosHint").style.display = "block";
-}
+  s.textContent = "✅ OVER HOST instalado! Procure o ícone na sua tela inicial.";
+  document.getElementById("installBtn").style.display = "none";
+});
 
 function doInstall() {
   if (deferredPrompt) {
     deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(r => {
-      if (r.outcome === "accepted") {
-        deferredPrompt = null;
-      }
+    deferredPrompt.userChoice.then(function(r) {
+      if (r.outcome === "accepted") deferredPrompt = null;
     });
   } else if (isIOS()) {
     document.getElementById("iosHint").style.display = "block";
   } else {
-    // Mostrar instrucao manual
-    const s = document.getElementById("statusMsg");
+    var s = document.getElementById("statusMsg");
     s.className = "status";
     s.style.display = "block";
     s.style.background = "rgba(245,158,11,.1)";
     s.style.border = "1px solid rgba(245,158,11,.3)";
     s.style.color = "#f59e0b";
-    s.innerHTML = "📲 <strong>Toque nos 3 pontinhos</strong> (⋮) no canto superior direito do Chrome → <strong>\"Instalar aplicativo\"</strong> ou <strong>\"Adicionar à tela inicial\"</strong>";
+    s.innerHTML = '📲 <strong>Toque nos 3 pontinhos</strong> (⋮) no canto superior direito do Chrome → <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>';
   }
+}
+</script>
+</body>
+</html>
 }
 </script>
 </body>
