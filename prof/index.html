@@ -994,6 +994,32 @@ input,select,textarea{font-family:inherit;outline:none}
       <button onclick="editorPublish()" class="btn-main" id="btn-editor-publish">🚀 Publicar na Loja</button>
     </div>
 
+    <!-- Ajustes da moldura (só aparece quando tipo=moldura) -->
+    <div id="editor-frame-adjust" class="t-form" style="display:none;margin-bottom:24px">
+      <div class="section-title">🔧 Ajustar Moldura</div>
+      <div style="margin-bottom:14px">
+        <label class="lbl">DESLOCAMENTO HORIZONTAL</label>
+        <input type="range" id="frame-adj-x" min="-50" max="50" value="0" step="1" oninput="editorApplyFrameAdjust()" style="width:100%;accent-color:#f59e0b">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b"><span>← Esquerda</span><span id="frame-adj-x-val">0%</span><span>Direita →</span></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="lbl">DESLOCAMENTO VERTICAL</label>
+        <input type="range" id="frame-adj-y" min="-50" max="50" value="0" step="1" oninput="editorApplyFrameAdjust()" style="width:100%;accent-color:#f59e0b">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b"><span>↑ Cima</span><span id="frame-adj-y-val">0%</span><span>Baixo ↓</span></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="lbl">TAMANHO</label>
+        <input type="range" id="frame-adj-scale" min="80" max="200" value="128" step="1" oninput="editorApplyFrameAdjust()" style="width:100%;accent-color:#f59e0b">
+        <div style="text-align:center;font-size:11px;color:#64748b"><span id="frame-adj-scale-val">128%</span></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="lbl">ROTAÇÃO</label>
+        <input type="range" id="frame-adj-rot" min="-180" max="180" value="0" step="1" oninput="editorApplyFrameAdjust()" style="width:100%;accent-color:#f59e0b">
+        <div style="text-align:center;font-size:11px;color:#64748b"><span id="frame-adj-rot-val">0°</span></div>
+      </div>
+      <button onclick="editorResetFrameAdjust()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-size:12px;font-weight:700;padding:8px 16px;border-radius:10px;cursor:pointer;width:100%">🔄 Resetar Ajustes</button>
+    </div>
+
     <!-- Preview do perfil simulado -->
     <div class="t-form" style="margin-bottom:24px">
       <div class="section-title">👁️ Preview do Perfil</div>
@@ -3039,6 +3065,9 @@ function editorSelectType(tipo) {
       el.style.boxShadow = "none";
     }
   });
+  // Mostrar/ocultar painel de ajuste de moldura
+  const adjPanel = document.getElementById("editor-frame-adjust");
+  if (adjPanel) adjPanel.style.display = (tipo === "moldura" && editorFileUrl) ? "block" : "none";
   editorUpdatePreview();
 }
 
@@ -3051,9 +3080,14 @@ function editorUpdatePreview() {
 
   // Reset
   simFrame.style.display = "none";
+  simFrame.style.transform = "";
   simBanner.style.backgroundImage = "";
   simEmblems.innerHTML = "";
   simAvatar.innerHTML = '<span style="font-size:28px">M</span>';
+
+  // Mostrar/ocultar painel de ajuste
+  const adjPanel = document.getElementById("editor-frame-adjust");
+  if (adjPanel) adjPanel.style.display = (editorType === "moldura") ? "block" : "none";
 
   switch (editorType) {
     case "avatar":
@@ -3062,6 +3096,7 @@ function editorUpdatePreview() {
     case "moldura":
       simFrame.src = editorFileUrl;
       simFrame.style.display = "block";
+      editorApplyFrameAdjust();
       break;
     case "banner":
       simBanner.style.backgroundImage = 'url(' + editorFileUrl + ')';
@@ -3070,6 +3105,45 @@ function editorUpdatePreview() {
       simEmblems.innerHTML = '<img src="' + editorFileUrl + '" style="width:32px;height:32px;object-fit:contain">';
       break;
   }
+}
+
+function editorApplyFrameAdjust() {
+  const simFrame = document.getElementById("editor-sim-frame");
+  if (!simFrame) return;
+  const ox = parseInt(document.getElementById("frame-adj-x").value) || 0;
+  const oy = parseInt(document.getElementById("frame-adj-y").value) || 0;
+  const sc = parseInt(document.getElementById("frame-adj-scale").value) || 128;
+  const rot = parseInt(document.getElementById("frame-adj-rot").value) || 0;
+  // Atualizar labels
+  document.getElementById("frame-adj-x-val").textContent = ox + "%";
+  document.getElementById("frame-adj-y-val").textContent = oy + "%";
+  document.getElementById("frame-adj-scale-val").textContent = sc + "%";
+  document.getElementById("frame-adj-rot-val").textContent = rot + "°";
+  // Aplicar no preview — tamanho e posição via CSS
+  simFrame.style.width = sc + "%";
+  simFrame.style.height = sc + "%";
+  var offset = -(sc - 100) / 2;
+  simFrame.style.left = (offset + ox) + "%";
+  simFrame.style.top = (offset + oy) + "%";
+  simFrame.style.inset = "auto";
+  simFrame.style.transform = rot ? ("rotate(" + rot + "deg)") : "";
+}
+
+function editorResetFrameAdjust() {
+  document.getElementById("frame-adj-x").value = 0;
+  document.getElementById("frame-adj-y").value = 0;
+  document.getElementById("frame-adj-scale").value = 128;
+  document.getElementById("frame-adj-rot").value = 0;
+  editorApplyFrameAdjust();
+}
+
+function editorGetFrameAdjust() {
+  if (editorType !== "moldura") return null;
+  var ox = parseInt(document.getElementById("frame-adj-x").value) || 0;
+  var oy = parseInt(document.getElementById("frame-adj-y").value) || 0;
+  var sc = parseInt(document.getElementById("frame-adj-scale").value) || 128;
+  var rot = parseInt(document.getElementById("frame-adj-rot").value) || 0;
+  return { offsetX: ox, offsetY: oy, scale: sc, rotation: rot };
 }
 
 async function editorPublish() {
@@ -3091,29 +3165,35 @@ async function editorPublish() {
   try {
     const base64 = editorFileUrl;
 
+    const frameAdj = editorGetFrameAdjust();
+
     if (base64.length <= 800000) {
       // Cabe em um único documento
-      await db.collection("cuts_items").add({
+      const itemData = {
         nome: nome,
         tipo: editorType,
         preco: preco,
         url: base64,
         criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      };
+      if (frameAdj) itemData.frameAdjust = frameAdj;
+      await db.collection("cuts_items").add(itemData);
     } else {
       // Grande demais: gerar thumbnail + armazenar em chunks
       btn.textContent = "Gerando preview...";
       const thumbnail = await editorMakeThumbnail(base64);
 
       btn.textContent = "Enviando...";
-      const docRef = await db.collection("cuts_items").add({
+      const itemData = {
         nome: nome,
         tipo: editorType,
         preco: preco,
         url: thumbnail,
         chunked: true,
         criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      };
+      if (frameAdj) itemData.frameAdjust = frameAdj;
+      const docRef = await db.collection("cuts_items").add(itemData);
 
       // Armazenar base64 completo em chunks de 750KB
       const chunkSize = 750000;
@@ -3195,9 +3275,14 @@ function editorResetForm() {
   });
   // Reset preview
   document.getElementById("editor-sim-avatar").innerHTML = '<span style="font-size:28px">M</span>';
-  document.getElementById("editor-sim-frame").style.display = "none";
+  var sf = document.getElementById("editor-sim-frame");
+  sf.style.display = "none"; sf.style.transform = ""; sf.style.inset = "-14%"; sf.style.width = "128%"; sf.style.height = "128%"; sf.style.left = ""; sf.style.top = "";
   document.getElementById("editor-sim-banner").style.backgroundImage = "";
   document.getElementById("editor-sim-emblems").innerHTML = "";
+  // Reset frame adjust
+  var adjPanel = document.getElementById("editor-frame-adjust");
+  if (adjPanel) adjPanel.style.display = "none";
+  editorResetFrameAdjust();
 }
 
 async function loadEditorItems() {

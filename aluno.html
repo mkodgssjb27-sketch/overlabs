@@ -2233,15 +2233,70 @@ function applySidebarCustomization() {
   const custom = userCustomization || {};
   const sidebarFrame = document.getElementById("sidebar-frame");
 
-  // Frame
+  // Frame do sistema antigo (decorations)
   const frame = custom.frameId ? allDecorations.find(d => d.id === custom.frameId) : null;
   if (sidebarFrame) {
     if (frame) { sidebarFrame.src = frame.imageURL; sidebarFrame.style.display = "block"; }
     else { sidebarFrame.style.display = "none"; }
   }
 
+  // Frame equipado do cuts_inventory (novo sistema — sobrescreve se existir)
+  applySidebarFrame();
+
   // Banner equipado do inventário (cuts_inventory)
   applySidebarBanner();
+}
+
+function applySidebarFrame() {
+  if (!firebaseOk || !currentUser) return;
+  const sidebarFrame = document.getElementById("sidebar-frame");
+  if (!sidebarFrame) return;
+  db.collection("cuts_inventory")
+    .where("userId", "==", currentUser.id)
+    .where("tipo", "==", "moldura")
+    .where("equipado", "==", true)
+    .limit(1)
+    .get().then(function(snap) {
+      if (snap.empty) return;
+      var inv = snap.docs[0].data();
+      var itemId = inv.itemId;
+      // Buscar dados do item (frameAdjust) da loja
+      return db.collection("cuts_items").doc(itemId).get().then(function(itemDoc) {
+        var url = inv.url || "";
+        var adj = null;
+        if (itemDoc.exists) {
+          var data = itemDoc.data();
+          if (data.url) url = data.url;
+          adj = data.frameAdjust || null;
+        }
+        if (!url) return;
+        sidebarFrame.src = url;
+        sidebarFrame.style.display = "block";
+        // Aplicar ajustes de posição
+        if (adj) {
+          var sc = adj.scale || 128;
+          var ox = adj.offsetX || 0;
+          var oy = adj.offsetY || 0;
+          var rot = adj.rotation || 0;
+          var offset = -(sc - 100) / 2;
+          sidebarFrame.style.inset = "auto";
+          sidebarFrame.style.width = sc + "%";
+          sidebarFrame.style.height = sc + "%";
+          sidebarFrame.style.left = (offset + ox) + "%";
+          sidebarFrame.style.top = (offset + oy) + "%";
+          sidebarFrame.style.transform = rot ? ("rotate(" + rot + "deg)") : "";
+        } else {
+          sidebarFrame.style.inset = "-14%";
+          sidebarFrame.style.width = "128%";
+          sidebarFrame.style.height = "128%";
+          sidebarFrame.style.left = "";
+          sidebarFrame.style.top = "";
+          sidebarFrame.style.transform = "";
+        }
+      });
+    }).catch(function(e) {
+      console.warn("[Sidebar] Erro ao carregar moldura:", e);
+    });
 }
 
 function applySidebarBanner() {
