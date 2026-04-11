@@ -478,10 +478,13 @@ input,select{font-family:inherit;outline:none}
   </div>
   <!-- Menu -->
   <div style="padding:8px 14px 20px">
-    <div style="display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:4px 10px;margin-bottom:10px;transform:scale(.8);transform-origin:left center">
-      <span style="font-size:13px">🪙</span>
-      <span style="font-weight:900;font-size:12px;color:#f59e0b" id="sidebar-cuts">0</span>
-      <span style="font-size:9px;font-weight:700;color:#f59e0b">CUTS</span>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:4px 10px;transform:scale(.8);transform-origin:left center">
+        <span style="font-size:13px">🪙</span>
+        <span style="font-weight:900;font-size:12px;color:#f59e0b" id="sidebar-cuts">0</span>
+        <span style="font-size:9px;font-weight:700;color:#f59e0b">CUTS</span>
+      </div>
+      <div id="sidebar-emblems" style="display:flex;align-items:center;gap:4px"></div>
     </div>
     <script>try{var _c=localStorage.getItem("carolampra_cuts");if(_c!=null)document.getElementById("sidebar-cuts").textContent=_c}catch(e){}</script>
     <button onclick="closeSidebar();showScreen('student-personal');loadProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
@@ -2245,6 +2248,55 @@ function applySidebarCustomization() {
 
   // Banner equipado do inventário (cuts_inventory)
   applySidebarBanner();
+
+  // Emblemas equipados do inventário
+  applySidebarEmblems();
+}
+
+function applySidebarEmblems() {
+  if (!firebaseOk || !currentUser) return;
+  var container = document.getElementById("sidebar-emblems");
+  if (!container) return;
+  db.collection("cuts_inventory")
+    .where("userId", "==", currentUser.id)
+    .where("tipo", "==", "emblema")
+    .where("equipado", "==", true)
+    .get().then(function(snap) {
+      if (snap.empty) { container.innerHTML = ""; return; }
+      var html = "";
+      snap.docs.forEach(function(doc) {
+        var inv = doc.data();
+        var url = inv.url || "";
+        var itemId = inv.itemId || "";
+        if (url) {
+          html += '<img src="' + url + '" data-emblem-id="' + itemId + '" style="width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))">';
+        }
+      });
+      container.innerHTML = html;
+      // Carregar versão completa de emblemas chunked
+      snap.docs.forEach(function(doc) {
+        var inv = doc.data();
+        if (!inv.itemId) return;
+        db.collection("cuts_items").doc(inv.itemId).get().then(function(itemDoc) {
+          if (!itemDoc.exists) return;
+          var data = itemDoc.data();
+          if (data.chunked) {
+            db.collection("cuts_items").doc(inv.itemId).collection("chunks").get().then(function(chSnap) {
+              if (chSnap.empty) return;
+              var sorted = chSnap.docs.sort(function(a,b) { return parseInt(a.id) - parseInt(b.id); });
+              var fullUrl = sorted.map(function(d) { return d.data().data; }).join("");
+              var img = container.querySelector('img[data-emblem-id="' + inv.itemId + '"]');
+              if (img) img.src = fullUrl;
+            });
+          } else if (data.url) {
+            var img = container.querySelector('img[data-emblem-id="' + inv.itemId + '"]');
+            if (img && data.url !== inv.url) img.src = data.url;
+          }
+        });
+      });
+    }).catch(function(e) {
+      console.warn("[Sidebar] Erro ao carregar emblemas:", e);
+    });
 }
 
 function applySidebarFrame() {

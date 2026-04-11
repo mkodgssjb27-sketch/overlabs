@@ -471,17 +471,26 @@ async function toggleEquip(itemId, tipo) {
         showToast("Item desequipado");
       }
     } else {
-      // Desequipar outros do mesmo tipo primeiro
+      // Desequipar outros do mesmo tipo primeiro (exceto emblema — permite até 5)
       const sameType = myInventory.filter(i => {
         const t = i.tipo || (allItems.find(a => a.id === i.itemId) || {}).tipo;
         return t === tipo && i.equipado;
       });
 
+      // Para emblemas, verificar limite de 5
+      if (tipo === "emblema" && sameType.length >= 5) {
+        showToast("⚠️ Máximo de 5 emblemas equipados");
+        return;
+      }
+
       // PASSO 1: Atualizar inventário (marcar equipado) — batch separado
       const invBatch = db.batch();
-      sameType.forEach(i => {
-        invBatch.update(db.collection("cuts_inventory").doc(i.docId), { equipado: false });
-      });
+      // Para emblema, não desequipa os outros; para demais tipos, desequipa
+      if (tipo !== "emblema") {
+        sameType.forEach(i => {
+          invBatch.update(db.collection("cuts_inventory").doc(i.docId), { equipado: false });
+        });
+      }
       invBatch.update(db.collection("cuts_inventory").doc(inv.docId), { equipado: true });
       await invBatch.commit();
       console.log("[Loja] Inventário atualizado — equipado:", itemId);
