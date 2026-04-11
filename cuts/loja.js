@@ -402,10 +402,11 @@ async function confirmPurchase() {
 
 // ── Equipar / Desequipar ──
 async function toggleEquip(itemId, tipo) {
-  if (!firebaseOk || !currentUser) return;
+  if (!firebaseOk || !currentUser) { console.warn("[Loja] toggleEquip: firebase ou user indisponível"); return; }
+  console.log("[Loja] toggleEquip:", itemId, tipo);
   try {
     const inv = myInventory.find(i => i.itemId === itemId);
-    if (!inv) return;
+    if (!inv) { showToast("⚠️ Item não encontrado no inventário"); console.warn("[Loja] Item não encontrado:", itemId); return; }
 
     // Se é chunked e não está no cache, carregar agora antes de tudo
     let isChunked = inv.chunked || (allItems.find(a => a.id === itemId) || {}).chunked;
@@ -448,7 +449,6 @@ async function toggleEquip(itemId, tipo) {
         const userDoc = await db.collection("users").doc(currentUser.id).get();
         const userData = userDoc.data();
         // Usar originalPhotoURL se existir, senão manter photoURL atual (sem avatar)
-        const originalPhoto = userData.originalPhotoURL || userData.photoURL || "";
         const updates = { equippedAvatarItemId: "" };
         if (userData.originalPhotoURL) {
           updates.photoURL = userData.originalPhotoURL;
@@ -468,45 +468,46 @@ async function toggleEquip(itemId, tipo) {
         return t === tipo && i.equipado;
       });
 
-      const batch = db.batch();
+      // PASSO 1: Atualizar inventário (marcar equipado) — batch separado
+      const invBatch = db.batch();
       sameType.forEach(i => {
-        batch.update(db.collection("cuts_inventory").doc(i.docId), { equipado: false });
+        invBatch.update(db.collection("cuts_inventory").doc(i.docId), { equipado: false });
       });
+      invBatch.update(db.collection("cuts_inventory").doc(inv.docId), { equipado: true });
+      await invBatch.commit();
+      console.log("[Loja] Inventário atualizado — equipado:", itemId);
 
-      // Equipar este
-      batch.update(db.collection("cuts_inventory").doc(inv.docId), { equipado: true });
-
-      // Se for avatar, trocar foto de perfil
+      // PASSO 2: Se for avatar, trocar foto de perfil (operação separada para não bloquear inventário)
       if (tipo === "avatar" && itemUrl) {
-        const userDoc = await db.collection("users").doc(currentUser.id).get();
-        const userData = userDoc.data();
-        // Detectar se é chunked: chunkCache tem a URL completa, ou o item da loja/inventário tem flag chunked
-        // Para chunked: salvar thumbnail (do doc principal) no Firestore; para normal: salvar url direto
-        let photoForFirestore;
-        if (isChunked) {
-          // Thumbnail: pegar do fromShop.url (que é o thumbnail), ou do inv.url
-          photoForFirestore = (fromShop && fromShop.url) || inv.url || "";
-        } else {
-          photoForFirestore = itemUrl;
+        try {
+          const userDoc = await db.collection("users").doc(currentUser.id).get();
+          const userData = userDoc.data();
+          let photoForFirestore;
+          if (isChunked) {
+            photoForFirestore = (fromShop && fromShop.url) || inv.url || "";
+          } else {
+            photoForFirestore = itemUrl;
+          }
+          // Segurança: não salvar base64 muito grande no Firestore
+          if (photoForFirestore.length > 500000) {
+            photoForFirestore = "";
+          }
+          const updateData = { photoURL: photoForFirestore, equippedAvatarItemId: itemId };
+          // Salvar foto pessoal original apenas se ainda não temos uma salva
+          if (!userData.originalPhotoURL) {
+            if (userData.photoURL) updateData.originalPhotoURL = userData.photoURL;
+          }
+          await db.collection("users").doc(currentUser.id).update(updateData);
+          // No localStorage, salvar GIF completo para exibição animada
+          localStorage.setItem("carolampra_photo", itemUrl);
+          console.log("[Loja] Foto de perfil atualizada para avatar:", itemId);
+        } catch(photoErr) {
+          console.error("[Loja] Erro ao atualizar foto (item já equipado):", photoErr);
+          // Item já está marcado como equipado no inventário, só a foto falhou
+          localStorage.setItem("carolampra_photo", itemUrl);
         }
-        // Segurança: se photoURL ainda é muito grande (>800KB), não salvar no Firestore
-        if (photoForFirestore.length > 800000) {
-          photoForFirestore = "";
-        }
-        // Salvar foto pessoal original (nunca sobrescrever com URL de avatar)
-        const updateData = { photoURL: photoForFirestore, equippedAvatarItemId: itemId };
-        if (!userData.originalPhotoURL || !userData.equippedAvatarItemId) {
-          // Salvar foto atual como original só se não tem avatar equipado
-          if (userData.photoURL) updateData.originalPhotoURL = userData.photoURL;
-        }
-        batch.update(db.collection("users").doc(currentUser.id), updateData);
-        // No localStorage, salvar GIF completo para exibição animada
-        localStorage.setItem("carolampra_photo", itemUrl);
       }
 
-      await batch.commit();
-
-      console.log("[Loja] Equipado:", itemId, "(tipo:", tipo, ")");
       if (tipo === "avatar") {
         showToast("✅ Avatar equipado como foto de perfil!");
       } else {
@@ -516,7 +517,7 @@ async function toggleEquip(itemId, tipo) {
 
   } catch (e) {
     console.error("[Loja] Erro ao equipar:", e);
-    showToast("❌ Erro: " + (e.message || e));
+    showToast("❌ Erro ao equipar: " + (e.message || e));
   }
 }
 
