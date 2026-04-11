@@ -2908,39 +2908,53 @@ function editorHandleFile(input) {
     return;
   }
 
-  // PNG/JPG/WebP: comprimir via canvas para caber no Firestore
-  editorCompressImage(file, 800, 0.85, function(base64) {
+  // PNG/JPG/WebP: ler como base64 primeiro, comprimir só se necessário
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var base64 = e.target.result;
     if (!base64 || base64.length < 100) {
       showToast("❌ Erro ao processar imagem");
       input.value = ""; editorFile = null;
       return;
     }
-    // Se ainda grande, tentar com qualidade menor
-    if (base64.length > 900 * 1024) {
-      editorCompressImage(file, 600, 0.7, function(base64b) {
-        if (base64b.length > 900 * 1024) {
-          showToast("❌ Imagem muito grande mesmo comprimida. Use uma menor.");
-          input.value = ""; editorFile = null;
-          return;
-        }
-        editorFileUrl = base64b;
-        editorShowUploadResult(file);
-      });
+    // Se cabe no Firestore, usar direto sem compressão
+    if (base64.length <= 800000) {
+      editorFileUrl = base64;
+      editorShowUploadResult(file);
       return;
     }
-    editorFileUrl = base64;
-    editorShowUploadResult(file);
-  });
+    // Grande: comprimir via canvas
+    editorCompressImage(base64, 800, 0.85, function(compressed) {
+      if (!compressed || compressed.length < 100) {
+        // Fallback: usar original (será salvo com chunks)
+        editorFileUrl = base64;
+        editorShowUploadResult(file);
+        return;
+      }
+      if (compressed.length > 800000) {
+        // Ainda grande: usar original (será salvo com chunks pelo publish)
+        editorFileUrl = base64;
+        editorShowUploadResult(file);
+        return;
+      }
+      editorFileUrl = compressed;
+      editorShowUploadResult(file);
+    });
+  };
+  reader.onerror = function() {
+    showToast("❌ Erro ao ler arquivo");
+    input.value = ""; editorFile = null;
+  };
+  reader.readAsDataURL(file);
 }
 
-function editorCompressImage(file, maxSize, quality, callback) {
-  var url = URL.createObjectURL(file);
+function editorCompressImage(base64src, maxSize, quality, callback) {
   var img = new Image();
   img.onload = function() {
     try {
       var canvas = document.createElement("canvas");
       var w = img.naturalWidth, h = img.naturalHeight;
-      if (!w || !h) { URL.revokeObjectURL(url); callback(""); return; }
+      if (!w || !h) { callback(""); return; }
       if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
       else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
       canvas.width = w;
@@ -2949,7 +2963,6 @@ function editorCompressImage(file, maxSize, quality, callback) {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
-      URL.revokeObjectURL(url);
       if (canvas.toBlob) {
         canvas.toBlob(function(blob) {
           if (!blob) { callback(""); return; }
@@ -2961,10 +2974,10 @@ function editorCompressImage(file, maxSize, quality, callback) {
       } else {
         callback(canvas.toDataURL("image/jpeg", quality));
       }
-    } catch(e) { URL.revokeObjectURL(url); callback(""); }
+    } catch(e) { callback(""); }
   };
-  img.onerror = function() { URL.revokeObjectURL(url); callback(""); };
-  img.src = url;
+  img.onerror = function() { callback(""); };
+  img.src = base64src;
 }
 
 function editorShowUploadResult(file) {
