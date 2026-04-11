@@ -28,10 +28,12 @@ messaging.onBackgroundMessage(payload => {
   return self.registration.showNotification(title, options);
 });
 
-const CACHE_NAME = "overlabs-v70";
+const CACHE_NAME = "overlabs-v71";
 const URLS_TO_CACHE = [
   "./aluno.html",
+  "./professor.html",
   "./manifest.json",
+  "./manifest-prof.json",
   "./logo.png",
   "./icon-192.png",
   "./icon-512.png",
@@ -48,11 +50,11 @@ self.addEventListener("install", event => {
   );
 });
 
-// Remove apenas caches antigos do ALUNO (overlabs-v*), nunca do professor
+// Remove caches antigos
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k.startsWith("overlabs-v") && k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
