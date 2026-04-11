@@ -1,0 +1,87 @@
+/* ═══════════════════════════════════════════
+   EDITOR DE ARTES — Estilos
+   Módulo independente — não altera CSS existente
+   ═══════════════════════════════════════════ */
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e2e8f0;min-height:100vh;overflow-x:hidden}
+
+/* ── Layout ── */
+.editor-wrap{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+.editor-header{background:rgba(15,15,20,.95);backdrop-filter:blur(20px);padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50}
+.editor-header .back-btn{background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer}
+.editor-header .title{font-size:18px;font-weight:900;color:#fff;letter-spacing:1px;flex:1}
+.editor-header .badge-beta{background:rgba(34,197,94,.2);color:#22c55e;font-size:10px;font-weight:900;padding:3px 10px;border-radius:8px}
+
+.editor-content{flex:1;overflow-y:auto;padding:24px 20px}
+
+/* ── Form card ── */
+.form-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:24px;margin-bottom:20px}
+.form-title{font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+.lbl{display:block;font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;letter-spacing:.4px}
+.inp{width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.06);transition:.15s border-color;font-family:inherit}
+.inp:focus{border-color:#f59e0b;outline:none}
+
+/* ── Upload zone ── */
+.upload-zone{border:2px dashed rgba(255,255,255,.12);border-radius:16px;padding:40px 20px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:16px;position:relative}
+.upload-zone:hover{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.04)}
+.upload-zone.has-file{border-color:#f59e0b;border-style:solid;background:rgba(245,158,11,.06)}
+.upload-zone .uz-icon{font-size:40px;margin-bottom:10px;display:block}
+.upload-zone .uz-text{color:#94a3b8;font-size:14px;font-weight:600}
+.upload-zone .uz-hint{color:#64748b;font-size:12px;margin-top:4px}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+/* ── Preview da imagem uploadada ── */
+.upload-preview{width:100%;max-width:200px;margin:0 auto 16px;border-radius:14px;overflow:hidden;border:2px solid rgba(245,158,11,.3);display:none}
+.upload-preview img{width:100%;display:block}
+.upload-preview.show{display:block}
+
+/* ── Tipo selector ── */
+.type-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+.type-option{background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.08);border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s}
+.type-option:hover{border-color:rgba(245,158,11,.3)}
+.type-option.selected{border-color:#f59e0b;background:rgba(245,158,11,.1);box-shadow:0 0 16px rgba(245,158,11,.2)}
+.type-option .to-icon{font-size:28px;margin-bottom:6px;display:block}
+.type-option .to-label{font-size:12px;font-weight:800;color:#fff}
+
+/* ── Preview do perfil simulado ── */
+.profile-sim{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;overflow:hidden;margin-bottom:20px}
+.profile-sim .sim-banner{position:relative;padding:28px 20px 20px;text-align:center;background:#1e293b;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;background-size:cover;background-position:center}
+.profile-sim .sim-banner .sim-overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:0}
+.profile-sim .sim-banner>*:not(.sim-overlay){position:relative;z-index:1}
+.profile-sim .sim-avatar-wrap{width:90px;height:90px;margin:0 auto 10px;position:relative}
+.profile-sim .sim-avatar{width:100%;height:100%;border-radius:50%;overflow:hidden;border:3px solid rgba(245,158,11,.5);background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff}
+.profile-sim .sim-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.profile-sim .sim-frame{position:absolute;inset:-14%;width:128%;height:128%;pointer-events:none;z-index:2;display:none}
+.profile-sim .sim-name{font-weight:800;font-size:16px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.profile-sim .sim-username{font-size:12px;color:#94a3b8;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.profile-sim .sim-emblems{display:flex;gap:8px;justify-content:center;margin-top:8px}
+.profile-sim .sim-emblems img{width:32px;height:32px;object-fit:contain}
+.profile-sim .sim-body{padding:16px;display:flex;gap:12px;align-items:center;justify-content:center}
+.profile-sim .sim-cuts{display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.15);padding:6px 14px;border-radius:20px;font-weight:900;color:#f59e0b;font-size:14px}
+
+/* ── Botões ── */
+.btn-publish{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:16px;border:none;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(245,158,11,.25)}
+.btn-publish:active{opacity:.85}
+.btn-publish:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Itens publicados ── */
+.pub-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:16px}
+.pub-item{background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;position:relative}
+.pub-item img{width:100%;aspect-ratio:1;object-fit:contain;background:rgba(255,255,255,.02);padding:8px}
+.pub-item .pub-info{padding:10px}
+.pub-item .pub-name{font-size:12px;font-weight:700;color:#fff}
+.pub-item .pub-meta{font-size:10px;color:#64748b;margin-top:2px}
+.pub-item .pub-delete{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* ── Loading / empty / toast ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:60px 0;flex-direction:column;gap:12px;color:#64748b;font-weight:600}
+.spin{width:32px;height:32px;border:3px solid rgba(255,255,255,.1);border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px 16px}
+.empty .icon{font-size:40px;margin-bottom:12px}
+.empty p{color:#94a3b8;font-weight:700;font-size:15px}
+.empty small{color:#64748b;font-size:13px;display:block;margin-top:4px}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,.95);color:#fff;padding:12px 22px;border-radius:14px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}

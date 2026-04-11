@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Loja CUTS — OVER LABS</title>
+<meta name="theme-color" content="#0a0a0f">
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<link rel="stylesheet" href="loja.css">
+</head>
+<body>
+
+<div class="loja-wrap">
+
+  <!-- ── Header ── -->
+  <div class="loja-header">
+    <button class="back-btn" onclick="window.location.href='../aluno.html'">←</button>
+    <div class="title">🛒 Loja CUTS</div>
+    <div class="saldo-badge">
+      <span class="coin">🪙</span>
+      <span class="val" id="saldo-valor">0</span>
+      <span class="lbl">CUTS</span>
+    </div>
+  </div>
+
+  <!-- ── Conteúdo ── -->
+  <div class="loja-content">
+
+    <!-- Toggle Loja / Inventário -->
+    <div class="loja-tabs" style="margin-bottom:16px">
+      <button class="loja-tab active" id="btn-view-loja" onclick="showView('loja')">🛒 Loja</button>
+      <button class="loja-tab" id="btn-view-inv" onclick="showView('inventario')">🎒 Inventário</button>
+    </div>
+
+    <!-- ═══ VIEW: LOJA ═══ -->
+    <div id="view-loja">
+      <!-- Filtro por tipo -->
+      <div class="loja-tabs">
+        <button class="loja-tab active" data-tab="todos" onclick="switchLojaTab('todos')">Todos</button>
+        <button class="loja-tab" data-tab="avatar" onclick="switchLojaTab('avatar')">Avatares</button>
+        <button class="loja-tab" data-tab="moldura" onclick="switchLojaTab('moldura')">Molduras</button>
+        <button class="loja-tab" data-tab="banner" onclick="switchLojaTab('banner')">Banners</button>
+        <button class="loja-tab" data-tab="emblema" onclick="switchLojaTab('emblema')">Emblemas</button>
+      </div>
+
+      <!-- Grid de itens -->
+      <div class="loading" id="loja-loading"><div class="spin"></div>Carregando loja...</div>
+      <div class="loja-grid" id="items-grid"></div>
+    </div>
+
+    <!-- ═══ VIEW: INVENTÁRIO ═══ -->
+    <div id="view-inventario" style="display:none">
+      <div id="inventory-content">
+        <div class="empty"><div class="icon">🎒</div><p>Carregando inventário...</p></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal de Compra ── -->
+<div class="modal-overlay" id="buy-modal">
+  <div class="modal-box">
+    <img class="modal-img" id="modal-img" src="" alt="Item">
+    <div class="modal-name" id="modal-name">—</div>
+    <div class="modal-type" id="modal-type">—</div>
+    <div class="modal-price"><span>🪙</span> <span id="modal-price-val">0</span> CUTS</div>
+    <div class="modal-balance" id="modal-balance">—</div>
+    <button class="btn-buy" id="btn-confirm-buy" onclick="confirmPurchase()">🪙 Confirmar Compra</button>
+    <button class="btn-cancel" onclick="closeBuyModal()">Cancelar</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="loja.js"></script>
+</body>
+</html>

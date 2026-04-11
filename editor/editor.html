@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Editor de Artes — OVER LABS</title>
+<meta name="theme-color" content="#0a0a0f">
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+
+<link rel="stylesheet" href="editor.css">
+</head>
+<body>
+
+<div class="editor-wrap">
+
+  <!-- ── Header ── -->
+  <div class="editor-header">
+    <button class="back-btn" onclick="window.location.href='../prof/'">←</button>
+    <div class="title">🎨 Editor de Artes</div>
+    <span class="badge-beta">BETA</span>
+  </div>
+
+  <!-- ── Conteúdo ── -->
+  <div class="editor-content">
+
+    <!-- ═══ FORMULÁRIO ═══ -->
+    <div class="form-card">
+      <div class="form-title">📤 Criar Novo Item</div>
+
+      <!-- Upload -->
+      <div class="upload-zone" id="upload-zone">
+        <span class="uz-icon">📁</span>
+        <div class="uz-text">Clique para enviar imagem ou GIF</div>
+        <div class="uz-hint">PNG, GIF, JPG, WebP (máx. 10MB)</div>
+        <input type="file" id="file-input" accept="image/png,image/gif,image/jpeg,image/webp" onchange="handleFileSelect(this)">
+      </div>
+
+      <!-- Preview da imagem upload -->
+      <div class="upload-preview" id="upload-preview">
+        <img id="upload-preview-img" src="" alt="Preview">
+      </div>
+
+      <!-- Tipo -->
+      <label class="lbl">TIPO DO ITEM</label>
+      <div class="type-grid">
+        <div class="type-option" data-type="avatar" onclick="selectType('avatar')">
+          <span class="to-icon">🖼️</span>
+          <span class="to-label">Avatar</span>
+        </div>
+        <div class="type-option" data-type="moldura" onclick="selectType('moldura')">
+          <span class="to-icon">🖼️</span>
+          <span class="to-label">Moldura</span>
+        </div>
+        <div class="type-option" data-type="banner" onclick="selectType('banner')">
+          <span class="to-icon">🌄</span>
+          <span class="to-label">Banner</span>
+        </div>
+        <div class="type-option" data-type="emblema" onclick="selectType('emblema')">
+          <span class="to-icon">🏅</span>
+          <span class="to-label">Emblema</span>
+        </div>
+      </div>
+
+      <!-- Nome e preço -->
+      <div style="margin-bottom:16px">
+        <label class="lbl">NOME DO ITEM</label>
+        <input class="inp" id="item-nome" placeholder="Ex: Moldura Dourada">
+      </div>
+      <div style="margin-bottom:20px">
+        <label class="lbl">PREÇO (CUTS)</label>
+        <input type="number" class="inp" id="item-preco" placeholder="Ex: 50" min="0">
+      </div>
+
+      <!-- Publicar -->
+      <button class="btn-publish" id="btn-publish" onclick="publishItem()">🚀 Publicar na Loja</button>
+    </div>
+
+    <!-- ═══ PREVIEW DO PERFIL ═══ -->
+    <div class="form-card">
+      <div class="form-title">👁️ Preview do Perfil</div>
+      <div class="profile-sim">
+        <div class="sim-banner" id="sim-banner">
+          <div class="sim-overlay"></div>
+          <div class="sim-avatar-wrap">
+            <div class="sim-avatar" id="sim-avatar"><span style="font-size:28px">M</span></div>
+            <img class="sim-frame" id="sim-frame" src="" alt="frame">
+          </div>
+          <div class="sim-name">Aluno Exemplo</div>
+          <div class="sim-username">@aluno123</div>
+          <div class="sim-emblems" id="sim-emblems"></div>
+        </div>
+        <div class="sim-body">
+          <div class="sim-cuts">🪙 150 CUTS</div>
+        </div>
+      </div>
+      <p style="text-align:center;color:#64748b;font-size:12px;margin-top:-8px">Simulação de como o item aparecerá no perfil do aluno</p>
+    </div>
+
+    <!-- ═══ ITENS PUBLICADOS ═══ -->
+    <div class="form-card">
+      <div class="form-title">📦 Itens na Loja</div>
+      <div class="pub-grid" id="published-grid">
+        <div class="loading"><div class="spin"></div>Carregando...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="editor.js"></script>
+</body>
+</html>
