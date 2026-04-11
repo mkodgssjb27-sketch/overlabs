@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>OVER LABS â€” Professor</title>
+<title>OVER LABS — Professor</title>
 <meta name="theme-color" content="#0d9488">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" sizes="192x192" href="../icon-192.png">
 
 <script>
-// Capturar beforeinstallprompt o mais cedo possÃ­vel
+// Capturar beforeinstallprompt o mais cedo possível
 window.__deferredInstall = null;
 window.addEventListener("beforeinstallprompt", function(e) {
   e.preventDefault();
@@ -128,31 +128,31 @@ input,select,textarea{font-family:inherit;outline:none}
 </head>
 <body>
 
-<!-- â•â• PROFESSOR â€” LOGIN â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — LOGIN ════════════════════════════════════════════ -->
 <div class="screen active" id="screen-teacher-login">
   <div style="min-height:100vh;background:#0a0a0f;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden">
-    <!-- Canvas de partÃ­culas parallax -->
+    <!-- Canvas de partículas parallax -->
     <canvas id="particles-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0"></canvas>
     <div style="background:rgba(255,255,255,.04);backdrop-filter:blur(24px);border-radius:28px;padding:48px 36px;width:100%;max-width:400px;border:1px solid rgba(255,255,255,.08);text-align:center;position:relative;z-index:1;box-shadow:0 8px 60px rgba(0,0,0,.5)">
       <img src="../logo.png" alt="Over Point" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin-bottom:16px;box-shadow:0 0 30px rgba(245,158,11,.25)">
       <h1 style="font-size:26px;font-weight:900;color:#fff;margin-bottom:4px;letter-spacing:2px">OVER LABS</h1>
-      <p style="color:#64748b;font-size:13px;margin-bottom:32px">Painel do Professor â€” Digite seu PIN de acesso</p>
+      <p style="color:#64748b;font-size:13px;margin-bottom:32px">Painel do Professor — Digite seu PIN de acesso</p>
       <label class="lbl" style="color:#94a3b8;text-align:left">PIN</label>
-      <input type="password" id="t-pin" placeholder="â€¢â€¢â€¢â€¢" maxlength="10" oninput="clearErr('t-pin-err')" onkeydown="if(event.key==='Enter')teacherLogin()"
+      <input type="password" id="t-pin" placeholder="••••" maxlength="10" oninput="clearErr('t-pin-err')" onkeydown="if(event.key==='Enter')teacherLogin()"
         style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#fff;font-size:22px;letter-spacing:10px;text-align:center;margin-bottom:6px">
       <p class="err-txt" id="t-pin-err" style="margin-bottom:10px"></p>
-      <button onclick="teacherLogin()" style="width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:16px;margin-top:4px;box-shadow:0 4px 20px rgba(245,158,11,.3)">Entrar â†’</button>
-      <button id="prof-install-btn" onclick="installProfApp()" style="display:none;width:100%;padding:13px;border-radius:14px;background:rgba(13,148,136,.15);border:1px solid rgba(13,148,136,.3);color:#0d9488;font-weight:800;font-size:14px;margin-top:12px;cursor:pointer;align-items:center;justify-content:center;gap:8px">ðŸ“² Instalar App Professor</button>
+      <button onclick="teacherLogin()" style="width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:16px;margin-top:4px;box-shadow:0 4px 20px rgba(245,158,11,.3)">Entrar →</button>
+      <button id="prof-install-btn" onclick="installProfApp()" style="display:none;width:100%;padding:13px;border-radius:14px;background:rgba(13,148,136,.15);border:1px solid rgba(13,148,136,.3);color:#0d9488;font-weight:800;font-size:14px;margin-top:12px;cursor:pointer;align-items:center;justify-content:center;gap:8px">📲 Instalar App Professor</button>
       <div id="prof-ios-hint" style="display:none;margin-top:12px;padding:14px;border-radius:14px;background:rgba(13,148,136,.08);border:1px solid rgba(13,148,136,.2);text-align:center">
-        <div style="font-size:13px;font-weight:700;color:#0d9488;margin-bottom:6px">ðŸ“² Para instalar no iPhone:</div>
-        <div style="font-size:12px;color:#94a3b8">Toque em <strong style="color:#fff">â¬†ï¸ Compartilhar</strong> (barra do Safari) â†’ <strong style="color:#fff">Adicionar Ã  Tela de InÃ­cio</strong></div>
+        <div style="font-size:13px;font-weight:700;color:#0d9488;margin-bottom:6px">📲 Para instalar no iPhone:</div>
+        <div style="font-size:12px;color:#94a3b8">Toque em <strong style="color:#fff">⬆️ Compartilhar</strong> (barra do Safari) → <strong style="color:#fff">Adicionar à Tela de Início</strong></div>
       </div>
-      <p style="color:#334155;font-size:11px;margin-top:20px">PIN padrÃ£o: <strong style="color:#64748b">1234</strong> (mude no cÃ³digo)</p>
+      <p style="color:#334155;font-size:11px;margin-top:20px">PIN padrão: <strong style="color:#64748b">1234</strong> (mude no código)</p>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” DASHBOARD â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — DASHBOARD ════════════════════════════════════════ -->
 <div class="screen" id="screen-teacher-dashboard">
   <div class="top-bar">
     <div class="top-bar-brand">
@@ -171,58 +171,58 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="stat-card"><div class="stat-val" id="stat-wait" style="color:#f97316">0</div><div class="stat-lbl">Na Fila</div></div>
     </div>
 
-    <!-- Menu de funÃ§Ãµes -->
-    <div class="section-title">FunÃ§Ãµes</div>
+    <!-- Menu de funções -->
+    <div class="section-title">Funções</div>
     <div class="menu-grid">
       <div class="menu-card" onclick="showScreen('teacher-rides')">
-        <span class="mc-icon">ðŸš—</span>
+        <span class="mc-icon">🚗</span>
         <div class="mc-title">Caronas</div>
         <div class="mc-desc">Gerenciar, criar e editar</div>
       </div>
       <div class="menu-card" onclick="showScreen('teacher-alerts')">
-        <span class="mc-icon">ðŸ””</span>
+        <span class="mc-icon">🔔</span>
         <div class="mc-title">Alertas</div>
         <div class="mc-desc">Enviar avisos aos alunos</div>
       </div>
       <div class="menu-card" onclick="showScreen('teacher-presence');loadPresenceStudents()">
-        <span class="mc-icon">ðŸ“‹</span>
-        <div class="mc-title">PresenÃ§as</div>
-        <div class="mc-desc">Controle de presenÃ§a</div>
+        <span class="mc-icon">📋</span>
+        <div class="mc-title">Presenças</div>
+        <div class="mc-desc">Controle de presença</div>
       </div>
       <div class="menu-card" onclick="showScreen('teacher-students');loadStudents()">
-        <span class="mc-icon">ðŸ‘¥</span>
+        <span class="mc-icon">👥</span>
         <div class="mc-title">Alunos Cadastrados</div>
-        <div class="mc-desc">Gerenciar alunos e localizaÃ§Ã£o</div>
+        <div class="mc-desc">Gerenciar alunos e localização</div>
       </div>
       <div class="menu-card" onclick="showScreen('teacher-feed');loadFeedManager()">
-        <span class="mc-icon">ðŸ“°</span>
-        <div class="mc-title">Feed de AtualizaÃ§Ãµes</div>
+        <span class="mc-icon">📰</span>
+        <div class="mc-title">Feed de Atualizações</div>
         <div class="mc-desc">Gerenciar o feed dos alunos</div>
       </div>
       <div class="menu-card" onclick="showScreen('teacher-patch');loadPatchNotes()">
-        <span class="mc-icon">ðŸ“</span>
+        <span class="mc-icon">📝</span>
         <div class="mc-title">Notas de Patch</div>
         <div class="mc-desc">Editar changelog do app</div>
       </div>
       <div class="menu-card" onclick="showScreen('teacher-tournaments')">
-        <span class="mc-icon">ðŸ</span>
+        <span class="mc-icon">🏐</span>
         <div class="mc-title">Torneios</div>
-        <div class="mc-desc">Gerenciar torneios e inscriÃ§Ãµes</div>
+        <div class="mc-desc">Gerenciar torneios e inscrições</div>
       </div>
       <div class="menu-card" onclick="showScreen('teacher-decorations');loadDecorations()">
-        <span class="mc-icon">ðŸŽ¨</span>
-        <div class="mc-title">DecoraÃ§Ãµes</div>
+        <span class="mc-icon">🎨</span>
+        <div class="mc-title">Decorações</div>
         <div class="mc-desc">Molduras e banners para alunos</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” CARONAS (lista) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — CARONAS (lista) ════════════════════════════════ -->
 <div class="screen" id="screen-teacher-rides">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
       <h1 style="font-size:16px">Caronas</h1>
     </div>
     <div class="top-bar-actions">
@@ -231,24 +231,24 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
   <div class="t-content">
     <div id="t-rides-loading" class="loading"><div class="spin"></div>Carregando...</div>
-    <div id="t-rides-empty" class="empty" style="display:none"><div class="icon">ðŸš—</div><p>Nenhuma carona criada</p><small>Clique em "+ Nova Carona" para comeÃ§ar</small></div>
+    <div id="t-rides-empty" class="empty" style="display:none"><div class="icon">🚗</div><p>Nenhuma carona criada</p><small>Clique em "+ Nova Carona" para começar</small></div>
     <div id="t-rides-list"></div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” CRIAR CARONA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — CRIAR CARONA ════════════════════════════════════ -->
 <div class="screen" id="screen-teacher-create">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-rides')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
+      <button onclick="showScreen('teacher-rides')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
       <div><div class="t-title" style="font-size:16px">Nova Carona</div></div>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
       <div style="margin-bottom:18px">
-        <label class="lbl">TÃTULO DA CARONA</label>
-        <input class="inp" id="r-title" placeholder="Ex: Carona para a faculdade â€” Sexta" oninput="clearErr('r-title-err')">
+        <label class="lbl">TÍTULO DA CARONA</label>
+        <input class="inp" id="r-title" placeholder="Ex: Carona para a faculdade — Sexta" oninput="clearErr('r-title-err')">
         <p class="err-txt" id="r-title-err"></p>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
@@ -258,13 +258,13 @@ input,select,textarea{font-family:inherit;outline:none}
           <p class="err-txt" id="r-date-err"></p>
         </div>
         <div>
-          <label class="lbl">HORÃRIO</label>
+          <label class="lbl">HORÁRIO</label>
           <input type="time" class="inp" id="r-time" oninput="clearErr('r-time-err')" style="color-scheme:dark">
           <p class="err-txt" id="r-time-err"></p>
         </div>
       </div>
       <div style="margin-bottom:26px">
-        <label class="lbl">VAGAS DISPONÃVEIS: <span id="seats-val" style="color:#f59e0b;font-size:17px;font-weight:900">4</span></label>
+        <label class="lbl">VAGAS DISPONÍVEIS: <span id="seats-val" style="color:#f59e0b;font-size:17px;font-weight:900">4</span></label>
         <input type="range" min="1" max="8" value="4" id="r-seats" oninput="updateSeats(this.value)" style="width:100%;accent-color:#f59e0b;margin:8px 0">
         <div class="seats-row" id="seats-icons"></div>
       </div>
@@ -275,27 +275,27 @@ input,select,textarea{font-family:inherit;outline:none}
           <span class="toggle-dot"></span>
         </label>
         <div>
-          <div style="font-weight:700;font-size:14px;color:#e2e8f0">ðŸ‘ VisÃ­vel para alunos</div>
-          <div style="font-size:12px;color:#64748b;margin-top:2px">AparecerÃ¡ no app e no feed dos alunos</div>
+          <div style="font-weight:700;font-size:14px;color:#e2e8f0">👁 Visível para alunos</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Aparecerá no app e no feed dos alunos</div>
         </div>
       </div>
-      <button onclick="createRide()" class="btn-main">âœ“ Criar Carona</button>
+      <button onclick="createRide()" class="btn-main">✓ Criar Carona</button>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” EDITAR CARONA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — EDITAR CARONA ══════════════════════════════════ -->
 <div class="screen" id="screen-teacher-edit">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="openTeacherDetail(currentDetailRideId)" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
+      <button onclick="openTeacherDetail(currentDetailRideId)" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
       <div><div class="t-title" style="font-size:16px">Editar Carona</div></div>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
       <div style="margin-bottom:18px">
-        <label class="lbl">TÃTULO DA CARONA</label>
+        <label class="lbl">TÍTULO DA CARONA</label>
         <input class="inp" id="e-title" oninput="clearErr('e-title-err')">
         <p class="err-txt" id="e-title-err"></p>
       </div>
@@ -306,13 +306,13 @@ input,select,textarea{font-family:inherit;outline:none}
           <p class="err-txt" id="e-date-err"></p>
         </div>
         <div>
-          <label class="lbl">HORÃRIO</label>
+          <label class="lbl">HORÁRIO</label>
           <input type="time" class="inp" id="e-time" oninput="clearErr('e-time-err')" style="color-scheme:dark">
           <p class="err-txt" id="e-time-err"></p>
         </div>
       </div>
       <div style="margin-bottom:26px">
-        <label class="lbl">VAGAS DISPONÃVEIS: <span id="e-seats-val" style="color:#f59e0b;font-size:17px;font-weight:900">4</span></label>
+        <label class="lbl">VAGAS DISPONÍVEIS: <span id="e-seats-val" style="color:#f59e0b;font-size:17px;font-weight:900">4</span></label>
         <input type="range" min="1" max="8" value="4" id="e-seats" oninput="document.getElementById('e-seats-val').textContent=this.value" style="width:100%;accent-color:#f59e0b;margin:8px 0">
       </div>
       <div style="margin-bottom:22px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
@@ -322,26 +322,26 @@ input,select,textarea{font-family:inherit;outline:none}
           <span class="toggle-dot"></span>
         </label>
         <div>
-          <div style="font-weight:700;font-size:14px;color:#e2e8f0">ðŸ‘ VisÃ­vel para alunos</div>
-          <div style="font-size:12px;color:#64748b;margin-top:2px">Se desligado, a carona desaparecerÃ¡ para os alunos</div>
+          <div style="font-weight:700;font-size:14px;color:#e2e8f0">👁 Visível para alunos</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Se desligado, a carona desaparecerá para os alunos</div>
         </div>
       </div>
-      <div id="e-vis-warn" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;color:#f87171;font-size:13px;font-weight:700">âš ï¸ AtenÃ§Ã£o: a carona ficarÃ¡ OCULTA para todos os alunos!</div>
-      <button onclick="saveEditRide()" class="btn-main">ðŸ’¾ Salvar AlteraÃ§Ãµes</button>
+      <div id="e-vis-warn" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;color:#f87171;font-size:13px;font-weight:700">⚠️ Atenção: a carona ficará OCULTA para todos os alunos!</div>
+      <button onclick="saveEditRide()" class="btn-main">💾 Salvar Alterações</button>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” DETALHE DA CARONA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — DETALHE DA CARONA ═══════════════════════════════ -->
 <div class="screen" id="screen-teacher-detail">
   <div class="top-bar" style="justify-content:space-between">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-rides')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <div><div class="t-title" id="td-title" style="font-size:16px">â€”</div><div class="t-sub" id="td-sub">â€”</div></div>
+      <button onclick="showScreen('teacher-rides')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" id="td-title" style="font-size:16px">—</div><div class="t-sub" id="td-sub">—</div></div>
     </div>
     <div style="display:flex;gap:8px">
-      <button onclick="openEditRide()" style="background:rgba(245,158,11,.15);color:#f59e0b;padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px;border:none">âœï¸ Editar</button>
-      <button onclick="deleteRide()" style="background:rgba(248,113,113,.1);color:#f87171;padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px;border:none">ðŸ—‘ Excluir</button>
+      <button onclick="openEditRide()" style="background:rgba(245,158,11,.15);color:#f59e0b;padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px;border:none">✏️ Editar</button>
+      <button onclick="deleteRide()" style="background:rgba(248,113,113,.1);color:#f87171;padding:9px 16px;border-radius:10px;font-weight:700;font-size:13px;border:none">🗑 Excluir</button>
     </div>
   </div>
   <div class="t-content" style="max-width:660px">
@@ -351,30 +351,30 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="stat-card"><div class="stat-val" id="td-stat-free" style="color:#38bdf8">0</div><div class="stat-lbl">Vagas livres</div></div>
     </div>
     <div style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(255,255,255,.08);padding:22px;margin-bottom:16px">
-      <h3 style="font-weight:800;font-size:15px;margin-bottom:14px;color:#22c55e">âœ… Confirmados</h3>
+      <h3 style="font-weight:800;font-size:15px;margin-bottom:14px;color:#22c55e">✅ Confirmados</h3>
       <div id="td-booked"></div>
     </div>
     <div id="td-waitlist-wrap" style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(245,158,11,.2);padding:22px;display:none">
-      <h3 style="font-weight:800;font-size:15px;margin-bottom:14px;color:#f59e0b">â³ Lista de Espera</h3>
+      <h3 style="font-weight:800;font-size:15px;margin-bottom:14px;color:#f59e0b">⏳ Lista de Espera</h3>
       <div id="td-waitlist"></div>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” ALERTAS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — ALERTAS ════════════════════════════════════════ -->
 <div class="screen" id="screen-teacher-alerts">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
       <h1 style="font-size:16px">Alertas</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:600px">
     <div class="t-form" style="margin-bottom:24px">
-      <div class="section-title">ðŸ”” Novo Alerta</div>
-      <p style="color:#64748b;font-size:13px;margin-bottom:16px">Envie uma mensagem que aparecerÃ¡ como notificaÃ§Ã£o para todos os alunos.</p>
+      <div class="section-title">🔔 Novo Alerta</div>
+      <p style="color:#64748b;font-size:13px;margin-bottom:16px">Envie uma mensagem que aparecerá como notificação para todos os alunos.</p>
       <label class="lbl">MENSAGEM DO ALERTA</label>
-      <textarea id="alert-msg" rows="4" placeholder="Ex: Treino cancelado amanhÃ£ por causa da chuva..." style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#e2e8f0;font-size:15px;resize:vertical;font-family:inherit"></textarea>
+      <textarea id="alert-msg" rows="4" placeholder="Ex: Treino cancelado amanhã por causa da chuva..." style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#e2e8f0;font-size:15px;resize:vertical;font-family:inherit"></textarea>
       <p class="err-txt" id="alert-msg-err" style="margin-bottom:12px"></p>
       <div style="margin-bottom:18px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
         <label class="toggle-wrap">
@@ -383,70 +383,70 @@ input,select,textarea{font-family:inherit;outline:none}
           <span class="toggle-dot"></span>
         </label>
         <div>
-          <div style="font-weight:700;font-size:14px;color:#e2e8f0">ðŸ‘ VisÃ­vel para alunos</div>
-          <div style="font-size:12px;color:#64748b;margin-top:2px">AparecerÃ¡ no feed dos alunos</div>
+          <div style="font-weight:700;font-size:14px;color:#e2e8f0">👁 Visível para alunos</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Aparecerá no feed dos alunos</div>
         </div>
       </div>
-      <button onclick="sendAlert()" class="btn-main" id="btn-send-alert">ðŸ“¤ Enviar Alerta</button>
+      <button onclick="sendAlert()" class="btn-main" id="btn-send-alert">📤 Enviar Alerta</button>
     </div>
     <div class="section-title">Alertas enviados</div>
     <div id="alerts-loading" class="loading" style="display:none"><div class="spin"></div>Carregando...</div>
-    <div id="alerts-empty" class="empty" style="display:none"><div class="icon">ðŸ”•</div><p>Nenhum alerta enviado</p></div>
+    <div id="alerts-empty" class="empty" style="display:none"><div class="icon">🔕</div><p>Nenhum alerta enviado</p></div>
     <div id="alerts-list"></div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” PRESENÃ‡AS (lista de alunos) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — PRESENÇAS (lista de alunos) ══════════════════════ -->
 <div class="screen" id="screen-teacher-presence">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <h1 style="font-size:16px">ðŸ“‹ PresenÃ§as</h1>
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📋 Presenças</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:700px">
     <div class="loading" id="presence-loading"><div class="spin"></div>Carregando...</div>
-    <div class="empty" id="presence-empty" style="display:none"><div class="icon">ðŸ‘¥</div><p>Nenhum aluno cadastrado</p></div>
+    <div class="empty" id="presence-empty" style="display:none"><div class="icon">👥</div><p>Nenhum aluno cadastrado</p></div>
     <div id="presence-students-list"></div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” PRESENÃ‡AS â€” OPÃ‡Ã•ES DO ALUNO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — PRESENÇAS — OPÇÕES DO ALUNO ═══════════════════ -->
 <div class="screen" id="screen-teacher-presence-options">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-presence');loadPresenceStudents()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
+      <button onclick="showScreen('teacher-presence');loadPresenceStudents()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
       <h1 style="font-size:16px" id="presence-opt-title">Aluno</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div style="display:flex;flex-direction:column;gap:14px;padding:20px 0">
       <button onclick="openLancarPresenca()" style="padding:22px;border-radius:18px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#22c55e;font-weight:800;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px">
-        âœ… LanÃ§ar PresenÃ§a
+        ✅ Lançar Presença
       </button>
       <button onclick="openRelatorioPresenca()" style="padding:22px;border-radius:18px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);color:#38bdf8;font-weight:800;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px">
-        ðŸ“Š RelatÃ³rio de PresenÃ§as
+        📊 Relatório de Presenças
       </button>
       <button onclick="openGerenciarPresencas()" style="padding:22px;border-radius:18px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);color:#f59e0b;font-weight:800;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px">
-        ðŸ“ Gerenciar PresenÃ§as
+        📝 Gerenciar Presenças
       </button>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” LANÃ‡AR PRESENÃ‡A â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — LANÇAR PRESENÇA ═══════════════════════════════ -->
 <div class="screen" id="screen-teacher-lancar-presenca">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-presence-options')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <h1 style="font-size:16px" id="lancar-title">LanÃ§ar PresenÃ§a</h1>
+      <button onclick="showScreen('teacher-presence-options')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px" id="lancar-title">Lançar Presença</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
       <div style="margin-bottom:18px">
-        <label class="lbl">TÃTULO DO TREINO</label>
-        <input type="text" class="inp" id="pres-title" placeholder="Ex: Arena GrussaÃ­" maxlength="60" style="color-scheme:dark">
+        <label class="lbl">TÍTULO DO TREINO</label>
+        <input type="text" class="inp" id="pres-title" placeholder="Ex: Arena Grussaí" maxlength="60" style="color-scheme:dark">
       </div>
       <div style="margin-bottom:18px">
         <label class="lbl">DATA DO TREINO</label>
@@ -454,75 +454,75 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
         <div>
-          <label class="lbl">HORÃRIO INÃCIO</label>
+          <label class="lbl">HORÁRIO INÍCIO</label>
           <input type="time" class="inp" id="pres-time-start" style="color-scheme:dark">
         </div>
         <div>
-          <label class="lbl">HORÃRIO FIM</label>
+          <label class="lbl">HORÁRIO FIM</label>
           <input type="time" class="inp" id="pres-time-end" style="color-scheme:dark">
         </div>
       </div>
       <div style="margin-bottom:18px">
-        <label class="lbl">ðŸª™ CUTS A CONCEDER</label>
+        <label class="lbl">🪙 CUTS A CONCEDER</label>
         <input type="number" class="inp" id="pres-cuts" min="0" placeholder="Ex: 5 (0 = nenhum)" value="0" style="color-scheme:dark;-webkit-user-select:text;user-select:text">
       </div>
       <p class="err-txt" id="pres-err" style="margin-bottom:12px"></p>
-      <button onclick="savePresenca()" class="btn-main" id="btn-save-presenca">ðŸ’¾ Salvar PresenÃ§a</button>
+      <button onclick="savePresenca()" class="btn-main" id="btn-save-presenca">💾 Salvar Presença</button>
     </div>
     <div style="margin-top:28px">
-      <div style="font-size:14px;font-weight:800;color:#94a3b8;margin-bottom:12px">PresenÃ§as lanÃ§adas</div>
+      <div style="font-size:14px;font-weight:800;color:#94a3b8;margin-bottom:12px">Presenças lançadas</div>
       <div id="presenca-history-list"></div>
-      <div class="empty" id="presenca-history-empty" style="display:none"><div class="icon">ðŸ“‹</div><p>Nenhuma presenÃ§a lanÃ§ada</p></div>
+      <div class="empty" id="presenca-history-empty" style="display:none"><div class="icon">📋</div><p>Nenhuma presença lançada</p></div>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” RELATÃ“RIO DE PRESENÃ‡AS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — RELATÓRIO DE PRESENÇAS ═══════════════════════ -->
 <div class="screen" id="screen-teacher-relatorio-presenca">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-presence-options')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <h1 style="font-size:16px" id="relatorio-title">RelatÃ³rio</h1>
+      <button onclick="showScreen('teacher-presence-options')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px" id="relatorio-title">Relatório</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div style="margin-bottom:18px">
-      <label class="lbl">SELECIONAR MÃŠS</label>
+      <label class="lbl">SELECIONAR MÊS</label>
       <input type="month" class="inp" id="relatorio-month" style="color-scheme:dark" onchange="loadRelatorio()">
     </div>
     <div id="relatorio-stats"></div>
     <div id="relatorio-list"></div>
-    <div class="empty" id="relatorio-empty" style="display:none"><div class="icon">ðŸ“Š</div><p>Nenhuma presenÃ§a neste mÃªs</p></div>
+    <div class="empty" id="relatorio-empty" style="display:none"><div class="icon">📊</div><p>Nenhuma presença neste mês</p></div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” GERENCIAR PRESENÃ‡AS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — GERENCIAR PRESENÇAS ═══════════════════════════ -->
 <div class="screen" id="screen-teacher-gerenciar-presencas">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-presence-options')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <h1 style="font-size:16px" id="gerenciar-pres-title">Gerenciar PresenÃ§as</h1>
+      <button onclick="showScreen('teacher-presence-options')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px" id="gerenciar-pres-title">Gerenciar Presenças</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div id="gerenciar-pres-list"></div>
-    <div class="empty" id="gerenciar-pres-empty" style="display:none"><div class="icon">ðŸ“‹</div><p>Nenhuma presenÃ§a lanÃ§ada</p></div>
+    <div class="empty" id="gerenciar-pres-empty" style="display:none"><div class="icon">📋</div><p>Nenhuma presença lançada</p></div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” EDITAR PRESENÃ‡A â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — EDITAR PRESENÇA ════════════════════════════════ -->
 <div class="screen" id="screen-teacher-edit-presenca">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="openGerenciarPresencas()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <h1 style="font-size:16px">Editar PresenÃ§a</h1>
+      <button onclick="openGerenciarPresencas()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">Editar Presença</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
       <div style="margin-bottom:18px">
-        <label class="lbl">TÃTULO DO TREINO</label>
-        <input type="text" class="inp" id="edit-pres-title" placeholder="Ex: Arena GrussaÃ­" maxlength="60" style="color-scheme:dark">
+        <label class="lbl">TÍTULO DO TREINO</label>
+        <input type="text" class="inp" id="edit-pres-title" placeholder="Ex: Arena Grussaí" maxlength="60" style="color-scheme:dark">
       </div>
       <div style="margin-bottom:18px">
         <label class="lbl">DATA DO TREINO</label>
@@ -530,45 +530,45 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
         <div>
-          <label class="lbl">HORÃRIO INÃCIO</label>
+          <label class="lbl">HORÁRIO INÍCIO</label>
           <input type="time" class="inp" id="edit-pres-time-start" style="color-scheme:dark">
         </div>
         <div>
-          <label class="lbl">HORÃRIO FIM</label>
+          <label class="lbl">HORÁRIO FIM</label>
           <input type="time" class="inp" id="edit-pres-time-end" style="color-scheme:dark">
         </div>
       </div>
       <p class="err-txt" id="edit-pres-err" style="margin-bottom:12px"></p>
-      <button onclick="updatePresenca()" class="btn-main" id="btn-update-presenca">ðŸ’¾ Salvar AlteraÃ§Ãµes</button>
+      <button onclick="updatePresenca()" class="btn-main" id="btn-update-presenca">💾 Salvar Alterações</button>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” ALUNOS CADASTRADOS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — ALUNOS CADASTRADOS ════════════════════════════════ -->
 <div class="screen" id="screen-teacher-students">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
       <h1 style="font-size:16px">Alunos Cadastrados</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:700px">
     <div style="margin-bottom:16px">
       <button onclick="openAllStudentsMap()" style="width:100%;padding:13px;border-radius:14px;background:rgba(56,189,248,.12);color:#38bdf8;font-weight:700;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-        ðŸ—ºï¸ Ver todos no mapa
+        🗺️ Ver todos no mapa
       </button>
     </div>
     <div id="students-loading" class="loading"><div class="spin"></div>Carregando...</div>
-    <div id="students-empty" class="empty" style="display:none"><div class="icon">ðŸ‘¥</div><p>Nenhum aluno cadastrado</p></div>
+    <div id="students-empty" class="empty" style="display:none"><div class="icon">👥</div><p>Nenhum aluno cadastrado</p></div>
     <div id="students-list"></div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” EDITAR PERFIL DO ALUNO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — EDITAR PERFIL DO ALUNO ═════════════════════════ -->
 <div class="screen" id="screen-teacher-edit-student">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-students');loadStudents()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
+      <button onclick="showScreen('teacher-students');loadStudents()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
       <h1 style="font-size:16px" id="edit-student-title">Editar Aluno</h1>
     </div>
   </div>
@@ -593,8 +593,8 @@ input,select,textarea{font-family:inherit;outline:none}
         <input type="date" class="inp" id="es-birthdate" style="color-scheme:dark">
       </div>
       <div style="margin-bottom:16px">
-        <label class="lbl">ENDEREÃ‡O</label>
-        <input class="inp" id="es-address" placeholder="Rua, nÂº â€” Bairro, Cidade">
+        <label class="lbl">ENDEREÇO</label>
+        <input class="inp" id="es-address" placeholder="Rua, nº — Bairro, Cidade">
       </div>
       <div style="margin-bottom:16px">
         <label class="lbl">TELEFONE (WHATSAPP)</label>
@@ -602,7 +602,7 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
         <div>
-          <label class="lbl">USUÃRIO</label>
+          <label class="lbl">USUÁRIO</label>
           <input class="inp" id="es-username" disabled style="opacity:.5;cursor:not-allowed">
         </div>
         <div>
@@ -610,164 +610,164 @@ input,select,textarea{font-family:inherit;outline:none}
           <input class="inp" id="es-password" placeholder="Nova senha">
         </div>
       </div>
-      <button onclick="saveStudentProfile()" class="btn-main" id="btn-save-student">ðŸ’¾ Salvar AlteraÃ§Ãµes</button>
+      <button onclick="saveStudentProfile()" class="btn-main" id="btn-save-student">💾 Salvar Alterações</button>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” FEED DE ATUALIZAÃ‡Ã•ES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — FEED DE ATUALIZAÇÕES ═════════════════════════════ -->
 <div class="screen" id="screen-teacher-feed">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <h1 style="font-size:16px">ðŸ“° Feed de AtualizaÃ§Ãµes</h1>
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📰 Feed de Atualizações</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:660px">
     <div class="loading" id="feed-mgr-loading"><div class="spin"></div>Carregando...</div>
-    <div class="empty" id="feed-mgr-empty" style="display:none"><div class="icon">ðŸ“­</div><p>Nenhum item no feed</p></div>
+    <div class="empty" id="feed-mgr-empty" style="display:none"><div class="icon">📭</div><p>Nenhum item no feed</p></div>
     <div id="feed-mgr-list"></div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” EDITAR ITEM DO FEED â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — EDITAR ITEM DO FEED ═════════════════════════════ -->
 <div class="screen" id="screen-teacher-feed-edit">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-feed');loadFeedManager()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
+      <button onclick="showScreen('teacher-feed');loadFeedManager()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
       <h1 style="font-size:16px">Editar Item</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
       <div style="margin-bottom:16px">
-        <label class="lbl">ÃCONE</label>
-        <input class="inp" id="fe-icon" placeholder="ðŸš—" maxlength="4">
+        <label class="lbl">ÍCONE</label>
+        <input class="inp" id="fe-icon" placeholder="🚗" maxlength="4">
       </div>
       <div style="margin-bottom:16px">
         <label class="lbl">TEXTO</label>
-        <input class="inp" id="fe-text" placeholder="Texto da atualizaÃ§Ã£o">
+        <input class="inp" id="fe-text" placeholder="Texto da atualização">
       </div>
       <div style="margin-bottom:16px">
         <label class="lbl">DETALHE (opcional)</label>
-        <input class="inp" id="fe-detail" placeholder="InformaÃ§Ã£o extra">
+        <input class="inp" id="fe-detail" placeholder="Informação extra">
       </div>
-      <button onclick="saveFeedItem()" class="btn-main" id="btn-save-feed">ðŸ’¾ Salvar</button>
+      <button onclick="saveFeedItem()" class="btn-main" id="btn-save-feed">💾 Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” NOTAS DE PATCH â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — NOTAS DE PATCH ═══════════════════════════════════ -->
 <div class="screen" id="screen-teacher-patch">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <h1 style="font-size:16px">ðŸ“ Notas de Patch</h1>
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📝 Notas de Patch</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:660px">
     <div class="t-form" style="margin-bottom:20px">
       <div style="margin-bottom:16px">
-        <label class="lbl">VERSÃƒO</label>
+        <label class="lbl">VERSÃO</label>
         <input class="inp" id="patch-version" placeholder="Ex: 2.0.0">
       </div>
       <div style="margin-bottom:16px">
-        <label class="lbl">TÃTULO</label>
-        <input class="inp" id="patch-title" placeholder="Ex: AtualizaÃ§Ã£o de Abril">
+        <label class="lbl">TÍTULO</label>
+        <input class="inp" id="patch-title" placeholder="Ex: Atualização de Abril">
       </div>
       <div style="margin-bottom:16px">
-        <label class="lbl">CONTEÃšDO (o que foi implementado)</label>
+        <label class="lbl">CONTEÚDO (o que foi implementado)</label>
         <textarea class="inp" id="patch-content" rows="8" placeholder="Descreva as novidades..." style="resize:vertical;min-height:120px"></textarea>
       </div>
-      <button onclick="savePatchNote()" class="btn-main" id="btn-save-patch">ðŸ“¤ Publicar Nota de Patch</button>
+      <button onclick="savePatchNote()" class="btn-main" id="btn-save-patch">📤 Publicar Nota de Patch</button>
     </div>
-    <div style="font-size:14px;font-weight:800;color:#94a3b8;margin-bottom:12px">HistÃ³rico</div>
+    <div style="font-size:14px;font-weight:800;color:#94a3b8;margin-bottom:12px">Histórico</div>
     <div id="patch-list"></div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” TORNEIOS (menu) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — TORNEIOS (menu) ════════════════════════════════ -->
 <div class="screen" id="screen-teacher-tournaments">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <h1 style="font-size:16px">ðŸ Torneios</h1>
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">🏐 Torneios</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div style="display:flex;flex-direction:column;gap:12px;padding:10px 0">
       <button onclick="showScreen('teacher-criar-inscricao')" style="padding:20px;border-radius:16px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px">
-        <span style="font-size:22px">ðŸ“</span> Criar InscriÃ§Ã£o
+        <span style="font-size:22px">📝</span> Criar Inscrição
       </button>
       <button onclick="showScreen('teacher-consultar-inscricao');loadInscricoes()" style="padding:20px;border-radius:16px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);color:#38bdf8;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px">
-        <span style="font-size:22px">ðŸ”</span> Consultar InscriÃ§Ã£o
+        <span style="font-size:22px">🔍</span> Consultar Inscrição
       </button>
       <button disabled style="padding:20px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#475569;font-weight:800;font-size:15px;cursor:not-allowed;display:flex;align-items:center;gap:12px;position:relative">
-        <span style="font-size:22px">ðŸ†</span> Criar Torneio
+        <span style="font-size:22px">🏆</span> Criar Torneio
         <span style="position:absolute;right:16px;font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:800">EM BREVE</span>
       </button>
       <button disabled style="padding:20px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#475569;font-weight:800;font-size:15px;cursor:not-allowed;display:flex;align-items:center;gap:12px;position:relative">
-        <span style="font-size:22px">ðŸ“‹</span> Consultar Torneio
+        <span style="font-size:22px">📋</span> Consultar Torneio
         <span style="position:absolute;right:16px;font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:800">EM BREVE</span>
       </button>
       <button disabled style="padding:20px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#475569;font-weight:800;font-size:15px;cursor:not-allowed;display:flex;align-items:center;gap:12px;position:relative">
-        <span style="font-size:22px">ðŸ“Š</span> Criar Tabela de Torneio
+        <span style="font-size:22px">📊</span> Criar Tabela de Torneio
         <span style="position:absolute;right:16px;font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:800">EM BREVE</span>
       </button>
       <button disabled style="padding:20px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#475569;font-weight:800;font-size:15px;cursor:not-allowed;display:flex;align-items:center;gap:12px;position:relative">
-        <span style="font-size:22px">ðŸ‘</span> Consultar Tabela
+        <span style="font-size:22px">👁</span> Consultar Tabela
         <span style="position:absolute;right:16px;font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:800">EM BREVE</span>
       </button>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” CRIAR INSCRIÃ‡ÃƒO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — CRIAR INSCRIÇÃO ═══════════════════════════════ -->
 <div class="screen" id="screen-teacher-criar-inscricao">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-tournaments')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <h1 style="font-size:16px">ðŸ“ Criar InscriÃ§Ã£o</h1>
+      <button onclick="showScreen('teacher-tournaments')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📝 Criar Inscrição</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
       <div style="margin-bottom:18px">
-        <label class="lbl">TÃTULO DA INSCRIÃ‡ÃƒO</label>
-        <input class="inp" id="insc-title" placeholder="Ex: Torneio de VÃ´lei â€” Abril 2026">
+        <label class="lbl">TÍTULO DA INSCRIÇÃO</label>
+        <input class="inp" id="insc-title" placeholder="Ex: Torneio de Vôlei — Abril 2026">
       </div>
       <p class="err-txt" id="insc-err" style="margin-bottom:12px"></p>
-      <button onclick="criarInscricao()" class="btn-main" id="btn-criar-insc">âœ… Criar InscriÃ§Ã£o</button>
+      <button onclick="criarInscricao()" class="btn-main" id="btn-criar-insc">✅ Criar Inscrição</button>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” CONSULTAR INSCRIÃ‡Ã•ES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — CONSULTAR INSCRIÇÕES ═════════════════════════ -->
 <div class="screen" id="screen-teacher-consultar-inscricao">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-tournaments')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <h1 style="font-size:16px">ðŸ” Consultar InscriÃ§Ãµes</h1>
+      <button onclick="showScreen('teacher-tournaments')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">🔍 Consultar Inscrições</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:660px">
     <div class="loading" id="inscricoes-loading"><div class="spin"></div>Carregando...</div>
-    <div class="empty" id="inscricoes-empty" style="display:none"><div class="icon">ðŸ“</div><p>Nenhuma inscriÃ§Ã£o criada</p></div>
+    <div class="empty" id="inscricoes-empty" style="display:none"><div class="icon">📝</div><p>Nenhuma inscrição criada</p></div>
     <div id="inscricoes-list"></div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” DETALHE DA INSCRIÃ‡ÃƒO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — DETALHE DA INSCRIÇÃO ═════════════════════════ -->
 <div class="screen" id="screen-teacher-inscricao-detail">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-consultar-inscricao');loadInscricoes()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <h1 style="font-size:16px" id="inscricao-detail-title">InscriÃ§Ã£o</h1>
+      <button onclick="showScreen('teacher-consultar-inscricao');loadInscricoes()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px" id="inscricao-detail-title">Inscrição</h1>
     </div>
   </div>
   <div class="t-content" style="max-width:660px">
     <div id="inscricao-detail-stats" style="margin-bottom:16px"></div>
-    <div class="empty" id="inscricao-detail-empty" style="display:none"><div class="icon">ðŸ‘¥</div><p>Nenhum inscrito ainda</p></div>
+    <div class="empty" id="inscricao-detail-empty" style="display:none"><div class="icon">👥</div><p>Nenhum inscrito ainda</p></div>
     <div id="inscricao-detail-list"></div>
   </div>
 </div>
@@ -775,8 +775,8 @@ input,select,textarea{font-family:inherit;outline:none}
 <!-- Map Modal -->
 <div id="map-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:200">
   <div style="position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;z-index:201">
-    <div style="background:rgba(0,0,0,.7);backdrop-filter:blur(10px);padding:10px 18px;border-radius:14px;color:#fff;font-weight:800;font-size:14px" id="map-title">LocalizaÃ§Ã£o</div>
-    <button onclick="closeMap()" style="background:rgba(0,0,0,.7);backdrop-filter:blur(10px);padding:10px 18px;border-radius:14px;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">âœ• Fechar</button>
+    <div style="background:rgba(0,0,0,.7);backdrop-filter:blur(10px);padding:10px 18px;border-radius:14px;color:#fff;font-weight:800;font-size:14px" id="map-title">Localização</div>
+    <button onclick="closeMap()" style="background:rgba(0,0,0,.7);backdrop-filter:blur(10px);padding:10px 18px;border-radius:14px;color:#fff;font-weight:700;font-size:14px;border:none;cursor:pointer">✕ Fechar</button>
   </div>
   <div id="map-container" style="width:100%;height:100%"></div>
 </div>
@@ -785,13 +785,13 @@ input,select,textarea{font-family:inherit;outline:none}
 <div id="msg-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px">
   <div style="background:#1e293b;border-radius:20px;padding:28px 24px;max-width:400px;width:100%;border:1px solid rgba(255,255,255,.1)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <div style="font-weight:800;font-size:16px;color:#fff">âœ‰ï¸ Mensagem para <span id="msg-target-name" style="color:#a78bfa"></span></div>
-      <button onclick="closeMsgModal()" style="background:none;border:none;color:#64748b;font-size:18px;cursor:pointer">âœ•</button>
+      <div style="font-weight:800;font-size:16px;color:#fff">✉️ Mensagem para <span id="msg-target-name" style="color:#a78bfa"></span></div>
+      <button onclick="closeMsgModal()" style="background:none;border:none;color:#64748b;font-size:18px;cursor:pointer">✕</button>
     </div>
     <label class="lbl">MENSAGEM</label>
     <textarea id="msg-content" class="inp" rows="4" placeholder="Digite a mensagem para o aluno..." style="resize:vertical;min-height:80px;-webkit-user-select:text;user-select:text"></textarea>
     <p class="err-txt" id="msg-err" style="margin-bottom:10px"></p>
-    <button onclick="sendMessageToStudent()" id="btn-send-msg" class="btn-main" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">ðŸ“¤ Enviar Mensagem</button>
+    <button onclick="sendMessageToStudent()" id="btn-send-msg" class="btn-main" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">📤 Enviar Mensagem</button>
   </div>
 </div>
 
@@ -810,17 +810,17 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
 </div>
 
-<!-- â•â• MODAL CUTS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ MODAL CUTS ═══════════════════════════════════════════════════ -->
 <div id="cuts-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center">
   <div style="background:#1e293b;border-radius:18px;padding:28px 24px;max-width:360px;width:90%;border:1px solid rgba(255,255,255,.1)">
     <div style="text-align:center;margin-bottom:20px">
-      <span style="font-size:40px">ðŸª™</span>
+      <span style="font-size:40px">🪙</span>
       <div style="font-size:18px;font-weight:800;color:#e2e8f0;margin-top:8px" id="cuts-modal-title">CUTS</div>
       <div style="font-size:13px;color:#64748b;margin-top:4px">Saldo atual: <span style="color:#f59e0b;font-weight:900" id="cuts-modal-current">0</span></div>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:16px">
       <button onclick="cutsAction('add')" id="cuts-tab-add" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(34,197,94,.15);color:#22c55e">+ Adicionar</button>
-      <button onclick="cutsAction('remove')" id="cuts-tab-remove" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">âˆ’ Remover</button>
+      <button onclick="cutsAction('remove')" id="cuts-tab-remove" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">− Remover</button>
       <button onclick="cutsAction('set')" id="cuts-tab-set" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">= Definir</button>
     </div>
     <div style="margin-bottom:16px">
@@ -834,12 +834,12 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” DECORAÃ‡Ã•ES â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — DECORAÇÕES ═══════════════════════════════════════ -->
 <div class="screen" id="screen-teacher-decorations">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <div><div class="t-title" style="font-size:16px">ðŸŽ¨ DecoraÃ§Ãµes</div><div class="t-sub">Molduras e Banners para Alunos</div></div>
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" style="font-size:16px">🎨 Decorações</div><div class="t-sub">Molduras e Banners para Alunos</div></div>
     </div>
     <div class="top-bar-actions">
       <button class="btn-topbar" onclick="showScreen('teacher-add-decoration')">+ Nova</button>
@@ -847,22 +847,22 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
   <div class="t-content">
     <div style="margin-bottom:20px">
-      <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:12px">ðŸ–¼ï¸ Molduras de Avatar</div>
+      <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:12px">🖼️ Molduras de Avatar</div>
       <div id="deco-frames-list"><div class="loading"><div class="spin"></div></div></div>
     </div>
     <div>
-      <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:12px">ðŸŒ„ Fundos de Banner</div>
+      <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:12px">🌄 Fundos de Banner</div>
       <div id="deco-banners-list"><div class="loading"><div class="spin"></div></div></div>
     </div>
   </div>
 </div>
 
-<!-- â•â• PROFESSOR â€” ADICIONAR DECORAÃ‡ÃƒO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ PROFESSOR — ADICIONAR DECORAÇÃO ══════════════════════════════ -->
 <div class="screen" id="screen-teacher-add-decoration">
   <div class="top-bar">
     <div class="top-bar-brand">
-      <button onclick="showScreen('teacher-decorations');loadDecorations()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">â†</button>
-      <div><div class="t-title" style="font-size:16px">Nova DecoraÃ§Ã£o</div></div>
+      <button onclick="showScreen('teacher-decorations');loadDecorations()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" style="font-size:16px">Nova Decoração</div></div>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
@@ -870,31 +870,31 @@ input,select,textarea{font-family:inherit;outline:none}
       <div style="margin-bottom:18px">
         <label class="lbl">TIPO</label>
         <select class="inp" id="deco-type" style="color-scheme:dark">
-          <option value="frame">ðŸ–¼ï¸ Moldura de Avatar</option>
-          <option value="banner">ðŸŒ„ Fundo de Banner</option>
+          <option value="frame">🖼️ Moldura de Avatar</option>
+          <option value="banner">🌄 Fundo de Banner</option>
         </select>
       </div>
       <div style="margin-bottom:18px">
-        <label class="lbl">NOME DA DECORAÃ‡ÃƒO</label>
+        <label class="lbl">NOME DA DECORAÇÃO</label>
         <input class="inp" id="deco-name" placeholder="Ex: Moldura Dourada, Fundo Neon...">
         <p class="err-txt" id="deco-name-err"></p>
       </div>
       <div style="margin-bottom:18px">
-        <label class="lbl">ORDEM (posiÃ§Ã£o na lista)</label>
+        <label class="lbl">ORDEM (posição na lista)</label>
         <input type="number" class="inp" id="deco-order" value="0" min="0" placeholder="0 = primeiro">
       </div>
       <div style="margin-bottom:18px">
-        <label class="lbl">IMAGEM (PNG, GIF ou JPG â€” mÃ¡x 800KB)</label>
+        <label class="lbl">IMAGEM (PNG, GIF ou JPG — máx 800KB)</label>
         <div id="deco-upload-area" onclick="document.getElementById('deco-file-input').click()" style="border:2px dashed rgba(255,255,255,.15);border-radius:16px;padding:30px 20px;text-align:center;cursor:pointer;transition:.2s;background:rgba(255,255,255,.02)">
           <div id="deco-upload-preview" style="margin-bottom:12px">
-            <span style="font-size:40px;display:block;margin-bottom:8px">ðŸ“</span>
+            <span style="font-size:40px;display:block;margin-bottom:8px">📁</span>
             <span style="color:#94a3b8;font-size:13px">Clique para selecionar a imagem</span>
           </div>
         </div>
         <input type="file" id="deco-file-input" accept="image/png,image/gif,image/jpeg,image/webp" style="display:none" onchange="previewDecoFile(event)">
         <p class="err-txt" id="deco-file-err"></p>
       </div>
-      <button onclick="saveDecoration()" class="btn-main" id="btn-save-deco">ðŸ’¾ Salvar DecoraÃ§Ã£o</button>
+      <button onclick="saveDecoration()" class="btn-main" id="btn-save-deco">💾 Salvar Decoração</button>
     </div>
   </div>
 </div>
@@ -926,14 +926,14 @@ let unsubRides = null;
 let allRides = [];
 let currentDetailRideId = null;
 
-// â”€â”€ NavegaÃ§Ã£o â”€â”€
+// ── Navegação ──
 function showScreen(name) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById("screen-" + name).classList.add("active");
   window.scrollTo(0, 0);
 }
 
-// â”€â”€ Helpers â”€â”€
+// ── Helpers ──
 function clearErr(id) { const el = document.getElementById(id); if(el) el.textContent = ""; }
 function setErr(id, msg) { const el = document.getElementById(id); if(el) el.textContent = msg; }
 function showToast(msg) {
@@ -965,11 +965,11 @@ function isPast(date, time) {
   return new Date(date + "T" + time) < new Date();
 }
 function requireFirebase() {
-  if (!firebaseOk) { alert("Firebase nÃ£o configurado!"); return false; }
+  if (!firebaseOk) { alert("Firebase não configurado!"); return false; }
   return true;
 }
 
-// â”€â”€ Auth â”€â”€
+// ── Auth ──
 function teacherLogin() {
   const pin = document.getElementById("t-pin").value;
   if (pin === TEACHER_PIN) {
@@ -991,7 +991,7 @@ function teacherLogout() {
   showScreen("teacher-login");
 }
 
-// â”€â”€ Listener em tempo real â”€â”€
+// ── Listener em tempo real ──
 function startTeacherListener() {
   if (!requireFirebase()) { renderTeacherRides([]); return; }
   document.getElementById("t-rides-loading").style.display = "flex";
@@ -1036,10 +1036,10 @@ function renderTeacherRides(rides) {
             ${full ? 'LOTADO' : (r.seats - booked.length) + ' VAGAS'}
           </span>
         </div>
-        <p class="ride-info">ðŸ“… ${fmtShort(r.date)} Â· â° ${r.time}</p>
+        <p class="ride-info">📅 ${fmtShort(r.date)} · ⏰ ${r.time}</p>
         <div class="seg-bar">${Array.from({length:r.seats}).map((_,i)=>`<div class="seg" style="background:${i<booked.length?'#f59e0b':'rgba(255,255,255,.1)'}"></div>`).join('')}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-          <span style="color:#64748b;font-size:12px">${booked.length}/${r.seats} confirmados Â· ${wl.length} na fila</span>
+          <span style="color:#64748b;font-size:12px">${booked.length}/${r.seats} confirmados · ${wl.length} na fila</span>
           <div style="display:flex;gap:3px">${booked.slice(0,4).map(b=>`<div class="avatar" title="${b.firstName}" style="background:linear-gradient(135deg,#f59e0b,#e85d04);width:28px;height:28px;font-size:11px">${b.firstName[0]}</div>`).join('')}${booked.length>4?`<div class="avatar" style="background:rgba(255,255,255,.1);color:#94a3b8;width:28px;height:28px;font-size:11px">+${booked.length-4}</div>`:''}</div>
         </div>
       </div>`;
@@ -1050,7 +1050,7 @@ function renderTeacherRides(rides) {
   list.innerHTML = html;
 }
 
-// â”€â”€ Criar Carona â”€â”€
+// ── Criar Carona ──
 function resetRideForm() {
   document.getElementById("r-title").value = "";
   document.getElementById("r-date").value = "";
@@ -1063,7 +1063,7 @@ function resetRideForm() {
 
 function updateSeats(n) {
   document.getElementById("seats-val").textContent = n;
-  document.getElementById("seats-icons").innerHTML = Array.from({length:Number(n)}).map(()=>`<div class="seat-icon">ðŸ’º</div>`).join("");
+  document.getElementById("seats-icons").innerHTML = Array.from({length:Number(n)}).map(()=>`<div class="seat-icon">💺</div>`).join("");
 }
 
 async function createRide() {
@@ -1075,9 +1075,9 @@ async function createRide() {
   const visible = document.getElementById("r-visible").checked;
 
   let ok = true;
-  if (!title) { setErr("r-title-err","Informe o tÃ­tulo"); ok=false; }
+  if (!title) { setErr("r-title-err","Informe o título"); ok=false; }
   if (!date)  { setErr("r-date-err","Informe a data"); ok=false; }
-  if (!time)  { setErr("r-time-err","Informe o horÃ¡rio"); ok=false; }
+  if (!time)  { setErr("r-time-err","Informe o horário"); ok=false; }
   if (!ok) return;
 
   const btn = event.target; btn.disabled = true; btn.textContent = "Criando...";
@@ -1086,23 +1086,23 @@ async function createRide() {
     if (visible) {
       await db.collection("feed").add({
         type: "ride_created",
-        icon: "ðŸš—",
+        icon: "🚗",
         text: title,
-        detail: `ðŸ“… ${date} Â· â° ${time} Â· ${seats} vagas`,
+        detail: `📅 ${date} · ⏰ ${time} · ${seats} vagas`,
         refId: docRef.id,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
-    showToast("âœ… Carona criada!");
+    showToast("✅ Carona criada!");
     showScreen("teacher-rides");
   } catch(e) {
     showToast("Erro ao criar carona");
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = "âœ“ Criar Carona";
+  btn.disabled = false; btn.textContent = "✓ Criar Carona";
 }
 
-// â”€â”€ Detalhe da Carona â”€â”€
+// ── Detalhe da Carona ──
 function openTeacherDetail(rideId) {
   currentDetailRideId = rideId;
   const ride = allRides.find(r => r.id === rideId);
@@ -1114,7 +1114,7 @@ function openTeacherDetail(rideId) {
 function renderTeacherDetail(ride) {
   const booked = ride.booked || [], wl = ride.waitlist || [];
   document.getElementById("td-title").textContent = ride.title;
-  document.getElementById("td-sub").textContent = `${fmtShort(ride.date)} Â· ${ride.time}`;
+  document.getElementById("td-sub").textContent = `${fmtShort(ride.date)} · ${ride.time}`;
   document.getElementById("td-stat-conf").textContent = `${booked.length}/${ride.seats}`;
   document.getElementById("td-stat-wait").textContent = `${wl.length}/5`;
   document.getElementById("td-stat-free").textContent = Math.max(0, ride.seats - booked.length);
@@ -1126,7 +1126,7 @@ function renderTeacherDetail(ride) {
           <div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#e85d04)">${b.firstName[0]}</div>
           <div style="flex:1"><p style="font-weight:700;font-size:14px;color:#e2e8f0">${b.firstName}</p><p style="color:#64748b;font-size:12px">@${b.username}</p></div>
           <span class="badge" style="background:rgba(34,197,94,.15);color:#22c55e">Vaga ${i+1}</span>
-          <button onclick="removeStudentFromRide('${b.userId}')" style="margin-left:8px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">âœ• Remover</button>
+          <button onclick="removeStudentFromRide('${b.userId}')" style="margin-left:8px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">✕ Remover</button>
         </div>`).join("");
 
   const wlWrap = document.getElementById("td-waitlist-wrap");
@@ -1144,31 +1144,31 @@ function renderTeacherDetail(ride) {
 }
 
 function deleteRide() {
-  showConfirmModal("Excluir esta carona?", "Esta aÃ§Ã£o nÃ£o pode ser desfeita.", async () => {
+  showConfirmModal("Excluir esta carona?", "Esta ação não pode ser desfeita.", async () => {
     try {
       const ride = allRides.find(r => r.id === currentDetailRideId);
       await db.collection("rides").doc(currentDetailRideId).delete();
-      showToast("Carona excluÃ­da");
+      showToast("Carona excluída");
       currentDetailRideId = null;
       showScreen("teacher-rides");
     } catch(e) { showToast("Erro ao excluir"); }
   });
 }
 
-// â”€â”€ Remover aluno de uma carona â”€â”€
+// ── Remover aluno de uma carona ──
 function removeStudentFromRide(userId) {
   const ride = allRides.find(r => r.id === currentDetailRideId);
   if (!ride) return;
   const student = (ride.booked || []).find(b => b.userId === userId);
   const studentName = student ? student.firstName : "este aluno";
-  showConfirmModal(`Remover ${studentName}?`, "A vaga serÃ¡ liberada. Se houver alguÃ©m na fila de espera, serÃ¡ promovido automaticamente.", async () => {
+  showConfirmModal(`Remover ${studentName}?`, "A vaga será liberada. Se houver alguém na fila de espera, será promovido automaticamente.", async () => {
     try {
       const rideRef = db.collection("rides").doc(currentDetailRideId);
       let promotedUser = null;
       let rideTitle = "";
       await db.runTransaction(async tx => {
         const doc = await tx.get(rideRef);
-        if (!doc.exists) throw "Carona nÃ£o encontrada";
+        if (!doc.exists) throw "Carona não encontrada";
         const data = doc.data();
         rideTitle = data.title;
         const booked = data.booked || [];
@@ -1188,20 +1188,20 @@ function removeStudentFromRide(userId) {
       if (promotedUser) {
         await db.collection("feed").add({
           type: "waitlist_promotion",
-          icon: "ðŸŽ‰",
+          icon: "🎉",
           text: "Vaga confirmada!",
-          detail: `Uma vaga abriu na carona "${rideTitle}" e vocÃª foi confirmado automaticamente!`,
+          detail: `Uma vaga abriu na carona "${rideTitle}" e você foi confirmado automaticamente!`,
           targetUserId: promotedUser.userId,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         await db.collection("notifications").doc(promotedUser.userId).collection("items").add({
-          msg: `ðŸŽ‰ Uma vaga abriu na carona "${rideTitle}" e vocÃª foi confirmado automaticamente!`,
+          msg: `🎉 Uma vaga abriu na carona "${rideTitle}" e você foi confirmado automaticamente!`,
           read: false,
           at: firebase.firestore.FieldValue.serverTimestamp()
         });
       }
 
-      showToast("âœ… Aluno removido");
+      showToast("✅ Aluno removido");
       openTeacherDetail(currentDetailRideId);
     } catch(e) {
       showToast("Erro ao remover aluno");
@@ -1210,7 +1210,7 @@ function removeStudentFromRide(userId) {
   });
 }
 
-// â”€â”€ Editar Carona â”€â”€
+// ── Editar Carona ──
 function openEditRide() {
   const ride = allRides.find(r => r.id === currentDetailRideId);
   if (!ride) return;
@@ -1233,9 +1233,9 @@ async function saveEditRide() {
   const visible = document.getElementById("e-visible").checked;
 
   let ok = true;
-  if (!title) { setErr("e-title-err","Informe o tÃ­tulo"); ok=false; }
+  if (!title) { setErr("e-title-err","Informe o título"); ok=false; }
   if (!date)  { setErr("e-date-err","Informe a data"); ok=false; }
-  if (!time)  { setErr("e-time-err","Informe o horÃ¡rio"); ok=false; }
+  if (!time)  { setErr("e-time-err","Informe o horário"); ok=false; }
   if (!ok) return;
 
   const btn = event.target; btn.disabled = true; btn.textContent = "Salvando...";
@@ -1246,7 +1246,7 @@ async function saveEditRide() {
 
     await db.runTransaction(async tx => {
       const doc = await tx.get(rideRef);
-      if (!doc.exists) throw "Carona nÃ£o encontrada";
+      if (!doc.exists) throw "Carona não encontrada";
       const ride = doc.data();
       let booked = ride.booked || [];
       let wl = ride.waitlist || [];
@@ -1269,33 +1269,33 @@ async function saveEditRide() {
     for (const pu of promotedUsers) {
       await db.collection("feed").add({
         type: "waitlist_promotion",
-        icon: "ðŸŽ‰",
+        icon: "🎉",
         text: "Vaga confirmada!",
-        detail: `Uma vaga abriu na carona "${title}" e vocÃª foi confirmado automaticamente!`,
+        detail: `Uma vaga abriu na carona "${title}" e você foi confirmado automaticamente!`,
         targetUserId: pu.userId,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       await db.collection("notifications").doc(pu.userId).collection("items").add({
-        msg: `ðŸŽ‰ Uma vaga abriu na carona "${title}" e vocÃª foi confirmado automaticamente!`,
+        msg: `🎉 Uma vaga abriu na carona "${title}" e você foi confirmado automaticamente!`,
         read: false,
         at: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
 
     if (promoted > 0) {
-      showToast(`âœ… Carona atualizada! ${promoted} aluno(s) saiu(ram) da fila de espera`);
+      showToast(`✅ Carona atualizada! ${promoted} aluno(s) saiu(ram) da fila de espera`);
     } else {
-      showToast("âœ… Carona atualizada!");
+      showToast("✅ Carona atualizada!");
     }
     openTeacherDetail(currentDetailRideId);
   } catch(e) {
     showToast("Erro ao salvar");
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = "ðŸ’¾ Salvar AlteraÃ§Ãµes";
+  btn.disabled = false; btn.textContent = "💾 Salvar Alterações";
 }
 
-// â”€â”€ Alertas â”€â”€
+// ── Alertas ──
 let unsubAlerts = null;
 
 function loadAlerts() {
@@ -1316,8 +1316,8 @@ function loadAlerts() {
         <div class="alert-card">
           <div class="alert-msg">${escapeHtml(a.message)}</div>
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <span class="alert-time">ðŸ“… ${a.createdAt ? new Date(a.createdAt.toDate()).toLocaleString("pt-BR") : "agora"}</span>
-            <button class="alert-del" onclick="deleteAlert('${a.id}')">âœ• Remover</button>
+            <span class="alert-time">📅 ${a.createdAt ? new Date(a.createdAt.toDate()).toLocaleString("pt-BR") : "agora"}</span>
+            <button class="alert-del" onclick="deleteAlert('${a.id}')">✕ Remover</button>
           </div>
         </div>`).join("");
     }, err => {
@@ -1341,7 +1341,7 @@ async function sendAlert() {
   const btn = document.getElementById("btn-send-alert");
   btn.disabled = true; btn.textContent = "Enviando...";
   try {
-    // Salvar na coleÃ§Ã£o de alertas
+    // Salvar na coleção de alertas
     await db.collection("alerts").add({
       message: msg,
       visible,
@@ -1353,7 +1353,7 @@ async function sendAlert() {
     if (visible) {
       await db.collection("feed").add({
         type: "alert",
-        icon: "ðŸ””",
+        icon: "🔔",
         text: `Alerta: ${msg}`,
         detail: "",
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1363,12 +1363,12 @@ async function sendAlert() {
     document.getElementById("alert-msg").value = "";
     document.getElementById("alert-visible").checked = true;
     setErr("alert-msg-err", "");
-    showToast("ðŸ”” Alerta enviado!");
+    showToast("🔔 Alerta enviado!");
   } catch(e) {
     showToast("Erro ao enviar alerta");
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = "ðŸ“¤ Enviar Alerta";
+  btn.disabled = false; btn.textContent = "📤 Enviar Alerta";
 }
 
 async function deleteAlert(id) {
@@ -1379,7 +1379,7 @@ async function deleteAlert(id) {
   } catch(e) { showToast("Erro ao remover"); }
 }
 
-// â”€â”€ Alunos Cadastrados â”€â”€
+// ── Alunos Cadastrados ──
 let unsubStudents = null;
 let allStudents = [];
 let studentMap = null;
@@ -1431,41 +1431,41 @@ function renderStudents(students) {
           }
           <div style="flex:1">
             <div style="font-weight:800;font-size:15px;color:${blocked?'#f87171':'#fff'}">${escapeHtml(s.firstName||'')}${nickname} ${blocked?'<span style="font-size:11px;color:#f87171">(BLOQUEADO)</span>':''}</div>
-            <div style="color:#64748b;font-size:12px">@${escapeHtml(s.username||'')}${s.birthdate ? ' Â· ðŸŽ‚ '+s.birthdate : ''}</div>
+            <div style="color:#64748b;font-size:12px">@${escapeHtml(s.username||'')}${s.birthdate ? ' · 🎂 '+s.birthdate : ''}</div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
           <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px">
             <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:3px">SENHA</div>
             <div style="font-size:13px;color:#e2e8f0;font-weight:600;display:flex;align-items:center;gap:6px">
-              <span id="pw-${s.id}" style="letter-spacing:2px">â€¢â€¢â€¢â€¢</span>
-              <button onclick="togglePw('${s.id}')" style="background:none;border:none;color:#64748b;font-size:14px;cursor:pointer;padding:2px 4px">ðŸ‘</button>
+              <span id="pw-${s.id}" style="letter-spacing:2px">••••</span>
+              <button onclick="togglePw('${s.id}')" style="background:none;border:none;color:#64748b;font-size:14px;cursor:pointer;padding:2px 4px">👁</button>
             </div>
           </div>
           <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px">
             <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:3px">TELEFONE</div>
-            <div style="font-size:13px;color:#e2e8f0;font-weight:600">${escapeHtml(s.phone||'â€”')}</div>
+            <div style="font-size:13px;color:#e2e8f0;font-weight:600">${escapeHtml(s.phone||'—')}</div>
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="toggleBlock('${s.id}',${!blocked})" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:${blocked?'rgba(34,197,94,.15)':'rgba(239,68,68,.12)'};color:${blocked?'#22c55e':'#f87171'}">${blocked?'ðŸ”“ Desbloquear':'ðŸ”’ Bloquear'}</button>
-          <button onclick="openEditStudent('${s.id}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">âœï¸ Editar</button>
-          ${hasLoc ? `<button onclick="openStudentMap('${s.id}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">ðŸ“ Local</button>` : `<button disabled style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;background:rgba(255,255,255,.04);color:#64748b;cursor:default">ðŸ“ Sem local</button>`}
+          <button onclick="toggleBlock('${s.id}',${!blocked})" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:${blocked?'rgba(34,197,94,.15)':'rgba(239,68,68,.12)'};color:${blocked?'#22c55e':'#f87171'}">${blocked?'🔓 Desbloquear':'🔒 Bloquear'}</button>
+          <button onclick="openEditStudent('${s.id}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">✏️ Editar</button>
+          ${hasLoc ? `<button onclick="openStudentMap('${s.id}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">📍 Local</button>` : `<button disabled style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;background:rgba(255,255,255,.04);color:#64748b;cursor:default">📍 Sem local</button>`}
         </div>
         <!-- CUTS -->
         <div style="display:flex;align-items:center;gap:10px;margin-top:10px;margin-bottom:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15);border-radius:12px;padding:10px 14px">
-          <span style="font-size:20px">ðŸª™</span>
+          <span style="font-size:20px">🪙</span>
           <div style="flex:1">
             <div style="font-size:10px;font-weight:700;color:#64748b">CUTS</div>
             <div style="font-size:18px;font-weight:900;color:#f59e0b" id="cuts-${s.id}">${s.cuts || 0}</div>
           </div>
-          <button onclick="openCutsModal('${s.id}','${escapeHtml(s.firstName||'')}',${s.cuts||0})" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">âœï¸ Editar</button>
+          <button onclick="openCutsModal('${s.id}','${escapeHtml(s.firstName||'')}',${s.cuts||0})" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">✏️ Editar</button>
         </div>
         <div style="display:flex;gap:8px;margin-top:8px">
-          <button onclick="openMsgModal('${s.id}','${escapeHtml(s.firstName||'')}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(139,92,246,.12);color:#a78bfa;display:flex;align-items:center;justify-content:center;gap:6px">âœ‰ï¸ Mensagem</button>
-          <button onclick="deleteStudent('${s.id}','${escapeHtml(s.firstName||'')}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(239,68,68,.08);color:#f87171;display:flex;align-items:center;justify-content:center;gap:6px">ðŸ—‘ Excluir Conta</button>
+          <button onclick="openMsgModal('${s.id}','${escapeHtml(s.firstName||'')}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(139,92,246,.12);color:#a78bfa;display:flex;align-items:center;justify-content:center;gap:6px">✉️ Mensagem</button>
+          <button onclick="deleteStudent('${s.id}','${escapeHtml(s.firstName||'')}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(239,68,68,.08);color:#f87171;display:flex;align-items:center;justify-content:center;gap:6px">🗑 Excluir Conta</button>
         </div>
-        ${hasLoc ? `<div style="color:#64748b;font-size:11px;margin-top:8px">ðŸ“ Ãšltima atualizaÃ§Ã£o: ${locTime}</div>` : ''}
+        ${hasLoc ? `<div style="color:#64748b;font-size:11px;margin-top:8px">📍 Última atualização: ${locTime}</div>` : ''}
       </div>`;
   }).join("");
 }
@@ -1476,7 +1476,7 @@ function togglePw(id) {
   const el = document.getElementById("pw-" + id);
   if (!el) return;
   if (el.dataset.visible === "1") {
-    el.textContent = "â€¢â€¢â€¢â€¢";
+    el.textContent = "••••";
     el.style.letterSpacing = "2px";
     el.dataset.visible = "0";
   } else {
@@ -1487,10 +1487,10 @@ function togglePw(id) {
 }
 
 async function deleteStudent(userId, name) {
-  if (!confirm(`Excluir a conta de "${name}"? O aluno perderÃ¡ todos os dados e terÃ¡ que criar uma nova conta.`)) return;
-  if (!confirm(`TEM CERTEZA? Esta aÃ§Ã£o nÃ£o pode ser desfeita!`)) return;
+  if (!confirm(`Excluir a conta de "${name}"? O aluno perderá todos os dados e terá que criar uma nova conta.`)) return;
+  if (!confirm(`TEM CERTEZA? Esta ação não pode ser desfeita!`)) return;
   try {
-    // Remove notificaÃ§Ãµes do aluno
+    // Remove notificações do aluno
     const notifSnap = await db.collection('notifications').doc(userId).collection('items').get();
     const batch = db.batch();
     notifSnap.docs.forEach(d => batch.delete(d.ref));
@@ -1509,7 +1509,7 @@ async function deleteStudent(userId, name) {
         await rideDoc.ref.update({ booked: newBooked, waitlist: newWaitlist });
       }
     }
-    showToast('ðŸ—‘ Conta excluÃ­da com sucesso');
+    showToast('🗑 Conta excluída com sucesso');
   } catch(e) {
     showToast('Erro ao excluir conta');
     console.error(e);
@@ -1517,17 +1517,17 @@ async function deleteStudent(userId, name) {
 }
 
 async function toggleBlock(userId, block) {
-  if (!confirm(block ? "Bloquear esta conta? O aluno nÃ£o conseguirÃ¡ mais fazer login." : "Desbloquear esta conta?")) return;
+  if (!confirm(block ? "Bloquear esta conta? O aluno não conseguirá mais fazer login." : "Desbloquear esta conta?")) return;
   try {
     await db.collection("users").doc(userId).update({ blocked: block });
-    showToast(block ? "ðŸ”’ Conta bloqueada" : "ðŸ”“ Conta desbloqueada");
+    showToast(block ? "🔒 Conta bloqueada" : "🔓 Conta desbloqueada");
   } catch(e) {
     showToast("Erro ao atualizar");
     console.error(e);
   }
 }
 
-// â”€â”€ CUTS â”€â”€
+// ── CUTS ──
 let cutsModalUserId = null;
 let cutsModalMode = "add";
 let cutsModalCurrent = 0;
@@ -1536,7 +1536,7 @@ function openCutsModal(userId, name, current) {
   cutsModalUserId = userId;
   cutsModalCurrent = Number(current) || 0;
   cutsModalMode = "add";
-  document.getElementById("cuts-modal-title").textContent = "ðŸª™ CUTS â€” " + name;
+  document.getElementById("cuts-modal-title").textContent = "🪙 CUTS — " + name;
   document.getElementById("cuts-modal-current").textContent = cutsModalCurrent;
   document.getElementById("cuts-input").value = "";
   cutsAction("add");
@@ -1566,7 +1566,7 @@ function closeCutsModal() {
 
 async function saveCuts() {
   const val = parseInt(document.getElementById("cuts-input").value);
-  if (isNaN(val) || val < 0) { showToast("Informe um valor vÃ¡lido"); return; }
+  if (isNaN(val) || val < 0) { showToast("Informe um valor válido"); return; }
 
   try {
     let updateData;
@@ -1582,7 +1582,7 @@ async function saveCuts() {
     // Notificar aluno no sininho se recebeu CUTS
     if (cutsModalMode === "add" && val > 0) {
       await db.collection("notifications").doc(cutsModalUserId).collection("items").add({
-        msg: `ðŸª™ VocÃª recebeu ${val} moeda${val > 1 ? 's' : ''} CUTS!`,
+        msg: `🪙 Você recebeu ${val} moeda${val > 1 ? 's' : ''} CUTS!`,
         read: false,
         at: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -1601,7 +1601,7 @@ async function saveCuts() {
     // update card UI
     const el = document.getElementById("cuts-" + cutsModalUserId);
     if (el) el.textContent = finalVal;
-    showToast("ðŸª™ CUTS atualizado: " + finalVal);
+    showToast("🪙 CUTS atualizado: " + finalVal);
     closeCutsModal();
   } catch(e) {
     showToast("Erro ao salvar CUTS");
@@ -1611,23 +1611,23 @@ async function saveCuts() {
 
 function openStudentMap(userId) {
   const student = allStudents.find(s => s.id === userId);
-  if (!student || !student.location) { showToast("Sem localizaÃ§Ã£o disponÃ­vel"); return; }
+  if (!student || !student.location) { showToast("Sem localização disponível"); return; }
   const lat = student.location.lat;
   const lng = student.location.lng;
   const name = student.firstName || "Aluno";
 
-  document.getElementById("map-title").textContent = "ðŸ“ " + name;
+  document.getElementById("map-title").textContent = "📍 " + name;
   document.getElementById("map-modal").style.display = "block";
 
   setTimeout(() => {
     if (studentMap) { studentMap.remove(); studentMap = null; }
     studentMap = L.map("map-container").setView([lat, lng], 15);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: 'Â© OpenStreetMap',
+      attribution: '© OpenStreetMap',
       maxZoom: 19
     }).addTo(studentMap);
     L.marker([lat, lng]).addTo(studentMap)
-      .bindPopup("<b>" + escapeHtml(name) + "</b><br>@" + escapeHtml(student.username || "") + "<br><small>Ãšltima atualizaÃ§Ã£o: " + (student.location.updatedAt ? fmtTs(student.location.updatedAt) : "?") + "</small>")
+      .bindPopup("<b>" + escapeHtml(name) + "</b><br>@" + escapeHtml(student.username || "") + "<br><small>Última atualização: " + (student.location.updatedAt ? fmtTs(student.location.updatedAt) : "?") + "</small>")
       .openPopup();
     studentMap.invalidateSize();
   }, 200);
@@ -1635,9 +1635,9 @@ function openStudentMap(userId) {
 
 function openAllStudentsMap() {
   const withLoc = allStudents.filter(s => s.location && s.location.lat && s.location.lng);
-  if (withLoc.length === 0) { showToast("Nenhum aluno com localizaÃ§Ã£o disponÃ­vel"); return; }
+  if (withLoc.length === 0) { showToast("Nenhum aluno com localização disponível"); return; }
 
-  document.getElementById("map-title").textContent = "ðŸ“ Todos os Alunos (" + withLoc.length + ")";
+  document.getElementById("map-title").textContent = "📍 Todos os Alunos (" + withLoc.length + ")";
   document.getElementById("map-modal").style.display = "block";
 
   setTimeout(() => {
@@ -1646,7 +1646,7 @@ function openAllStudentsMap() {
     studentMap = L.map("map-container").fitBounds(bounds, { padding: [40, 40] });
     if (withLoc.length === 1) studentMap.setZoom(15);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: 'Â© OpenStreetMap',
+      attribution: '© OpenStreetMap',
       maxZoom: 19
     }).addTo(studentMap);
     withLoc.forEach(s => {
@@ -1684,9 +1684,9 @@ async function sendMessageToStudent() {
   const btn = document.getElementById('btn-send-msg');
   btn.disabled = true; btn.textContent = 'Enviando...';
   try {
-    // Adicionar na notificaÃ§Ã£o individual (sininho)
+    // Adicionar na notificação individual (sininho)
     await db.collection('notifications').doc(msgTargetId).collection('items').add({
-      msg: 'âœ‰ï¸ Mensagem do Professor: ' + msg,
+      msg: '✉️ Mensagem do Professor: ' + msg,
       read: false,
       at: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -1694,20 +1694,20 @@ async function sendMessageToStudent() {
     // Adicionar no feed com targetUserId (aparece apenas para esse aluno)
     await db.collection('feed').add({
       type: 'personal_msg',
-      icon: 'âœ‰ï¸',
+      icon: '✉️',
       text: 'Mensagem do Professor',
       detail: msg,
       targetUserId: msgTargetId,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    showToast('âœ‰ï¸ Mensagem enviada para ' + msgTargetName);
+    showToast('✉️ Mensagem enviada para ' + msgTargetName);
     closeMsgModal();
   } catch(e) {
     showToast('Erro ao enviar mensagem');
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = 'ðŸ“¤ Enviar Mensagem';
+  btn.disabled = false; btn.textContent = '📤 Enviar Mensagem';
 }
 
 let editingStudentId = null;
@@ -1716,7 +1716,7 @@ function openEditStudent(userId) {
   const student = allStudents.find(s => s.id === userId);
   if (!student) return;
   editingStudentId = userId;
-  document.getElementById("edit-student-title").textContent = "Editar â€” " + (student.firstName || "Aluno");
+  document.getElementById("edit-student-title").textContent = "Editar — " + (student.firstName || "Aluno");
   document.getElementById("es-fullname").value = student.fullName || student.firstName || "";
   document.getElementById("es-nickname").value = student.nickname || "";
   document.getElementById("es-birthdate").value = student.birthdate || "";
@@ -1774,14 +1774,14 @@ async function saveStudentProfile() {
       await batch.commit();
     }
 
-    showToast("âœ… Perfil do aluno atualizado!");
+    showToast("✅ Perfil do aluno atualizado!");
     showScreen("teacher-students");
     loadStudents();
   } catch(e) {
     showToast("Erro ao salvar");
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = "ðŸ’¾ Salvar AlteraÃ§Ãµes";
+  btn.disabled = false; btn.textContent = "💾 Salvar Alterações";
 }
 
 function closeMap() {
@@ -1791,7 +1791,7 @@ function closeMap() {
 
 updateSeats(4);
 
-// â”€â”€ Feed de AtualizaÃ§Ãµes (gerenciamento) â”€â”€
+// ── Feed de Atualizações (gerenciamento) ──
 let unsubFeedMgr = null;
 let allFeedItems = [];
 let editingFeedId = null;
@@ -1824,16 +1824,16 @@ function renderFeedManager(items) {
     return `
       <div style="background:rgba(255,255,255,.04);border:1px solid ${hidden?'rgba(239,68,68,.2)':'rgba(255,255,255,.08)'};border-radius:16px;padding:16px;margin-bottom:10px;${hidden?'opacity:.5':''}">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <span style="font-size:20px">${item.icon || "ðŸ“Œ"}</span>
+          <span style="font-size:20px">${item.icon || "📌"}</span>
           <span style="font-weight:800;font-size:14px;color:#fff;flex:1">${escapeHtml(item.text || "")}</span>
           <span style="font-size:11px;color:#64748b">${hidden?'OCULTO':''}</span>
         </div>
         ${item.detail ? `<p style="color:#94a3b8;font-size:13px;margin-left:32px;margin-bottom:8px">${escapeHtml(item.detail)}</p>` : ""}
         <p style="color:#64748b;font-size:11px;margin-left:32px;margin-bottom:10px">${time}</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="openEditFeed('${item.id}')" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">âœï¸ Editar</button>
-          <button onclick="toggleFeedVisibility('${item.id}',${!hidden})" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">${hidden?'ðŸ‘ Mostrar':'ðŸ™ˆ Ocultar'}</button>
-          <button onclick="deleteFeedItem('${item.id}')" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171">ðŸ—‘ Excluir</button>
+          <button onclick="openEditFeed('${item.id}')" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">✏️ Editar</button>
+          <button onclick="toggleFeedVisibility('${item.id}',${!hidden})" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">${hidden?'👁 Mostrar':'🙈 Ocultar'}</button>
+          <button onclick="deleteFeedItem('${item.id}')" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171">🗑 Excluir</button>
         </div>
       </div>`;
   }).join("");
@@ -1860,31 +1860,31 @@ async function saveFeedItem() {
   btn.disabled = true; btn.textContent = "Salvando...";
   try {
     await db.collection("feed").doc(editingFeedId).update({ icon, text, detail });
-    showToast("âœ… Item atualizado!");
+    showToast("✅ Item atualizado!");
     editingFeedId = null;
     showScreen("teacher-feed");
     loadFeedManager();
   } catch(e) { showToast("Erro ao salvar"); }
-  btn.disabled = false; btn.textContent = "ðŸ’¾ Salvar";
+  btn.disabled = false; btn.textContent = "💾 Salvar";
 }
 
 async function toggleFeedVisibility(id, hide) {
   try {
     await db.collection("feed").doc(id).update({ hidden: hide });
-    showToast(hide ? "Item oculto" : "Item visÃ­vel");
+    showToast(hide ? "Item oculto" : "Item visível");
   } catch(e) { showToast("Erro"); }
 }
 
 function deleteFeedItem(id) {
-  showConfirmModal("Excluir item do feed?", "Esta aÃ§Ã£o nÃ£o pode ser desfeita.", async () => {
+  showConfirmModal("Excluir item do feed?", "Esta ação não pode ser desfeita.", async () => {
     try {
       await db.collection("feed").doc(id).delete();
-      showToast("Item excluÃ­do");
+      showToast("Item excluído");
     } catch(e) { showToast("Erro ao excluir"); }
   });
 }
 
-// â”€â”€ Notas de Patch â”€â”€
+// ── Notas de Patch ──
 let allPatchNotes = [];
 
 function loadPatchNotes() {
@@ -1912,8 +1912,8 @@ function renderPatchNotes() {
         <div style="font-weight:800;font-size:14px;color:#fff;margin-bottom:8px">${escapeHtml(p.title || "")}</div>
         <pre style="color:#94a3b8;font-size:13px;white-space:pre-wrap;margin:0;font-family:inherit;line-height:1.5">${escapeHtml(p.content || "")}</pre>
         <div style="margin-top:12px;display:flex;gap:8px">
-          <button onclick="editPatchNote('${p.id}')" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">âœï¸ Editar</button>
-          <button onclick="deletePatchNote('${p.id}')" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171">ðŸ—‘ Excluir</button>
+          <button onclick="editPatchNote('${p.id}')" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">✏️ Editar</button>
+          <button onclick="deletePatchNote('${p.id}')" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171">🗑 Excluir</button>
         </div>
       </div>`;
   }).join("");
@@ -1940,10 +1940,10 @@ async function savePatchNote() {
     document.getElementById("patch-version").value = "";
     document.getElementById("patch-title").value = "";
     document.getElementById("patch-content").value = "";
-    showToast("âœ… Nota de patch salva!");
+    showToast("✅ Nota de patch salva!");
     loadPatchNotes();
   } catch(e) { showToast("Erro ao salvar"); }
-  btn.disabled = false; btn.textContent = "ðŸ“¤ Publicar Nota de Patch";
+  btn.disabled = false; btn.textContent = "📤 Publicar Nota de Patch";
 }
 
 function editPatchNote(id) {
@@ -1953,21 +1953,21 @@ function editPatchNote(id) {
   document.getElementById("patch-version").value = p.version || "";
   document.getElementById("patch-title").value = p.title || "";
   document.getElementById("patch-content").value = p.content || "";
-  document.getElementById("btn-save-patch").textContent = "ðŸ’¾ Salvar AlteraÃ§Ãµes";
+  document.getElementById("btn-save-patch").textContent = "💾 Salvar Alterações";
   window.scrollTo(0, 0);
 }
 
 function deletePatchNote(id) {
-  showConfirmModal("Excluir nota de patch?", "Esta aÃ§Ã£o nÃ£o pode ser desfeita.", async () => {
+  showConfirmModal("Excluir nota de patch?", "Esta ação não pode ser desfeita.", async () => {
     try {
       await db.collection("patchNotes").doc(id).delete();
-      showToast("Nota excluÃ­da");
+      showToast("Nota excluída");
       loadPatchNotes();
     } catch(e) { showToast("Erro ao excluir"); }
   });
 }
 
-// â”€â”€ PresenÃ§as â”€â”€
+// ── Presenças ──
 let presenceStudentId = null;
 let presenceStudentName = '';
 
@@ -1997,7 +1997,7 @@ function loadPresenceStudents() {
             <div style="font-weight:800;font-size:15px;color:#fff">${escapeHtml(s.firstName||'')}${nickname}</div>
             <div style="color:#64748b;font-size:12px">@${escapeHtml(s.username||'')}</div>
           </div>
-          <span style="color:#64748b;font-size:18px">â€º</span>
+          <span style="color:#64748b;font-size:18px">›</span>
         </div>`;
     }).join("");
   }).catch(e => {
@@ -2009,12 +2009,12 @@ function loadPresenceStudents() {
 function openPresenceOptions(userId, name) {
   presenceStudentId = userId;
   presenceStudentName = name;
-  document.getElementById("presence-opt-title").textContent = "ðŸ“‹ " + name;
+  document.getElementById("presence-opt-title").textContent = "📋 " + name;
   showScreen("teacher-presence-options");
 }
 
 function openLancarPresenca() {
-  document.getElementById("lancar-title").textContent = "âœ… PresenÃ§a â€” " + presenceStudentName;
+  document.getElementById("lancar-title").textContent = "✅ Presença — " + presenceStudentName;
   document.getElementById("pres-date").value = "";
   document.getElementById("pres-time-start").value = "";
   document.getElementById("pres-time-end").value = "";
@@ -2037,16 +2037,16 @@ function loadPresencaHistory() {
       if (empty) empty.style.display = recent.length === 0 ? "block" : "none";
       if (!list) return;
       list.innerHTML = recent.map(a => {
-        const cutsTag = a.cutsAwarded ? `<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:8px">ðŸª™ +${a.cutsAwarded}</span>` : '';
-        const titleTag = a.title ? `<div style="color:#94a3b8;font-size:12px;font-weight:600;margin-top:2px">ðŸ“ ${a.title}</div>` : '';
+        const cutsTag = a.cutsAwarded ? `<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:8px">🪙 +${a.cutsAwarded}</span>` : '';
+        const titleTag = a.title ? `<div style="color:#94a3b8;font-size:12px;font-weight:600;margin-top:2px">📍 ${a.title}</div>` : '';
         return `
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
           <div>
             <div style="font-weight:700;font-size:14px;color:#fff">${fmtShort(a.date)}${cutsTag}</div>
             ${titleTag}
-            <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} â€” ${a.timeEnd || ''}</div>
+            <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} — ${a.timeEnd || ''}</div>
           </div>
-          <button onclick="deletePresenca('${a.id}')" style="background:rgba(239,68,68,.12);color:#f87171;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">ðŸ—‘</button>
+          <button onclick="deletePresenca('${a.id}')" style="background:rgba(239,68,68,.12);color:#f87171;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">🗑</button>
         </div>`;
       }).join("");
     }).catch(e => {
@@ -2062,8 +2062,8 @@ async function savePresenca() {
   const errEl = document.getElementById("pres-err");
 
   if (!date) { errEl.textContent = "Selecione a data"; return; }
-  if (!timeStart || !timeEnd) { errEl.textContent = "Informe o perÃ­odo de horÃ¡rio"; return; }
-  if (timeEnd <= timeStart) { errEl.textContent = "HorÃ¡rio fim deve ser apÃ³s o inÃ­cio"; return; }
+  if (!timeStart || !timeEnd) { errEl.textContent = "Informe o período de horário"; return; }
+  if (timeEnd <= timeStart) { errEl.textContent = "Horário fim deve ser após o início"; return; }
   errEl.textContent = "";
 
   const cutsVal = parseInt(document.getElementById("pres-cuts").value) || 0;
@@ -2092,7 +2092,7 @@ async function savePresenca() {
       });
       // Notificar aluno no sininho
       await db.collection("notifications").doc(presenceStudentId).collection("items").add({
-        msg: `ðŸª™ VocÃª recebeu ${cutsVal} moeda${cutsVal > 1 ? 's' : ''} CUTS!`,
+        msg: `🪙 Você recebeu ${cutsVal} moeda${cutsVal > 1 ? 's' : ''} CUTS!`,
         read: false,
         at: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -2103,7 +2103,7 @@ async function savePresenca() {
       if (cutsEl) cutsEl.textContent = (st && st.cuts) || cutsVal;
     }
 
-    showToast(cutsVal > 0 ? `âœ… PresenÃ§a salva! ðŸª™ +${cutsVal} CUTS` : "âœ… PresenÃ§a salva!");
+    showToast(cutsVal > 0 ? `✅ Presença salva! 🪙 +${cutsVal} CUTS` : "✅ Presença salva!");
     document.getElementById("pres-title").value = "";
     document.getElementById("pres-date").value = "";
     document.getElementById("pres-time-start").value = "";
@@ -2111,14 +2111,14 @@ async function savePresenca() {
     document.getElementById("pres-cuts").value = "0";
     loadPresencaHistory();
   } catch(e) {
-    showToast("Erro ao salvar presenÃ§a");
+    showToast("Erro ao salvar presença");
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = "ðŸ’¾ Salvar PresenÃ§a";
+  btn.disabled = false; btn.textContent = "💾 Salvar Presença";
 }
 
 function deletePresenca(id) {
-  showConfirmModal("Excluir presenÃ§a?", "Esta aÃ§Ã£o nÃ£o pode ser desfeita.", async () => {
+  showConfirmModal("Excluir presença?", "Esta ação não pode ser desfeita.", async () => {
     try {
       const doc = await db.collection("attendance").doc(id).get();
       const cuts = doc.exists && doc.data().cutsAwarded ? doc.data().cutsAwarded : 0;
@@ -2131,17 +2131,17 @@ function deletePresenca(id) {
         const cutsEl = document.getElementById("cuts-" + uid);
         if (cutsEl && st) cutsEl.textContent = st.cuts;
       }
-      showToast(cuts > 0 ? `PresenÃ§a excluÃ­da (ðŸª™ -${cuts} CUTS)` : "PresenÃ§a excluÃ­da");
+      showToast(cuts > 0 ? `Presença excluída (🪙 -${cuts} CUTS)` : "Presença excluída");
       loadPresencaHistory();
     } catch(e) { showToast("Erro ao excluir"); console.error(e); }
   });
 }
 
-// â”€â”€ Gerenciar PresenÃ§as (todas) â”€â”€
+// ── Gerenciar Presenças (todas) ──
 let editPresencaId = null;
 
 function openGerenciarPresencas() {
-  document.getElementById("gerenciar-pres-title").textContent = "ðŸ“ PresenÃ§as â€” " + presenceStudentName;
+  document.getElementById("gerenciar-pres-title").textContent = "📝 Presenças — " + presenceStudentName;
   showScreen("teacher-gerenciar-presencas");
   loadAllPresencas();
 }
@@ -2158,19 +2158,19 @@ function loadAllPresencas() {
       if (empty) empty.style.display = items.length === 0 ? "block" : "none";
       if (!list) return;
       list.innerHTML = items.map(a => {
-        const cutsTag = a.cutsAwarded ? `<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:8px">ðŸª™ +${a.cutsAwarded}</span>` : '';
-        const titleTag = a.title ? `<div style="color:#94a3b8;font-size:12px;font-weight:600;margin-top:2px">ðŸ“ ${a.title}</div>` : '';
+        const cutsTag = a.cutsAwarded ? `<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:8px">🪙 +${a.cutsAwarded}</span>` : '';
+        const titleTag = a.title ? `<div style="color:#94a3b8;font-size:12px;font-weight:600;margin-top:2px">📍 ${a.title}</div>` : '';
         const safeTitle = (a.title || '').replace(/'/g, "\\'");
         return `
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
           <div>
             <div style="font-weight:700;font-size:14px;color:#fff">${fmtShort(a.date)}${cutsTag}</div>
             ${titleTag}
-            <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} â€” ${a.timeEnd || ''}</div>
+            <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} — ${a.timeEnd || ''}</div>
           </div>
           <div style="display:flex;gap:6px">
-            <button onclick="openEditPresenca('${a.id}','${a.date}','${a.timeStart || ''}','${a.timeEnd || ''}','${safeTitle}')" style="background:rgba(56,189,248,.12);color:#38bdf8;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">âœï¸</button>
-            <button onclick="deletePresencaFromList('${a.id}')" style="background:rgba(239,68,68,.12);color:#f87171;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">ðŸ—‘</button>
+            <button onclick="openEditPresenca('${a.id}','${a.date}','${a.timeStart || ''}','${a.timeEnd || ''}','${safeTitle}')" style="background:rgba(56,189,248,.12);color:#38bdf8;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">✏️</button>
+            <button onclick="deletePresencaFromList('${a.id}')" style="background:rgba(239,68,68,.12);color:#f87171;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer">🗑</button>
           </div>
         </div>`;
       }).join("");
@@ -2195,8 +2195,8 @@ async function updatePresenca() {
   const errEl = document.getElementById("edit-pres-err");
 
   if (!date) { errEl.textContent = "Selecione a data"; return; }
-  if (!timeStart || !timeEnd) { errEl.textContent = "Informe os horÃ¡rios"; return; }
-  if (timeEnd <= timeStart) { errEl.textContent = "HorÃ¡rio fim deve ser apÃ³s o inÃ­cio"; return; }
+  if (!timeStart || !timeEnd) { errEl.textContent = "Informe os horários"; return; }
+  if (timeEnd <= timeStart) { errEl.textContent = "Horário fim deve ser após o início"; return; }
   errEl.textContent = "";
 
   const btn = document.getElementById("btn-update-presenca");
@@ -2207,17 +2207,17 @@ async function updatePresenca() {
     if (editTitle) updateData.title = editTitle;
     else updateData.title = firebase.firestore.FieldValue.delete();
     await db.collection("attendance").doc(editPresencaId).update(updateData);
-    showToast("âœ… PresenÃ§a atualizada!");
+    showToast("✅ Presença atualizada!");
     openGerenciarPresencas();
   } catch(e) {
     showToast("Erro ao atualizar");
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = "ðŸ’¾ Salvar AlteraÃ§Ãµes";
+  btn.disabled = false; btn.textContent = "💾 Salvar Alterações";
 }
 
 function deletePresencaFromList(id) {
-  showConfirmModal("Excluir presenÃ§a?", "Esta aÃ§Ã£o nÃ£o pode ser desfeita.", async () => {
+  showConfirmModal("Excluir presença?", "Esta ação não pode ser desfeita.", async () => {
     try {
       const doc = await db.collection("attendance").doc(id).get();
       const cuts = doc.exists && doc.data().cutsAwarded ? doc.data().cutsAwarded : 0;
@@ -2230,14 +2230,14 @@ function deletePresencaFromList(id) {
         const cutsEl = document.getElementById("cuts-" + uid);
         if (cutsEl && st) cutsEl.textContent = st.cuts;
       }
-      showToast(cuts > 0 ? `PresenÃ§a excluÃ­da (ðŸª™ -${cuts} CUTS)` : "PresenÃ§a excluÃ­da");
+      showToast(cuts > 0 ? `Presença excluída (🪙 -${cuts} CUTS)` : "Presença excluída");
       loadAllPresencas();
     } catch(e) { showToast("Erro ao excluir"); console.error(e); }
   });
 }
 
 function openRelatorioPresenca() {
-  document.getElementById("relatorio-title").textContent = "ðŸ“Š " + presenceStudentName;
+  document.getElementById("relatorio-title").textContent = "📊 " + presenceStudentName;
   // Default to current month
   const now = new Date();
   const monthStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
@@ -2267,7 +2267,7 @@ function loadRelatorio() {
       items.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
       if (empty) empty.style.display = items.length === 0 ? "block" : "none";
 
-      const monthNames = ["Janeiro","Fevereiro","MarÃ§o","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+      const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
       const mName = monthNames[Number(month) - 1] + " " + year;
 
       if (stats) {
@@ -2280,15 +2280,15 @@ function loadRelatorio() {
 
       if (list) {
         list.innerHTML = items.map(a => {
-          const titleTag = a.title ? `<div style="color:#94a3b8;font-size:12px;font-weight:600;margin-top:2px">ðŸ“ ${a.title}</div>` : '';
+          const titleTag = a.title ? `<div style="color:#94a3b8;font-size:12px;font-weight:600;margin-top:2px">📍 ${a.title}</div>` : '';
           return `
           <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
             <div>
               <div style="font-weight:700;font-size:14px;color:#fff">${fmtShort(a.date)}</div>
               ${titleTag}
-              <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} â€” ${a.timeEnd || ''}</div>
+              <div style="color:#64748b;font-size:12px;margin-top:2px">${a.timeStart || ''} — ${a.timeEnd || ''}</div>
             </div>
-            <span style="color:#22c55e;font-size:13px;font-weight:700">âœ… Presente</span>
+            <span style="color:#22c55e;font-size:13px;font-weight:700">✅ Presente</span>
           </div>`;
         }).join("");
       }
@@ -2297,11 +2297,11 @@ function loadRelatorio() {
     });
 }
 
-// â”€â”€ Torneios / InscriÃ§Ãµes â”€â”€
+// ── Torneios / Inscrições ──
 async function criarInscricao() {
   if (!requireFirebase()) return;
   const title = document.getElementById("insc-title").value.trim();
-  if (!title) { document.getElementById("insc-err").textContent = "Informe o tÃ­tulo"; return; }
+  if (!title) { document.getElementById("insc-err").textContent = "Informe o título"; return; }
   document.getElementById("insc-err").textContent = "";
 
   const btn = document.getElementById("btn-criar-insc");
@@ -2314,13 +2314,13 @@ async function criarInscricao() {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     document.getElementById("insc-title").value = "";
-    showToast("âœ… InscriÃ§Ã£o criada!");
+    showToast("✅ Inscrição criada!");
     showScreen("teacher-tournaments");
   } catch(e) {
-    showToast("Erro ao criar inscriÃ§Ã£o");
+    showToast("Erro ao criar inscrição");
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = "âœ… Criar InscriÃ§Ã£o";
+  btn.disabled = false; btn.textContent = "✅ Criar Inscrição";
 }
 
 function loadInscricoes() {
@@ -2363,10 +2363,10 @@ function openInscricaoDetail(id) {
   const empty = document.getElementById("inscricao-detail-empty");
 
   db.collection("inscricoes").doc(id).get().then(doc => {
-    if (!doc.exists) { showToast("InscriÃ§Ã£o nÃ£o encontrada"); return; }
+    if (!doc.exists) { showToast("Inscrição não encontrada"); return; }
     const data = doc.data();
     const inscritos = data.inscritos || [];
-    document.getElementById("inscricao-detail-title").textContent = "ðŸ“‹ " + (data.title || "InscriÃ§Ã£o");
+    document.getElementById("inscricao-detail-title").textContent = "📋 " + (data.title || "Inscrição");
 
     const isOpen = data.open !== false;
     if (stats) {
@@ -2377,8 +2377,8 @@ function openInscricaoDetail(id) {
             <div style="font-size:12px;color:#64748b;font-weight:700">Inscritos</div>
           </div>
           <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-            <button onclick="toggleInscricao('${id}',${!isOpen})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:${isOpen?'rgba(239,68,68,.12);color:#f87171':'rgba(34,197,94,.12);color:#22c55e'}">${isOpen?'ðŸ”’ Fechar InscriÃ§Ã£o':'ðŸ”“ Abrir InscriÃ§Ã£o'}</button>
-            <button onclick="deleteInscricao('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(239,68,68,.08);color:#f87171">ðŸ—‘ Excluir</button>
+            <button onclick="toggleInscricao('${id}',${!isOpen})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:${isOpen?'rgba(239,68,68,.12);color:#f87171':'rgba(34,197,94,.12);color:#22c55e'}">${isOpen?'🔒 Fechar Inscrição':'🔓 Abrir Inscrição'}</button>
+            <button onclick="deleteInscricao('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(239,68,68,.08);color:#f87171">🗑 Excluir</button>
           </div>
         </div>`;
     }
@@ -2397,7 +2397,7 @@ function openInscricaoDetail(id) {
 
     showScreen("teacher-inscricao-detail");
   }).catch(e => {
-    showToast("Erro ao carregar inscriÃ§Ã£o");
+    showToast("Erro ao carregar inscrição");
     console.error(e);
   });
 }
@@ -2405,23 +2405,23 @@ function openInscricaoDetail(id) {
 async function toggleInscricao(id, open) {
   try {
     await db.collection("inscricoes").doc(id).update({ open });
-    showToast(open ? "InscriÃ§Ã£o aberta" : "InscriÃ§Ã£o fechada");
+    showToast(open ? "Inscrição aberta" : "Inscrição fechada");
     openInscricaoDetail(id);
   } catch(e) { showToast("Erro"); }
 }
 
 function deleteInscricao(id) {
-  showConfirmModal("Excluir inscriÃ§Ã£o?", "Todos os inscritos serÃ£o perdidos.", async () => {
+  showConfirmModal("Excluir inscrição?", "Todos os inscritos serão perdidos.", async () => {
     try {
       await db.collection("inscricoes").doc(id).delete();
-      showToast("InscriÃ§Ã£o excluÃ­da");
+      showToast("Inscrição excluída");
       showScreen("teacher-consultar-inscricao");
       loadInscricoes();
     } catch(e) { showToast("Erro ao excluir"); }
   });
 }
 
-// â”€â”€ DecoraÃ§Ãµes (Molduras e Banners) â”€â”€
+// ── Decorações (Molduras e Banners) ──
 let decoFileBase64 = null;
 
 function loadDecorations() {
@@ -2441,7 +2441,7 @@ function loadDecorations() {
 function renderDecoList(containerId, items) {
   const el = document.getElementById(containerId);
   if (items.length === 0) {
-    el.innerHTML = '<p style="color:#64748b;font-size:13px">Nenhuma decoraÃ§Ã£o criada</p>';
+    el.innerHTML = '<p style="color:#64748b;font-size:13px">Nenhuma decoração criada</p>';
     return;
   }
   el.innerHTML = items.map(item => `
@@ -2451,9 +2451,9 @@ function renderDecoList(containerId, items) {
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:800;font-size:14px;color:#fff">${escapeHtml(item.name)}</div>
-        <div style="font-size:11px;color:#64748b;margin-top:2px">${item.type === 'frame' ? 'ðŸ–¼ï¸ Moldura' : 'ðŸŒ„ Banner'} Â· Ordem: ${item.order || 0}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">${item.type === 'frame' ? '🖼️ Moldura' : '🌄 Banner'} · Ordem: ${item.order || 0}</div>
       </div>
-      <button onclick="deleteDecoration('${item.id}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:8px 12px;color:#f87171;font-weight:700;font-size:12px;cursor:pointer">ðŸ—‘</button>
+      <button onclick="deleteDecoration('${item.id}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:8px 12px;color:#f87171;font-weight:700;font-size:12px;cursor:pointer">🗑</button>
     </div>
   `).join("");
 }
@@ -2465,7 +2465,7 @@ function previewDecoFile(event) {
   errEl.textContent = "";
 
   if (file.size > 800000) {
-    errEl.textContent = "Arquivo muito grande (mÃ¡x 800KB). Reduza o tamanho da imagem.";
+    errEl.textContent = "Arquivo muito grande (máx 800KB). Reduza o tamanho da imagem.";
     event.target.value = "";
     return;
   }
@@ -2475,7 +2475,7 @@ function previewDecoFile(event) {
     decoFileBase64 = e.target.result;
     document.getElementById("deco-upload-preview").innerHTML = `
       <img src="${decoFileBase64}" style="max-width:100%;max-height:160px;object-fit:contain;border-radius:12px;margin-bottom:8px">
-      <div style="color:#22c55e;font-size:12px;font-weight:700">âœ“ ${escapeHtml(file.name)} (${(file.size / 1024).toFixed(1)}KB)</div>
+      <div style="color:#22c55e;font-size:12px;font-weight:700">✓ ${escapeHtml(file.name)} (${(file.size / 1024).toFixed(1)}KB)</div>
     `;
   };
   reader.readAsDataURL(file);
@@ -2500,35 +2500,35 @@ async function saveDecoration() {
       type, name, order, imageURL: decoFileBase64,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    showToast("ðŸŽ¨ DecoraÃ§Ã£o criada!");
+    showToast("🎨 Decoração criada!");
     // Reset form
     document.getElementById("deco-name").value = "";
     document.getElementById("deco-order").value = "0";
     document.getElementById("deco-file-input").value = "";
     decoFileBase64 = null;
     document.getElementById("deco-upload-preview").innerHTML = `
-      <span style="font-size:40px;display:block;margin-bottom:8px">ðŸ“</span>
+      <span style="font-size:40px;display:block;margin-bottom:8px">📁</span>
       <span style="color:#94a3b8;font-size:13px">Clique para selecionar a imagem</span>
     `;
     showScreen("teacher-decorations");
     loadDecorations();
   } catch(e) {
-    showToast("Erro ao salvar decoraÃ§Ã£o");
+    showToast("Erro ao salvar decoração");
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = "ðŸ’¾ Salvar DecoraÃ§Ã£o";
+  btn.disabled = false; btn.textContent = "💾 Salvar Decoração";
 }
 
 function deleteDecoration(id) {
-  showConfirmModal("Excluir DecoraÃ§Ã£o", "Remover esta decoraÃ§Ã£o? Alunos que a usam ficarÃ£o sem ela.", () => {
+  showConfirmModal("Excluir Decoração", "Remover esta decoração? Alunos que a usam ficarão sem ela.", () => {
     db.collection("decorations").doc(id).delete().then(() => {
-      showToast("DecoraÃ§Ã£o excluÃ­da");
+      showToast("Decoração excluída");
       loadDecorations();
     }).catch(e => { showToast("Erro ao excluir"); console.error(e); });
   });
 }
 
-// â”€â”€ PartÃ­culas Parallax â”€â”€
+// ── Partículas Parallax ──
 (function() {
   const canvas = document.getElementById('particles-canvas');
   if (!canvas) return;
@@ -2583,7 +2583,7 @@ function deleteDecoration(id) {
       if (p.y > h + 10) p.y = -10;
     }
 
-    // Linhas entre partÃ­culas prÃ³ximas
+    // Linhas entre partículas próximas
     for (let i = 0; i < particles.length; i++) {
       for (let j = i + 1; j < particles.length; j++) {
         const a = particles[i], b = particles[j];
@@ -2604,7 +2604,7 @@ function deleteDecoration(id) {
   draw();
 })();
 
-// â”€â”€ Service Worker & PWA Install â”€â”€
+// ── Service Worker & PWA Install ──
 if ("serviceWorker" in navigator) {
   const hadController = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
@@ -2647,13 +2647,13 @@ function isProfIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-// Mostrar botÃ£o/hint de instalaÃ§Ã£o se nÃ£o estÃ¡ instalado
+// Mostrar botão/hint de instalação se não está instalado
 if (!isProfStandalone()) {
   if (isProfIOS()) {
     const iosHint = document.getElementById("prof-ios-hint");
     if (iosHint) iosHint.style.display = "block";
   } else {
-    // Sempre mostrar o botÃ£o no Android
+    // Sempre mostrar o botão no Android
     const installBtn = document.getElementById("prof-install-btn");
     if (installBtn) installBtn.style.display = "inline-flex";
   }
@@ -2664,12 +2664,12 @@ function installProfApp() {
     deferredPromptProf.prompt();
     deferredPromptProf.userChoice.then(r => {
       deferredPromptProf = null;
-      if (r.outcome === "accepted") showToast("âœ… OVER HOST instalado!");
+      if (r.outcome === "accepted") showToast("✅ OVER HOST instalado!");
     });
   } else if (isProfIOS()) {
-    showToast("â¬†ï¸ Toque em Compartilhar (â¬†ï¸) â†’ Adicionar Ã  Tela de InÃ­cio");
+    showToast("⬆️ Toque em Compartilhar (⬆️) → Adicionar à Tela de Início");
   } else {
-    showToast("ðŸ“² Toque no menu do Chrome (â‹®) no canto superior â†’ 'Instalar aplicativo' ou 'Adicionar Ã  tela inicial'");
+    showToast("📲 Toque no menu do Chrome (⋮) no canto superior → 'Instalar aplicativo' ou 'Adicionar à tela inicial'");
   }
 }
 </script>
