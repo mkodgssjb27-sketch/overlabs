@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#0d9488">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="OVER Prof">
+<meta name="apple-mobile-web-app-title" content="OVER HOST">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest-prof.json">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -2615,12 +2615,13 @@ function installProfApp() {
     deferredPromptProf.prompt();
     deferredPromptProf.userChoice.then(r => {
       deferredPromptProf = null;
-      if (r.outcome === "accepted") showToast("✅ App Professor instalado!");
+      if (r.outcome === "accepted") showToast("✅ App OVER HOST instalado!");
     });
   } else if (isProfIOS()) {
     showToast("⬆️ Compartilhar → Adicionar à Tela de Início");
   } else {
-    showToast("Menu do navegador (⋮) → Instalar app");
+    // Fallback: abrir menu de instalação do Chrome via manifest
+    showToast("📲 Toque nos 3 pontinhos (⋮) no topo → Instalar aplicativo");
   }
 }
 </script>

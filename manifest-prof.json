@@ -1,8 +1,10 @@
 {
-  "name": "OVER LABS — Professor",
-  "short_name": "OVER Prof",
+  "name": "OVER HOST",
+  "short_name": "OVER HOST",
   "description": "Painel do Professor — OVER LABS",
+  "id": "/professor",
   "start_url": "./professor.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0a0a0f",
   "theme_color": "#0d9488",
