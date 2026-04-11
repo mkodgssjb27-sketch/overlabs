@@ -633,7 +633,7 @@ input,select{font-family:inherit;outline:none}
 <!-- Alert Popup flutuante -->
 <div class="alert-popup" id="alert-popup">
   <button class="ap-close" onclick="hideAlertPopup()">✕</button>
-  <div class="ap-title">🔔 Alerta do Professor</div>
+  <div class="ap-title">🔔 Alerta</div>
   <div class="ap-msg" id="alert-popup-msg"></div>
 </div>
 
@@ -1552,7 +1552,7 @@ function renderNotifications(notifs) {
   list.innerHTML = allNotifs.map(n => `
     <div class="notif-item${n.read?'':' unread'}" ${n.isAlert?'style="border-color:#f59e0b;background:rgba(245,158,11,.06)"':''}>
       <p style="font-size:14px;font-weight:600;color:#e2e8f0;line-height:1.5">${n.isAlert ? n.msg : n.msg}</p>
-      <p style="color:#64748b;font-size:11px;margin-top:8px">${n.isAlert?'Alerta do Professor · ':''}${fmtTs(n.at)}</p>
+      <p style="color:#64748b;font-size:11px;margin-top:8px">${n.isAlert?'Alerta · ':''}${fmtTs(n.at)}</p>
     </div>`).join("");
 }
 

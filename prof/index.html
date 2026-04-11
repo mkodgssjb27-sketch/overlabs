@@ -1995,7 +1995,7 @@ async function sendMessageToStudent() {
   try {
     // Adicionar na notificação individual (sininho)
     await db.collection('notifications').doc(msgTargetId).collection('items').add({
-      msg: '✉️ Mensagem do Professor: ' + msg,
+      msg: '✉️ Nova Mensagem: ' + msg,
       read: false,
       at: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -2004,7 +2004,7 @@ async function sendMessageToStudent() {
     await db.collection('feed').add({
       type: 'personal_msg',
       icon: '✉️',
-      text: 'Mensagem do Professor',
+      text: 'Nova Mensagem',
       detail: msg,
       targetUserId: msgTargetId,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
