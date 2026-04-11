@@ -14,6 +14,17 @@
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
 
+<script>
+// Capturar beforeinstallprompt o mais cedo possível
+window.__deferredInstall = null;
+window.addEventListener("beforeinstallprompt", function(e) {
+  e.preventDefault();
+  window.__deferredInstall = e;
+  var btn = document.getElementById("prof-install-btn");
+  if (btn) btn.style.display = "inline-flex";
+});
+</script>
+
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -2571,7 +2582,7 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-let deferredPromptProf = null;
+let deferredPromptProf = window.__deferredInstall || null;
 window.addEventListener("beforeinstallprompt", e => {
   e.preventDefault();
   deferredPromptProf = e;
@@ -2584,6 +2595,8 @@ window.addEventListener("appinstalled", () => {
   deferredPromptProf = null;
   const installBtn = document.getElementById("prof-install-btn");
   if (installBtn) installBtn.style.display = "none";
+  const iosHint = document.getElementById("prof-ios-hint");
+  if (iosHint) iosHint.style.display = "none";
 });
 
 function isProfStandalone() {
@@ -2599,14 +2612,9 @@ if (!isProfStandalone()) {
     const iosHint = document.getElementById("prof-ios-hint");
     if (iosHint) iosHint.style.display = "block";
   } else {
-    // Android/Chrome: o botão aparece via beforeinstallprompt
-    // Se demorar, mostra o botão genérico após 2s
-    setTimeout(() => {
-      if (!deferredPromptProf) {
-        const installBtn = document.getElementById("prof-install-btn");
-        if (installBtn && installBtn.style.display === "none") installBtn.style.display = "inline-flex";
-      }
-    }, 2000);
+    // Sempre mostrar o botão no Android
+    const installBtn = document.getElementById("prof-install-btn");
+    if (installBtn) installBtn.style.display = "inline-flex";
   }
 }
 
@@ -2615,13 +2623,19 @@ function installProfApp() {
     deferredPromptProf.prompt();
     deferredPromptProf.userChoice.then(r => {
       deferredPromptProf = null;
-      if (r.outcome === "accepted") showToast("✅ App OVER HOST instalado!");
+      if (r.outcome === "accepted") showToast("✅ OVER HOST instalado!");
     });
   } else if (isProfIOS()) {
     showToast("⬆️ Compartilhar → Adicionar à Tela de Início");
   } else {
-    // Fallback: abrir menu de instalação do Chrome via manifest
-    showToast("📲 Toque nos 3 pontinhos (⋮) no topo → Instalar aplicativo");
+    // Tentar redirecionar para a URL de manifest para forçar prompt
+    // Se não funcionar, o Chrome mostrará a barra de instalação nativa
+    window.location.reload();
+    setTimeout(() => {
+      if (!deferredPromptProf) {
+        showToast("📲 Para instalar: menu do Chrome (⋮) → Instalar aplicativo");
+      }
+    }, 2000);
   }
 }
 </script>
