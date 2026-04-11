@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atualizando OVER HOST...</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#fff;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px}
+.box{max-width:360px}
+h1{font-size:20px;margin-bottom:12px}
+p{color:#94a3b8;font-size:14px;margin-bottom:20px}
+.spin{width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="box">
+<div class="spin"></div>
+<h1>Atualizando OVER HOST...</h1>
+<p>Limpando cache e preparando instalação.</p>
+</div>
+<script>
+(async function() {
+  try {
+    // 1. Deletar TODOS os caches
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    
+    // 2. Desregistrar TODOS os service workers
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r => r.unregister()));
+    
+    // 3. Esperar um momento e redirecionar
+    setTimeout(() => {
+      window.location.replace("./");
+    }, 1500);
+  } catch(e) {
+    // Se falhar, redireciona mesmo assim
+    setTimeout(() => {
+      window.location.replace("./");
+    }, 1500);
+  }
+})();
+</script>
+</body>
+</html>
