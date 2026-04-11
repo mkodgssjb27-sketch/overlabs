@@ -1579,6 +1579,15 @@ async function saveCuts() {
     }
     await db.collection("users").doc(cutsModalUserId).update(updateData);
 
+    // Notificar aluno no sininho se recebeu CUTS
+    if (cutsModalMode === "add" && val > 0) {
+      await db.collection("notifications").doc(cutsModalUserId).collection("items").add({
+        msg: `🪙 Você recebeu ${val} moeda${val > 1 ? 's' : ''} CUTS!`,
+        read: false,
+        at: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
     // Buscar valor atualizado do Firestore
     const freshDoc = await db.collection("users").doc(cutsModalUserId).get();
     const newVal = (freshDoc.exists && freshDoc.data().cuts) || 0;
@@ -2079,6 +2088,12 @@ async function savePresenca() {
     if (cutsVal > 0) {
       await db.collection("users").doc(presenceStudentId).update({
         cuts: firebase.firestore.FieldValue.increment(cutsVal)
+      });
+      // Notificar aluno no sininho
+      await db.collection("notifications").doc(presenceStudentId).collection("items").add({
+        msg: `🪙 Você recebeu ${cutsVal} moeda${cutsVal > 1 ? 's' : ''} CUTS!`,
+        read: false,
+        at: firebase.firestore.FieldValue.serverTimestamp()
       });
       // Update local cache if student in allStudents
       const st = allStudents.find(x => x.id === presenceStudentId);
