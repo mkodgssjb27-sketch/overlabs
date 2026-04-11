@@ -1746,7 +1746,10 @@ function compressImage(file, maxSize, quality, callback) {
       else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
       canvas.width = w;
       canvas.height = h;
-      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      var ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
       URL.revokeObjectURL(url);
       // toBlob é mais confiável que toDataURL em Android
       if (canvas.toBlob) {
@@ -1779,7 +1782,10 @@ function readFileRaw(file, callback) {
         var c = document.createElement("canvas");
         c.width = img.naturalWidth || 300;
         c.height = img.naturalHeight || 300;
-        c.getContext("2d").drawImage(img, 0, 0);
+        var gctx = c.getContext("2d");
+        gctx.fillStyle = "#ffffff";
+        gctx.fillRect(0, 0, c.width, c.height);
+        gctx.drawImage(img, 0, 0);
         URL.revokeObjectURL(url);
         if (c.toBlob) {
           c.toBlob(function(blob) {
