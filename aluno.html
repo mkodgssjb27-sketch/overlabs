@@ -99,18 +99,6 @@ input,select{font-family:inherit;outline:none}
 .alert-popup .ap-msg{font-size:15px;line-height:1.5}
 .alert-popup .ap-close{position:absolute;top:10px;right:14px;background:none;border:none;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer}
 
-/* Manage ride controls */
-.mgr-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
-.mgr-row:last-child{border-bottom:none}
-.mgr-arrows{display:flex;flex-direction:column;gap:2px}
-.mgr-btn{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;cursor:pointer;border:none;transition:.15s}
-.mgr-btn:active{transform:scale(.9)}
-.mgr-btn.arrow{background:rgba(255,255,255,.08);color:#94a3b8}
-.mgr-btn.arrow:hover{background:rgba(255,255,255,.15);color:#fff}
-.mgr-btn.promote{background:rgba(34,197,94,.15);color:#22c55e;width:auto;padding:0 8px;font-size:11px}
-.mgr-btn.demote{background:rgba(249,115,22,.15);color:#f97316;width:auto;padding:0 8px;font-size:11px}
-.mgr-btn.remove{background:rgba(239,68,68,.12);color:#f87171;width:auto;padding:0 8px;font-size:11px}
-
 /* Profile */
 .profile-avatar-btn{width:36px;height:36px;border-radius:50%;border:2px solid rgba(245,158,11,.5);background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;cursor:pointer;overflow:hidden;flex-shrink:0;padding:0}
 .profile-avatar-btn img{width:100%;height:100%;object-fit:cover}
@@ -296,12 +284,11 @@ input,select{font-family:inherit;outline:none}
   <div class="app-wrap">
     <div class="s-header">
       <div style="display:flex;align-items:center;gap:14px">
-        <button onclick="exitManageMode();showScreen('student-list')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
-        <div style="flex:1">
+        <button onclick="showScreen('student-list')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+        <div>
           <div class="s-htitle" id="sd-title" style="font-size:16px">—</div>
           <div style="color:#64748b;font-size:13px;margin-top:2px" id="sd-info">—</div>
         </div>
-        <button id="btn-manage-ride" onclick="toggleManageMode()" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);padding:7px 12px;border-radius:10px;color:#f59e0b;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px"><span>⚙️</span><span id="manage-label">Gerenciar</span></button>
       </div>
     </div>
     <div class="s-content" id="sd-content">
@@ -1247,20 +1234,6 @@ function openStudentDetail(rideId) {
   showScreen("student-detail");
 }
 
-let manageMode = false;
-
-function toggleManageMode() {
-  manageMode = !manageMode;
-  document.getElementById("manage-label").textContent = manageMode ? "Voltar" : "Gerenciar";
-  const ride = allRides.find(r => r.id === currentRideId);
-  if (ride) renderStudentDetail(ride);
-}
-
-function exitManageMode() {
-  manageMode = false;
-  document.getElementById("manage-label").textContent = "Gerenciar";
-}
-
 function renderStudentDetail(ride) {
   const booked = ride.booked || [], wl = ride.waitlist || [];
   const myBooked  = booked.some(b => b.userId === currentUser.id);
@@ -1275,129 +1248,56 @@ function renderStudentDetail(ride) {
   const cols = Math.min(ride.seats, 4);
   let html = "";
 
-  if (!manageMode) {
-    // ── Modo normal ──
-    if (myBooked) html += `<div style="background:rgba(245,158,11,.1);border:1.5px solid #f59e0b;border-radius:16px;padding:14px;margin-bottom:14px;text-align:center"><p style="font-size:22px">🎉</p><p style="font-weight:800;color:#f59e0b;font-size:15px">Você está confirmado!</p></div>`;
-    if (myWaiting) html += `<div style="background:rgba(249,115,22,.1);border:1.5px solid #f97316;border-radius:16px;padding:14px;margin-bottom:14px;text-align:center"><p style="font-size:22px">⏳</p><p style="font-weight:800;color:#f97316;font-size:15px">Lista de espera — #${myPos} na fila</p><p style="color:#94a3b8;font-size:12px;margin-top:3px">Você será notificado se uma vaga abrir</p></div>`;
+  if (myBooked) html += `<div style="background:rgba(245,158,11,.1);border:1.5px solid #f59e0b;border-radius:16px;padding:14px;margin-bottom:14px;text-align:center"><p style="font-size:22px">🎉</p><p style="font-weight:800;color:#f59e0b;font-size:15px">Você está confirmado!</p></div>`;
+  if (myWaiting) html += `<div style="background:rgba(249,115,22,.1);border:1.5px solid #f97316;border-radius:16px;padding:14px;margin-bottom:14px;text-align:center"><p style="font-size:22px">⏳</p><p style="font-weight:800;color:#f97316;font-size:15px">Lista de espera — #${myPos} na fila</p><p style="color:#94a3b8;font-size:12px;margin-top:3px">Você será notificado se uma vaga abrir</p></div>`;
 
-    // Build seat map
-    const seatMap = new Array(ride.seats).fill(null);
-    booked.forEach(b => {
-      if (typeof b.seatIndex === 'number' && b.seatIndex < ride.seats && !seatMap[b.seatIndex]) {
-        seatMap[b.seatIndex] = b;
-      }
-    });
-    booked.forEach(b => {
-      if (!seatMap.includes(b)) {
-        const idx = seatMap.indexOf(null);
-        if (idx !== -1) seatMap[idx] = b;
-      }
-    });
-
-    const canTap = !myBooked && !myWaiting && !full;
-
-    html += `<div style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(255,255,255,.08);padding:18px;margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <span style="font-weight:800;font-size:15px;color:#fff">Vagas</span>
-        <span style="color:#94a3b8;font-size:13px">${booked.length}/${ride.seats}</span>
-      </div>
-      <div class="s-seat-grid" style="grid-template-columns:repeat(${cols},1fr)">
-        ${seatMap.map((occ,i) => {
-          const isMe = occ && occ.userId === currentUser.id;
-          const cls = occ ? (isMe?"mine":"taken") : ("free" + (canTap?" tappable":""));
-          const icon = occ ? (isMe?"😊":"👤") : "💺";
-          const name = occ ? (isMe?"Você":occ.firstName) : "Livre";
-          const tap = !occ && canTap ? `onclick="bookSeat('${ride.id}',${i})"` : "";
-          return `<div class="s-seat ${cls}" ${tap}><div style="font-size:20px">${icon}</div><div class="seat-name" style="color:${occ?(isMe?'#f59e0b':'#e2e8f0'):'#64748b'}">${name}</div></div>`;
-        }).join("")}
-      </div>`;
-
-    html += `<div style="display:flex;gap:3px;margin-top:10px">${Array.from({length:ride.seats}).map((_,i)=>`<div style="flex:1;height:5px;border-radius:3px;background:${i<booked.length?'#f59e0b':'rgba(255,255,255,.1)'}"></div>`).join("")}</div></div>`;
-
-    if (full || wl.length > 0) {
-      html += `<div style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(249,115,22,.2);padding:18px;margin-bottom:14px">
-        <h3 style="font-weight:800;font-size:15px;margin-bottom:12px;color:#fff">⏳ Lista de Espera (${wl.length}/5)</h3>`;
-      if (wl.length === 0) html += `<p style="color:#64748b;font-size:13px">Ninguém na fila</p>`;
-      else html += wl.map((w,i) => {
-        const isMe = w.userId === currentUser.id;
-        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:${i<wl.length-1?'1px solid rgba(255,255,255,.06)':'none'}">
-          <div style="width:24px;height:24px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px">#${i+1}</div>
-          <span style="font-weight:${isMe?800:600};color:${isMe?'#f59e0b':'#e2e8f0'};font-size:14px">${isMe?'Você':w.firstName}</span>
-          ${isMe?'<span style="margin-left:auto;font-size:11px;color:#f59e0b">← você</span>':''}
-        </div>`;
-      }).join("");
-      html += "</div>";
+  // Build seat map
+  const seatMap = new Array(ride.seats).fill(null);
+  booked.forEach(b => {
+    if (typeof b.seatIndex === 'number' && b.seatIndex < ride.seats && !seatMap[b.seatIndex]) {
+      seatMap[b.seatIndex] = b;
     }
-  } else {
-    // ── Modo gerenciar ──
-    html += `<div style="background:rgba(245,158,11,.06);border:1.5px solid rgba(245,158,11,.2);border-radius:16px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px">
-      <span style="font-size:18px">⚙️</span>
-      <span style="font-size:13px;color:#f59e0b;font-weight:700">Modo gerenciamento — reorganize, mova ou remova passageiros</span>
+  });
+  booked.forEach(b => {
+    if (!seatMap.includes(b)) {
+      const idx = seatMap.indexOf(null);
+      if (idx !== -1) seatMap[idx] = b;
+    }
+  });
+
+  const canTap = !myBooked && !myWaiting && !full;
+
+  html += `<div style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(255,255,255,.08);padding:18px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-weight:800;font-size:15px;color:#fff">Vagas</span>
+      <span style="color:#94a3b8;font-size:13px">${booked.length}/${ride.seats}</span>
+    </div>
+    <div class="s-seat-grid" style="grid-template-columns:repeat(${cols},1fr)">
+      ${seatMap.map((occ,i) => {
+        const isMe = occ && occ.userId === currentUser.id;
+        const cls = occ ? (isMe?"mine":"taken") : ("free" + (canTap?" tappable":""));
+        const icon = occ ? (isMe?"😊":"👤") : "💺";
+        const name = occ ? (isMe?"Você":occ.firstName) : "Livre";
+        const tap = !occ && canTap ? `onclick="bookSeat('${ride.id}',${i})"` : "";
+        return `<div class="s-seat ${cls}" ${tap}><div style="font-size:20px">${icon}</div><div class="seat-name" style="color:${occ?(isMe?'#f59e0b':'#e2e8f0'):'#64748b'}">${name}</div></div>`;
+      }).join("")}
     </div>`;
 
-    // Confirmados (booked) — lista gerenciável
-    html += `<div style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(255,255,255,.08);padding:18px;margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <span style="font-weight:800;font-size:15px;color:#fff">✅ Confirmados</span>
-        <span style="color:#94a3b8;font-size:13px">${booked.length}/${ride.seats}</span>
-      </div>`;
+  html += `<div style="display:flex;gap:3px;margin-top:10px">${Array.from({length:ride.seats}).map((_,i)=>`<div style="flex:1;height:5px;border-radius:3px;background:${i<booked.length?'#f59e0b':'rgba(255,255,255,.1)'}"></div>`).join("")}</div></div>`;
 
-    if (booked.length === 0) {
-      html += `<p style="color:#64748b;font-size:13px">Nenhum passageiro confirmado</p>`;
-    } else {
-      html += booked.map((b, i) => {
-        const isMe = b.userId === currentUser.id;
-        const nameDisplay = isMe ? "Você" : b.firstName;
-        return `<div class="mgr-row">
-          <div class="mgr-arrows">
-            ${i > 0 ? `<button class="mgr-btn arrow" onclick="mgrMoveBooked('${ride.id}',${i},-1)" title="Subir">▲</button>` : `<div class="mgr-btn" style="visibility:hidden">▲</div>`}
-            ${i < booked.length - 1 ? `<button class="mgr-btn arrow" onclick="mgrMoveBooked('${ride.id}',${i},1)" title="Descer">▼</button>` : `<div class="mgr-btn" style="visibility:hidden">▼</div>`}
-          </div>
-          <div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#e85d04);width:34px;height:34px;font-size:13px">${(b.firstName||'?')[0]}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:14px;color:${isMe?'#f59e0b':'#e2e8f0'}">${nameDisplay}</div>
-            <div style="font-size:11px;color:#64748b">Vaga ${i+1}</div>
-          </div>
-          <div style="display:flex;gap:4px;flex-shrink:0">
-            <button class="mgr-btn demote" onclick="mgrDemoteToWaitlist('${ride.id}','${b.userId}')" title="Mover para lista">→ Fila</button>
-            <button class="mgr-btn remove" onclick="mgrRemove('${ride.id}','${b.userId}')" title="Remover">✕</button>
-          </div>
-        </div>`;
-      }).join("");
-    }
-    html += `</div>`;
-
-    // Lista de espera — gerenciável
+  if (full || wl.length > 0) {
     html += `<div style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(249,115,22,.2);padding:18px;margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <span style="font-weight:800;font-size:15px;color:#fff">⏳ Lista de Espera</span>
-        <span style="color:#94a3b8;font-size:13px">${wl.length}/5</span>
+      <h3 style="font-weight:800;font-size:15px;margin-bottom:12px;color:#fff">⏳ Lista de Espera (${wl.length}/5)</h3>`;
+    if (wl.length === 0) html += `<p style="color:#64748b;font-size:13px">Ninguém na fila</p>`;
+    else html += wl.map((w,i) => {
+      const isMe = w.userId === currentUser.id;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:${i<wl.length-1?'1px solid rgba(255,255,255,.06)':'none'}">
+        <div style="width:24px;height:24px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px">#${i+1}</div>
+        <span style="font-weight:${isMe?800:600};color:${isMe?'#f59e0b':'#e2e8f0'};font-size:14px">${isMe?'Você':w.firstName}</span>
+        ${isMe?'<span style="margin-left:auto;font-size:11px;color:#f59e0b">← você</span>':''}
       </div>`;
-
-    if (wl.length === 0) {
-      html += `<p style="color:#64748b;font-size:13px">Ninguém na fila</p>`;
-    } else {
-      html += wl.map((w, i) => {
-        const isMe = w.userId === currentUser.id;
-        const nameDisplay = isMe ? "Você" : w.firstName;
-        const canPromote = booked.length < ride.seats;
-        return `<div class="mgr-row">
-          <div class="mgr-arrows">
-            ${i > 0 ? `<button class="mgr-btn arrow" onclick="mgrMoveWaitlist('${ride.id}',${i},-1)" title="Subir">▲</button>` : `<div class="mgr-btn" style="visibility:hidden">▲</div>`}
-            ${i < wl.length - 1 ? `<button class="mgr-btn arrow" onclick="mgrMoveWaitlist('${ride.id}',${i},1)" title="Descer">▼</button>` : `<div class="mgr-btn" style="visibility:hidden">▼</div>`}
-          </div>
-          <div style="width:24px;height:24px;border-radius:50%;background:#f97316;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0">#${i+1}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:14px;color:${isMe?'#f59e0b':'#e2e8f0'}">${nameDisplay}</div>
-          </div>
-          <div style="display:flex;gap:4px;flex-shrink:0">
-            ${canPromote ? `<button class="mgr-btn promote" onclick="mgrPromoteToBooked('${ride.id}','${w.userId}')" title="Mover para carona">← Vaga</button>` : ''}
-            <button class="mgr-btn remove" onclick="mgrRemove('${ride.id}','${w.userId}')" title="Remover">✕</button>
-          </div>
-        </div>`;
-      }).join("");
-    }
-    html += `</div>`;
+    }).join("");
+    html += "</div>";
   }
 
   const sdContent = document.getElementById("sd-content");
@@ -1406,9 +1306,7 @@ function renderStudentDetail(ride) {
   if (ptrEl) sdContent.insertBefore(ptrEl, sdContent.firstChild);
 
   let action = "";
-  if (manageMode) {
-    action = `<div style="padding:12px;border-radius:14px;background:rgba(245,158,11,.08);color:#f59e0b;font-weight:700;text-align:center;font-size:13px">⚙️ Use os controles acima para reorganizar</div>`;
-  } else if (!myBooked && !myWaiting && !full) {
+  if (!myBooked && !myWaiting && !full) {
     action = `<div style="padding:15px;border-radius:14px;background:rgba(245,158,11,.08);color:#f59e0b;font-weight:700;text-align:center;font-size:14px">👆 Toque em um assento livre para reservar</div>`;
   } else if (!myBooked && !myWaiting && full && !wFull) {
     action = `<button class="btn-main" style="background:linear-gradient(135deg,#f59e0b,#ef4444)" onclick="bookRide('${ride.id}')">⏳ Entrar na Lista de Espera</button>`;
@@ -1418,124 +1316,6 @@ function renderStudentDetail(ride) {
     action = `<button class="btn-ghost" style="width:100%;text-align:center;color:#dc2626;border-color:#f87171" onclick="cancelRide('${ride.id}')">Cancelar ${myBooked?'Reserva':'da Lista de Espera'}</button>`;
   }
   document.getElementById("sd-action").innerHTML = action;
-}
-
-// ── Gerenciamento de carona — funções ──
-async function mgrMoveBooked(rideId, index, direction) {
-  if (!requireFirebase()) return;
-  const rideRef = db.collection("rides").doc(rideId);
-  try {
-    await db.runTransaction(async tx => {
-      const doc = await tx.get(rideRef);
-      if (!doc.exists) throw "Carona não encontrada";
-      const data = doc.data();
-      const booked = [...(data.booked || [])];
-      const newIndex = index + direction;
-      if (newIndex < 0 || newIndex >= booked.length) return;
-      [booked[index], booked[newIndex]] = [booked[newIndex], booked[index]];
-      // Atualizar seatIndex para refletir nova posição
-      booked.forEach((b, i) => { b.seatIndex = i; });
-      tx.update(rideRef, { booked });
-    });
-  } catch(e) { showToast("Erro ao reordenar"); console.error(e); }
-}
-
-async function mgrMoveWaitlist(rideId, index, direction) {
-  if (!requireFirebase()) return;
-  const rideRef = db.collection("rides").doc(rideId);
-  try {
-    await db.runTransaction(async tx => {
-      const doc = await tx.get(rideRef);
-      if (!doc.exists) throw "Carona não encontrada";
-      const data = doc.data();
-      const waitlist = [...(data.waitlist || [])];
-      const newIndex = index + direction;
-      if (newIndex < 0 || newIndex >= waitlist.length) return;
-      [waitlist[index], waitlist[newIndex]] = [waitlist[newIndex], waitlist[index]];
-      tx.update(rideRef, { waitlist });
-    });
-  } catch(e) { showToast("Erro ao reordenar"); console.error(e); }
-}
-
-async function mgrPromoteToBooked(rideId, userId) {
-  if (!requireFirebase()) return;
-  const rideRef = db.collection("rides").doc(rideId);
-  try {
-    let promotedUser = null;
-    let rideTitle = "";
-    await db.runTransaction(async tx => {
-      const doc = await tx.get(rideRef);
-      if (!doc.exists) throw "Carona não encontrada";
-      const data = doc.data();
-      rideTitle = data.title;
-      const booked = [...(data.booked || [])];
-      const waitlist = [...(data.waitlist || [])];
-      if (booked.length >= data.seats) throw "Carona lotada";
-      const idx = waitlist.findIndex(w => w.userId === userId);
-      if (idx === -1) throw "Não encontrado na fila";
-      const person = waitlist.splice(idx, 1)[0];
-      person.seatIndex = booked.length;
-      booked.push(person);
-      promotedUser = person;
-      tx.update(rideRef, { booked, waitlist });
-    });
-    showToast("✅ Movido para carona");
-    if (promotedUser && promotedUser.userId !== currentUser.id) {
-      await db.collection("notifications").doc(promotedUser.userId).collection("items").add({
-        msg: `🎉 Você foi movido da lista de espera para a carona "${rideTitle}"!`,
-        read: false,
-        at: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }
-  } catch(e) {
-    if (typeof e === "string") showToast(e);
-    else { showToast("Erro ao mover"); console.error(e); }
-  }
-}
-
-async function mgrDemoteToWaitlist(rideId, userId) {
-  if (!requireFirebase()) return;
-  const rideRef = db.collection("rides").doc(rideId);
-  try {
-    await db.runTransaction(async tx => {
-      const doc = await tx.get(rideRef);
-      if (!doc.exists) throw "Carona não encontrada";
-      const data = doc.data();
-      const booked = [...(data.booked || [])];
-      const waitlist = [...(data.waitlist || [])];
-      if (waitlist.length >= 5) throw "Lista de espera lotada";
-      const idx = booked.findIndex(b => b.userId === userId);
-      if (idx === -1) throw "Não encontrado na carona";
-      const person = booked.splice(idx, 1)[0];
-      delete person.seatIndex;
-      waitlist.push(person);
-      // Reatribuir seatIndex sequencialmente
-      booked.forEach((b, i) => { b.seatIndex = i; });
-      tx.update(rideRef, { booked, waitlist });
-    });
-    showToast("Movido para lista de espera");
-  } catch(e) {
-    if (typeof e === "string") showToast(e);
-    else { showToast("Erro ao mover"); console.error(e); }
-  }
-}
-
-async function mgrRemove(rideId, userId) {
-  if (!requireFirebase()) return;
-  if (!confirm("Remover este passageiro da carona?")) return;
-  const rideRef = db.collection("rides").doc(rideId);
-  try {
-    await db.runTransaction(async tx => {
-      const doc = await tx.get(rideRef);
-      if (!doc.exists) throw "Carona não encontrada";
-      const data = doc.data();
-      const booked = (data.booked || []).filter(b => b.userId !== userId);
-      const waitlist = (data.waitlist || []).filter(w => w.userId !== userId);
-      booked.forEach((b, i) => { b.seatIndex = i; });
-      tx.update(rideRef, { booked, waitlist });
-    });
-    showToast("Passageiro removido");
-  } catch(e) { showToast("Erro ao remover"); console.error(e); }
 }
 
 // ── Reservar / Cancelar ──
