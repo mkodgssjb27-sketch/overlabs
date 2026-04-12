@@ -898,6 +898,16 @@ async function studentRegister() {
     const uid = genId();
     await db.collection("users").doc(uid).set({ username:un, firstName:fn, phone:ph, password:pw, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
 
+    // Registrar novo usuário no log de atividades
+    db.collection('activity_log').add({
+      userId: uid,
+      userName: fn,
+      action: 'novo_usuario',
+      detail: 'Novo usuário registrado: ' + fn + ' (@' + un + ')',
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      extra: { tipo: 'registro' }
+    }).catch(function(e) { console.warn('[Log]', e); });
+
     const user = { id:uid, username:un, firstName:fn, phone:ph };
     localStorage.setItem("carolampra_user", JSON.stringify(user));
     currentUser = user;
@@ -929,6 +939,19 @@ async function studentLogin() {
     if (storedPw !== pw) { showLoginErr("Senha incorreta"); return; }
 
     if (doc.data().blocked === true) { showLoginErr("Sua conta foi bloqueada. Fale com o professor."); return; }
+
+    // Detectar primeiro login e registrar no log
+    if (!doc.data().firstLoginAt) {
+      db.collection("users").doc(doc.id).update({ firstLoginAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(function(){});
+      db.collection('activity_log').add({
+        userId: doc.id,
+        userName: doc.data().firstName || '',
+        action: 'novo_usuario',
+        detail: 'Primeiro login: ' + (doc.data().firstName || '') + ' (@' + (doc.data().username || '') + ')',
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        extra: { tipo: 'primeiro_login' }
+      }).catch(function(e) { console.warn('[Log]', e); });
+    }
 
     const user = { id:doc.id, username:doc.data().username, firstName:doc.data().firstName };
     localStorage.setItem("carolampra_user", JSON.stringify(user));
@@ -2039,8 +2062,26 @@ function loadRanking() {
       return ta - tb;
     });
 
-    if (loadingEl) loadingEl.style.display = "none";
-    renderRanking(users, podiumEl, listEl);
+    // Aplicar ordem personalizada do professor (se existir)
+    db.collection('ranking_config').doc('custom_order').get().then(function(orderDoc) {
+      if (orderDoc.exists) {
+        const savedOrder = orderDoc.data().order || [];
+        if (savedOrder.length > 0) {
+          const orderMap = {};
+          savedOrder.forEach(function(uid, idx) { orderMap[uid] = idx; });
+          users.sort(function(a, b) {
+            const ia = orderMap.hasOwnProperty(a.id) ? orderMap[a.id] : 9999;
+            const ib = orderMap.hasOwnProperty(b.id) ? orderMap[b.id] : 9999;
+            return ia - ib;
+          });
+        }
+      }
+      if (loadingEl) loadingEl.style.display = "none";
+      renderRanking(users, podiumEl, listEl);
+    }).catch(function() {
+      if (loadingEl) loadingEl.style.display = "none";
+      renderRanking(users, podiumEl, listEl);
+    });
   }, () => { if (loadingEl) loadingEl.style.display = "none"; });
 }
 

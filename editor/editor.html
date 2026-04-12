@@ -74,6 +74,37 @@
         <input type="number" class="inp" id="item-preco" placeholder="Ex: 50" min="0">
       </div>
 
+      <!-- Tempo disponível -->
+      <div style="margin-bottom:20px">
+        <label class="lbl">TEMPO DISPONÍVEL NA LOJA (DIAS)</label>
+        <input type="number" class="inp" id="item-dias" placeholder="Deixe vazio = sem limite" min="1">
+        <div class="inp-hint">Após esse período, o item será ocultado automaticamente da loja</div>
+      </div>
+
+      <!-- Raridade -->
+      <div style="margin-bottom:20px">
+        <label class="lbl">RARIDADE</label>
+        <div class="rarity-grid" id="rarity-grid">
+          <div class="rarity-option" data-rarity="comum" onclick="selectRarity('comum')">
+            <span class="ro-dot" style="background:#9ca3af"></span>
+            <span class="ro-label">Comum</span>
+          </div>
+          <div class="rarity-option" data-rarity="raro" onclick="selectRarity('raro')">
+            <span class="ro-dot" style="background:#3b82f6"></span>
+            <span class="ro-label">Raro</span>
+          </div>
+          <div class="rarity-option" data-rarity="super_raro" onclick="selectRarity('super_raro')">
+            <span class="ro-dot" style="background:#a855f7"></span>
+            <span class="ro-label">Super Raro</span>
+          </div>
+          <div class="rarity-option" data-rarity="lendaria" onclick="selectRarity('lendaria')">
+            <span class="ro-dot" style="background:#f59e0b"></span>
+            <span class="ro-label">Lendária</span>
+          </div>
+        </div>
+        <div class="inp-hint">Define o destaque visual do item na loja do aluno</div>
+      </div>
+
       <!-- Publicar -->
       <button class="btn-publish" id="btn-publish" onclick="publishItem()">🚀 Publicar na Loja</button>
     </div>

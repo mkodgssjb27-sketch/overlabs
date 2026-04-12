@@ -169,6 +169,15 @@ function renderItems() {
   if (loading) loading.style.display = "none";
 
   let filtered = allItems.filter(i => !i.hidden);
+
+  // Filtrar itens expirados
+  const now = new Date();
+  filtered = filtered.filter(i => {
+    if (!i.expiraEm) return true;
+    const expDate = i.expiraEm.toDate ? i.expiraEm.toDate() : new Date(i.expiraEm);
+    return expDate > now;
+  });
+
   if (currentTab !== "todos") {
     filtered = filtered.filter(i => i.tipo === currentTab);
   }
@@ -183,8 +192,37 @@ function renderItems() {
   grid.innerHTML = filtered.map(item => {
     const owned = ownedIds.has(item.id);
     const imgUrl = chunkCache[item.id] || item.url;
+
+    // Contador regressivo
+    let countdownHtml = '';
+    if (item.expiraEm) {
+      const expDate = item.expiraEm.toDate ? item.expiraEm.toDate() : new Date(item.expiraEm);
+      const diff = expDate - now;
+      if (diff > 0) {
+        const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const horas = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        if (dias > 0) {
+          countdownHtml = '<div class="item-countdown">\u23f0 ' + dias + 'd ' + horas + 'h</div>';
+        } else {
+          const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          countdownHtml = '<div class="item-countdown urgente">\u23f0 ' + horas + 'h ' + mins + 'm</div>';
+        }
+      }
+    }
+
+    // Raridade
+    const rar = item.raridade || '';
+    const rarClass = rar ? ' rarity-' + rar : '';
+    const rarLabels = { comum: 'Comum', raro: 'Raro', super_raro: 'Super Raro', lendaria: 'Lendária' };
+    let rarBadge = '';
+    if (rar) {
+      rarBadge = '<div class="item-rarity ir-' + rar + '">' + (rarLabels[rar] || '') + '</div>';
+    }
+
     return `
-      <div class="loja-item ${owned ? 'owned' : ''}" onclick="openBuyModal('${item.id}')">
+      <div class="loja-item ${owned ? 'owned' : ''}${rarClass}" onclick="openBuyModal('${item.id}')">
+        ${countdownHtml}
+        ${rarBadge}
         <img class="item-img" data-item-id="${item.id}" src="${escapeHtml(imgUrl)}" alt="${escapeHtml(item.nome)}">
         <div class="item-info">
           <div class="item-name">${escapeHtml(item.nome)}</div>
@@ -575,6 +613,9 @@ async function initLoja() {
   listenCuts();
   await loadInventory();
   await loadItems();
+
+  // Atualizar contadores regressivos a cada minuto
+  setInterval(function() { renderItems(); }, 60000);
 
   // Se acessou via #inventario, abrir direto no inventário
   if (window.location.hash === "#inventario") {

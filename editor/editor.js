@@ -10,6 +10,7 @@ let firebaseOk = false;
 let selectedFile = null;
 let selectedFileUrl = null; // preview local
 let selectedType = null;
+let selectedRarity = null;
 let publishedItems = [];
 
 // ── Init Firebase ──
@@ -97,6 +98,15 @@ function selectType(tipo) {
   console.log("[Editor] Tipo selecionado:", tipo);
 }
 
+// ── Seleção de raridade ──
+function selectRarity(rarity) {
+  selectedRarity = rarity;
+  document.querySelectorAll(".rarity-option").forEach(el => {
+    el.classList.toggle("selected", el.dataset.rarity === rarity);
+  });
+  console.log("[Editor] Raridade selecionada:", rarity);
+}
+
 // ── Preview do perfil simulado ──
 function updatePreview() {
   if (!selectedFileUrl || !selectedType) return;
@@ -165,6 +175,19 @@ async function publishItem() {
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     };
 
+    // Tempo disponível (dias)
+    const dias = parseInt(document.getElementById("item-dias").value, 10);
+    if (!isNaN(dias) && dias > 0) {
+      const expiraEm = new Date();
+      expiraEm.setDate(expiraEm.getDate() + dias);
+      docData.expiraEm = firebase.firestore.Timestamp.fromDate(expiraEm);
+    }
+
+    // Raridade
+    if (selectedRarity) {
+      docData.raridade = selectedRarity;
+    }
+
     await db.collection("cuts_items").add(docData);
     console.log("[Editor] Item publicado:", nome, selectedType, preco, "CUTS");
     showToast(`✅ "${nome}" publicado na loja!`);
@@ -190,6 +213,9 @@ function resetForm() {
   document.getElementById("file-input").value = "";
   document.getElementById("item-nome").value = "";
   document.getElementById("item-preco").value = "";
+  document.getElementById("item-dias").value = "";
+  selectedRarity = null;
+  document.querySelectorAll(".rarity-option").forEach(el => el.classList.remove("selected"));
   document.querySelectorAll(".type-option").forEach(el => el.classList.remove("selected"));
   updateUploadUI();
 
@@ -214,18 +240,71 @@ async function loadPublished() {
       return;
     }
 
-    const tipoLabels = { avatar: "Avatar", moldura: "Moldura", banner: "Banner", emblema: "Emblema" };
+    // Marcar expirados como hidden automaticamente no Firestore
+    const now = new Date();
+    for (const item of publishedItems) {
+      if (item.expiraEm && !item.hidden) {
+        const expDate = item.expiraEm.toDate ? item.expiraEm.toDate() : new Date(item.expiraEm);
+        if (expDate <= now) {
+          try {
+            await db.collection("cuts_items").doc(item.id).update({ hidden: true });
+            item.hidden = true;
+            console.log("[Editor] Item expirado marcado como oculto:", item.nome);
+          } catch (e) {
+            console.error("[Editor] Erro ao ocultar item expirado:", item.id, e);
+          }
+        }
+      }
+    }
 
-    container.innerHTML = publishedItems.map(item => `
-      <div class="pub-item">
+    const tipoLabels = { avatar: "Avatar", moldura: "Moldura", banner: "Banner", emblema: "Emblema" };
+    const raridadeLabels = { comum: "Comum", raro: "Raro", super_raro: "Super Raro", lendaria: "Lendária" };
+
+    container.innerHTML = publishedItems.map(item => {
+      let expBadge = '';
+      if (item.hidden && item.expiraEm) {
+        expBadge = '<div class="pub-exp expired">⏰ Expirado — Oculto</div>';
+      } else if (item.hidden) {
+        expBadge = '<div class="pub-exp expired">🚫 Oculto</div>';
+      } else if (item.expiraEm) {
+        const expDate = item.expiraEm.toDate ? item.expiraEm.toDate() : new Date(item.expiraEm);
+        const diff = expDate - now;
+        if (diff > 0) {
+          const dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
+          expBadge = '<div class="pub-exp active">⏰ ' + dias + 'd restante' + (dias !== 1 ? 's' : '') + '</div>';
+        }
+      }
+
+      // Raridade badge
+      const rar = item.raridade || '';
+      let rarBadge = '';
+      if (rar) {
+        rarBadge = '<div class="pub-rarity r-' + rar + '">' + (raridadeLabels[rar] || rar) + '</div>';
+      }
+
+      // Raridade edit buttons
+      let rarEdit = '<div class="pub-rarity-edit">';
+      ['comum','raro','super_raro','lendaria'].forEach(function(r) {
+        var active = (rar === r) ? ' active' : '';
+        rarEdit += '<button class="re-btn rc-' + r + active + '" onclick="setItemRarity(\'' + item.id + '\',\'' + r + '\')">' + (raridadeLabels[r]) + '</button>';
+      });
+      rarEdit += '</div>';
+
+      const opacidade = item.hidden ? ' style="opacity:.5"' : '';
+      return `
+      <div class="pub-item"${opacidade}>
         <button class="pub-delete" onclick="deleteItem('${item.id}')" title="Excluir">✕</button>
+        ${expBadge}
+        ${rarBadge}
         <img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}" loading="lazy">
         <div class="pub-info">
           <div class="pub-name">${escapeHtml(item.nome)}</div>
           <div class="pub-meta">${tipoLabels[item.tipo] || item.tipo} — 🪙 ${item.preco}</div>
+          ${rarEdit}
         </div>
       </div>
-    `).join("");
+    `;
+    }).join("");
 
     console.log("[Editor] Itens publicados:", publishedItems.length);
   } catch (e) {
@@ -244,6 +323,21 @@ async function deleteItem(itemId) {
   } catch (e) {
     console.error("[Editor] Erro ao excluir:", e);
     showToast("❌ Erro ao excluir");
+  }
+}
+
+// ── Alterar raridade de item publicado ──
+async function setItemRarity(itemId, rarity) {
+  try {
+    await db.collection("cuts_items").doc(itemId).update({ raridade: rarity });
+    // Atualizar local
+    const item = publishedItems.find(i => i.id === itemId);
+    if (item) item.raridade = rarity;
+    showToast("✨ Raridade atualizada!");
+    await loadPublished();
+  } catch (e) {
+    console.error("[Editor] Erro ao alterar raridade:", e);
+    showToast("❌ Erro ao alterar raridade");
   }
 }
 

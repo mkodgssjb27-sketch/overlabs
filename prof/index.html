@@ -990,6 +990,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <button onclick="logFilterAction('perfil')" class="log-action-btn" data-logaction="perfil" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">👤 Perfil</button>
         <button onclick="logFilterAction('carona')" class="log-action-btn" data-logaction="carona" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🚗 Caronas</button>
         <button onclick="logFilterAction('presente')" class="log-action-btn" data-logaction="presente" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🎁 Presentes</button>
+        <button onclick="logFilterAction('novo_usuario')" class="log-action-btn" data-logaction="novo_usuario" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🆕 Novos Usuários</button>
       </div>
       <div id="log-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
       <div style="text-align:center;margin-top:12px">
@@ -3470,6 +3471,8 @@ function renderLogEntries() {
       filtered = filtered.filter(e => e.action && e.action.startsWith('carona'));
     } else if (logCurrentFilter === 'presente') {
       filtered = filtered.filter(e => e.action && e.action.includes('presente'));
+    } else if (logCurrentFilter === 'novo_usuario') {
+      filtered = filtered.filter(e => e.action === 'novo_usuario');
     } else {
       filtered = filtered.filter(e => e.action === logCurrentFilter);
     }
@@ -3486,7 +3489,9 @@ function renderLogEntries() {
     perfil_foto: '📷',
     carona_reserva: '🚗',
     carona_cancelamento: '❌',
-    presente_recebido: '🎁'
+    presente_recebido: '🎁',
+    novo_usuario: '🆕',
+    cuts_alterado: '🪙'
   };
   const actionColors = {
     compra_loja: '#f59e0b',
@@ -3494,7 +3499,9 @@ function renderLogEntries() {
     perfil_foto: '#a78bfa',
     carona_reserva: '#22c55e',
     carona_cancelamento: '#f87171',
-    presente_recebido: '#f59e0b'
+    presente_recebido: '#f59e0b',
+    novo_usuario: '#22c55e',
+    cuts_alterado: '#f59e0b'
   };
 
   container.innerHTML = filtered.map(entry => {
@@ -3514,6 +3521,8 @@ function renderLogEntries() {
 }
 
 // ── ESTATÍSTICAS DO RANKING ──
+let rankingUsers = []; // estado atual do ranking para reordenação
+
 async function loadCurrentRanking() {
   if (!firebaseOk) return;
   const container = document.getElementById('ranking-stats-current');
@@ -3524,6 +3533,7 @@ async function loadCurrentRanking() {
     const users = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(u => u.username && u.username !== 'teste');
 
+    // Ordenação padrão por CUTS
     users.sort((a, b) => {
       const ca = a.cuts || 0, cb = b.cuts || 0;
       if (cb !== ca) return cb - ca;
@@ -3533,28 +3543,32 @@ async function loadCurrentRanking() {
       return ta - tb;
     });
 
+    // Aplicar ordem personalizada salva pelo professor
+    try {
+      const orderDoc = await db.collection('ranking_config').doc('custom_order').get();
+      if (orderDoc.exists) {
+        const savedOrder = orderDoc.data().order || []; // array de userIds
+        if (savedOrder.length > 0) {
+          // Reordenar com base na ordem salva
+          const orderMap = {};
+          savedOrder.forEach((uid, idx) => { orderMap[uid] = idx; });
+          users.sort((a, b) => {
+            const ia = orderMap.hasOwnProperty(a.id) ? orderMap[a.id] : 9999;
+            const ib = orderMap.hasOwnProperty(b.id) ? orderMap[b.id] : 9999;
+            return ia - ib;
+          });
+        }
+      }
+    } catch(orderErr) { console.warn('[Ranking] Erro ao carregar ordem:', orderErr); }
+
+    rankingUsers = users;
+
     if (!users.length) {
       container.innerHTML = '<div class="empty"><div class="icon">🏆</div><p>Nenhum aluno cadastrado</p></div>';
       return;
     }
 
-    const medals = ['🥇', '🥈', '🥉'];
-    const colors = ['#f59e0b', '#94a3b8', '#cd7f32'];
-    let html = '';
-    users.forEach((u, i) => {
-      const pos = i + 1;
-      const medal = medals[i] || '';
-      const c = colors[i] || '#64748b';
-      const isPodium = i < 3;
-      const photo = u.photoURL ? '<img src="' + escapeHtml(u.photoURL) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : '<span style="font-size:14px;font-weight:800;color:#fff">' + ((u.firstName || '?')[0]) + '</span>';
-      html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:4px;border-radius:12px;background:' + (isPodium ? 'rgba(245,158,11,.06)' : 'rgba(255,255,255,.02)') + ';border:1px solid ' + (isPodium ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.04)') + '">' +
-        '<span style="font-weight:900;font-size:14px;color:' + c + ';min-width:28px;text-align:center">' + (medal || pos + 'º') + '</span>' +
-        '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">' + photo + '</div>' +
-        '<div style="flex:1;font-weight:700;font-size:13px;color:#e2e8f0">' + escapeHtml(u.firstName || '—') + '</div>' +
-        '<span style="font-weight:900;font-size:14px;color:#f59e0b">🪙 ' + (u.cuts || 0) + '</span>' +
-      '</div>';
-    });
-    container.innerHTML = html;
+    renderRankingList();
 
     // Salvar snapshot do ranking para estatísticas
     saveRankingSnapshot(users);
@@ -3577,6 +3591,73 @@ async function saveRankingSnapshot(users) {
       positions: top
     });
   } catch(e) { console.warn('[Ranking] Erro ao salvar snapshot:', e); }
+}
+
+function renderRankingList() {
+  const container = document.getElementById('ranking-stats-current');
+  const users = rankingUsers;
+  const medals = ['🥇', '🥈', '🥉'];
+  const colors = ['#f59e0b', '#94a3b8', '#cd7f32'];
+  let html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+    '<span style="font-size:12px;color:#64748b;font-weight:700">Use as setas para reordenar jogadores empatados</span>' +
+    '<button onclick="resetRankingOrder()" style="padding:6px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171">🔄 Resetar</button>' +
+  '</div>';
+  users.forEach((u, i) => {
+    const pos = i + 1;
+    const medal = medals[i] || '';
+    const c = colors[i] || '#64748b';
+    const isPodium = i < 3;
+    const photo = u.photoURL ? '<img src="' + escapeHtml(u.photoURL) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : '<span style="font-size:14px;font-weight:800;color:#fff">' + ((u.firstName || '?')[0]) + '</span>';
+    const upBtn = i > 0 ? '<button onclick="rankingMove(' + i + ',-1)" style="background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-size:12px;padding:4px 7px;border-radius:6px;cursor:pointer;font-weight:900;line-height:1" title="Subir">▲</button>' : '<div style="width:27px"></div>';
+    const downBtn = i < users.length - 1 ? '<button onclick="rankingMove(' + i + ',1)" style="background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-size:12px;padding:4px 7px;border-radius:6px;cursor:pointer;font-weight:900;line-height:1" title="Descer">▼</button>' : '<div style="width:27px"></div>';
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:4px;border-radius:12px;background:' + (isPodium ? 'rgba(245,158,11,.06)' : 'rgba(255,255,255,.02)') + ';border:1px solid ' + (isPodium ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.04)') + '">' +
+      '<div style="display:flex;flex-direction:column;gap:2px">' + upBtn + downBtn + '</div>' +
+      '<span style="font-weight:900;font-size:14px;color:' + c + ';min-width:28px;text-align:center">' + (medal || pos + 'º') + '</span>' +
+      '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">' + photo + '</div>' +
+      '<div style="flex:1;font-weight:700;font-size:13px;color:#e2e8f0">' + escapeHtml(u.firstName || '—') + '</div>' +
+      '<span style="font-weight:900;font-size:14px;color:#f59e0b">🪙 ' + (u.cuts || 0) + '</span>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
+
+async function rankingMove(index, direction) {
+  const newIdx = index + direction;
+  if (newIdx < 0 || newIdx >= rankingUsers.length) return;
+  // Trocar posições
+  const temp = rankingUsers[index];
+  rankingUsers[index] = rankingUsers[newIdx];
+  rankingUsers[newIdx] = temp;
+  renderRankingList();
+  // Salvar ordem no Firestore
+  await saveRankingOrder();
+}
+
+async function saveRankingOrder() {
+  if (!firebaseOk) return;
+  try {
+    const order = rankingUsers.map(u => u.id);
+    await db.collection('ranking_config').doc('custom_order').set({
+      order: order,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    console.log('[Ranking] Ordem personalizada salva');
+  } catch(e) {
+    console.error('[Ranking] Erro ao salvar ordem:', e);
+    showToast('Erro ao salvar ordem');
+  }
+}
+
+async function resetRankingOrder() {
+  if (!confirm('Resetar a ordem do ranking para a automática (por CUTS)?')) return;
+  try {
+    await db.collection('ranking_config').doc('custom_order').delete();
+    showToast('Ordem resetada');
+    await loadCurrentRanking();
+  } catch(e) {
+    showToast('Erro ao resetar');
+    console.error(e);
+  }
 }
 
 async function loadRankingStats() {
