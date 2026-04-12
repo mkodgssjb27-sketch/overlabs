@@ -1170,12 +1170,29 @@ let unsubRides = null;
 let allRides = [];
 let currentDetailRideId = null;
 
-// ── Navegação ──
-function showScreen(name) {
+// ── Navegação com histórico (botão voltar do Android) ──
+let screenHistory = [];
+history.replaceState({ screen: "initial" }, "");
+
+function showScreen(name, skipHistory) {
+  const prev = document.querySelector(".screen.active");
+  const prevName = prev ? prev.id.replace("screen-", "") : null;
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById("screen-" + name).classList.add("active");
   window.scrollTo(0, 0);
+
+  if (!skipHistory && prevName && prevName !== name) {
+    screenHistory.push(prevName);
+    history.pushState({ screen: name }, "");
+  }
 }
+
+window.addEventListener("popstate", function(e) {
+  if (screenHistory.length > 0) {
+    const prev = screenHistory.pop();
+    showScreen(prev, true);
+  }
+});
 
 // ── Helpers ──
 function clearErr(id) { const el = document.getElementById(id); if(el) el.textContent = ""; }
@@ -1219,6 +1236,7 @@ function teacherLogin() {
   if (pin === TEACHER_PIN) {
     document.getElementById("t-pin").value = "";
     setErr("t-pin-err", "");
+    localStorage.setItem("teacher_logged_in", "true");
     showScreen("teacher-dashboard");
     startTeacherListener();
     loadAlerts();
@@ -1232,6 +1250,8 @@ function teacherLogout() {
   if (unsubStudents) { unsubStudents(); unsubStudents = null; }
   if (unsubAlerts) { unsubAlerts(); unsubAlerts = null; }
   if (unsubFeedMgr) { unsubFeedMgr(); unsubFeedMgr = null; }
+  localStorage.removeItem("teacher_logged_in");
+  screenHistory = [];
   showScreen("teacher-login");
 }
 
@@ -3947,6 +3967,13 @@ async function editorToggleHidden(itemId, currentlyHidden) {
     console.error("[Editor] Erro ao ocultar:", e);
     showToast("❌ Erro ao atualizar");
   }
+}
+
+// ── Auto-login persistente ──
+if (localStorage.getItem("teacher_logged_in") === "true") {
+  showScreen("teacher-dashboard");
+  startTeacherListener();
+  loadAlerts();
 }
 </script>
 </body>
