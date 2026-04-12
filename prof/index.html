@@ -98,6 +98,16 @@ input,select,textarea{font-family:inherit;outline:none}
 .person-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
 .person-row:last-child{border-bottom:none}
 
+/* Manage ride controls */
+.mgr-arrows{display:flex;flex-direction:column;gap:2px}
+.mgr-btn{height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;cursor:pointer;border:none;transition:.15s}
+.mgr-btn:active{transform:scale(.9)}
+.mgr-btn.arrow{width:28px;background:rgba(255,255,255,.08);color:#94a3b8}
+.mgr-btn.arrow:hover{background:rgba(255,255,255,.15);color:#fff}
+.mgr-btn.promote{background:rgba(34,197,94,.15);color:#22c55e;padding:0 8px;font-size:11px}
+.mgr-btn.demote{background:rgba(249,115,22,.15);color:#f97316;padding:0 8px;font-size:11px}
+.mgr-btn.remove{background:rgba(239,68,68,.12);color:#f87171;padding:0 8px;font-size:11px}
+
 .loading{display:flex;align-items:center;justify-content:center;padding:60px 0;flex-direction:column;gap:12px;color:#64748b;font-weight:600}
 .spin{width:32px;height:32px;border:3px solid rgba(255,255,255,.1);border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -1456,24 +1466,152 @@ function renderTeacherDetail(ride) {
     ? `<p style="color:#64748b;font-size:14px">Nenhum aluno confirmado ainda</p>`
     : booked.map((b,i) => `
         <div class="person-row">
+          <div class="mgr-arrows">
+            ${i > 0 ? `<button class="mgr-btn arrow" onclick="profMoveBooked(${i},-1)" title="Subir">▲</button>` : `<div class="mgr-btn" style="visibility:hidden">▲</div>`}
+            ${i < booked.length - 1 ? `<button class="mgr-btn arrow" onclick="profMoveBooked(${i},1)" title="Descer">▼</button>` : `<div class="mgr-btn" style="visibility:hidden">▼</div>`}
+          </div>
           <div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#e85d04)">${b.firstName[0]}</div>
           <div style="flex:1"><p style="font-weight:700;font-size:14px;color:#e2e8f0">${b.firstName}</p><p style="color:#64748b;font-size:12px">@${b.username}</p></div>
           <span class="badge" style="background:rgba(34,197,94,.15);color:#22c55e">Vaga ${i+1}</span>
-          <button onclick="removeStudentFromRide('${b.userId}')" style="margin-left:8px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">✕ Remover</button>
+          <div style="display:flex;gap:4px;margin-left:6px">
+            <button class="mgr-btn demote" onclick="profDemoteToWaitlist('${b.userId}')" title="Mover para fila">→ Fila</button>
+            <button class="mgr-btn remove" onclick="removeStudentFromRide('${b.userId}')" title="Remover">✕</button>
+          </div>
         </div>`).join("");
 
   const wlWrap = document.getElementById("td-waitlist-wrap");
-  if (wl.length > 0) {
+  if (wl.length > 0 || booked.length >= ride.seats) {
     wlWrap.style.display = "block";
-    document.getElementById("td-waitlist").innerHTML = wl.map((w,i) => `
+    document.getElementById("td-waitlist").innerHTML = wl.length === 0
+      ? `<p style="color:#64748b;font-size:13px">Ninguém na fila</p>`
+      : wl.map((w,i) => `
         <div class="person-row">
-          <div style="width:26px;height:26px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px">#${i+1}</div>
+          <div class="mgr-arrows">
+            ${i > 0 ? `<button class="mgr-btn arrow" onclick="profMoveWaitlist(${i},-1)" title="Subir">▲</button>` : `<div class="mgr-btn" style="visibility:hidden">▲</div>`}
+            ${i < wl.length - 1 ? `<button class="mgr-btn arrow" onclick="profMoveWaitlist(${i},1)" title="Descer">▼</button>` : `<div class="mgr-btn" style="visibility:hidden">▼</div>`}
+          </div>
+          <div style="width:26px;height:26px;border-radius:50%;background:#f59e0b;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0">#${i+1}</div>
           <div class="avatar" style="background:linear-gradient(135deg,#f97316,#ef4444)">${w.firstName[0]}</div>
-          <div><p style="font-weight:700;font-size:14px;color:#e2e8f0">${w.firstName}</p><p style="color:#64748b;font-size:12px">@${w.username}</p></div>
+          <div style="flex:1"><p style="font-weight:700;font-size:14px;color:#e2e8f0">${w.firstName}</p><p style="color:#64748b;font-size:12px">@${w.username}</p></div>
+          <div style="display:flex;gap:4px">
+            ${booked.length < ride.seats ? `<button class="mgr-btn promote" onclick="profPromoteToBooked('${w.userId}')" title="Mover para vaga">← Vaga</button>` : ''}
+            <button class="mgr-btn remove" onclick="profRemoveFromWaitlist('${w.userId}')" title="Remover">✕</button>
+          </div>
         </div>`).join("");
   } else {
     wlWrap.style.display = "none";
   }
+}
+
+// ── Gerenciamento de carona (professor) ──
+async function profMoveBooked(index, direction) {
+  if (!requireFirebase() || !currentDetailRideId) return;
+  const rideRef = db.collection("rides").doc(currentDetailRideId);
+  try {
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) return;
+      const booked = [...(doc.data().booked || [])];
+      const newIdx = index + direction;
+      if (newIdx < 0 || newIdx >= booked.length) return;
+      [booked[index], booked[newIdx]] = [booked[newIdx], booked[index]];
+      booked.forEach((b, i) => { b.seatIndex = i; });
+      tx.update(rideRef, { booked });
+    });
+  } catch(e) { showToast("Erro ao reordenar"); console.error(e); }
+}
+
+async function profMoveWaitlist(index, direction) {
+  if (!requireFirebase() || !currentDetailRideId) return;
+  const rideRef = db.collection("rides").doc(currentDetailRideId);
+  try {
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) return;
+      const waitlist = [...(doc.data().waitlist || [])];
+      const newIdx = index + direction;
+      if (newIdx < 0 || newIdx >= waitlist.length) return;
+      [waitlist[index], waitlist[newIdx]] = [waitlist[newIdx], waitlist[index]];
+      tx.update(rideRef, { waitlist });
+    });
+  } catch(e) { showToast("Erro ao reordenar"); console.error(e); }
+}
+
+async function profPromoteToBooked(userId) {
+  if (!requireFirebase() || !currentDetailRideId) return;
+  const rideRef = db.collection("rides").doc(currentDetailRideId);
+  try {
+    let promotedUser = null, rideTitle = "";
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) return;
+      const data = doc.data();
+      rideTitle = data.title;
+      const booked = [...(data.booked || [])];
+      const waitlist = [...(data.waitlist || [])];
+      if (booked.length >= data.seats) throw "Carona lotada";
+      const idx = waitlist.findIndex(w => w.userId === userId);
+      if (idx === -1) return;
+      const person = waitlist.splice(idx, 1)[0];
+      person.seatIndex = booked.length;
+      booked.push(person);
+      promotedUser = person;
+      tx.update(rideRef, { booked, waitlist });
+    });
+    showToast("✅ Movido para carona");
+    if (promotedUser) {
+      await db.collection("notifications").doc(promotedUser.userId).collection("items").add({
+        msg: `🎉 Você foi movido da lista de espera para a carona "${rideTitle}"!`,
+        read: false,
+        at: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  } catch(e) {
+    if (typeof e === "string") showToast(e);
+    else { showToast("Erro ao mover"); console.error(e); }
+  }
+}
+
+async function profDemoteToWaitlist(userId) {
+  if (!requireFirebase() || !currentDetailRideId) return;
+  const rideRef = db.collection("rides").doc(currentDetailRideId);
+  try {
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) return;
+      const data = doc.data();
+      const booked = [...(data.booked || [])];
+      const waitlist = [...(data.waitlist || [])];
+      if (waitlist.length >= 5) throw "Lista de espera lotada";
+      const idx = booked.findIndex(b => b.userId === userId);
+      if (idx === -1) return;
+      const person = booked.splice(idx, 1)[0];
+      delete person.seatIndex;
+      waitlist.push(person);
+      booked.forEach((b, i) => { b.seatIndex = i; });
+      tx.update(rideRef, { booked, waitlist });
+    });
+    showToast("Movido para lista de espera");
+  } catch(e) {
+    if (typeof e === "string") showToast(e);
+    else { showToast("Erro ao mover"); console.error(e); }
+  }
+}
+
+async function profRemoveFromWaitlist(userId) {
+  if (!requireFirebase() || !currentDetailRideId) return;
+  showConfirmModal("Remover da fila?", "O aluno será removido da lista de espera.", async () => {
+    try {
+      const rideRef = db.collection("rides").doc(currentDetailRideId);
+      await db.runTransaction(async tx => {
+        const doc = await tx.get(rideRef);
+        if (!doc.exists) return;
+        const waitlist = (doc.data().waitlist || []).filter(w => w.userId !== userId);
+        tx.update(rideRef, { waitlist });
+      });
+      showToast("Removido da fila");
+    } catch(e) { showToast("Erro ao remover"); console.error(e); }
+  });
 }
 
 function deleteRide() {
