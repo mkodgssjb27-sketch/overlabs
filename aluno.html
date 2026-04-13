@@ -1343,6 +1343,7 @@ async function confirmDailyLogin() {
 
     renderDailyLogin(currentCycle);
     showToast('✅ Login diário confirmado!');
+    setTimeout(closeDailyLogin, 1200);
   } catch(e) {
     console.error('[DailyLogin] Erro ao confirmar:', e);
     showToast('❌ Erro ao confirmar login');
