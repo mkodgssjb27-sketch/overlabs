@@ -719,18 +719,20 @@ input,select{font-family:inherit;outline:none}
 <div class="toast" id="toast"></div>
 
 <script>
+var _lojaLoaded = false;
 function openLojaOverlay(hash) {
   logActivity('navegacao', 'Acessou: Mercado', { tela: 'mercado' });
   const overlay = document.getElementById('loja-overlay');
   const iframe = document.getElementById('loja-iframe');
-  iframe.src = 'cuts/loja.html' + (hash || '');
+  if (!_lojaLoaded || hash) {
+    iframe.src = 'cuts/loja.html' + (hash || '');
+    _lojaLoaded = true;
+  }
   overlay.style.display = 'block';
 }
 function closeLojaOverlay() {
   const overlay = document.getElementById('loja-overlay');
-  const iframe = document.getElementById('loja-iframe');
   overlay.style.display = 'none';
-  iframe.src = 'about:blank';
   // Atualizar foto caso tenha mudado na loja
   if (firebaseOk && currentUser) {
     gifAvatarCache = null; // Forçar recarregar do Firestore
