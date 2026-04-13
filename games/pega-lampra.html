@@ -379,9 +379,10 @@ function gameLoop(ts){
     var spd=SPEED,dirX=0,dirY=0;
     if(isDragging&&moveToX!==null){
       if(boostMode){
-        // Direct finger-follow: blob moves exactly where the finger moves (delta tracking)
+        // Boost mode: finger delta amplified for fast traversal
+        var BOOST_MULT=4;
         if(lastTouchX!==null){
-          var deltaX=moveToX-lastTouchX,deltaY=moveToY-lastTouchY;
+          var deltaX=(moveToX-lastTouchX)*BOOST_MULT,deltaY=(moveToY-lastTouchY)*BOOST_MULT;
           myX+=deltaX;myY+=deltaY;
         }
         lastTouchX=moveToX;lastTouchY=moveToY;
