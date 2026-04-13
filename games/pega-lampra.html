@@ -378,9 +378,17 @@ function gameLoop(ts){
   if(!amDead){
     var spd=SPEED,dirX=0,dirY=0;
     if(isDragging&&moveToX!==null){
-      var cx=canvas.width/2,cy=canvas.height/2,dxx=moveToX-cx,dyy=moveToY-cy,dd=Math.sqrt(dxx*dxx+dyy*dyy);
-      if(dd>5){dirX=dxx/dd;dirY=dyy/dd;}
-      if(touchInsideSelf)spd*=DRAG_BOOST_MULT;
+      if(touchInsideSelf){
+        // Finger-follow mode: blob snaps toward finger position with boost
+        var cx=canvas.width/2,cy=canvas.height/2;
+        var targetWorldX=myX+(moveToX-cx),targetWorldY=myY+(moveToY-cy);
+        var dxx=targetWorldX-myX,dyy=targetWorldY-myY,dd=Math.sqrt(dxx*dxx+dyy*dyy);
+        var followSpd=SPEED*DRAG_BOOST_MULT*3;
+        if(dd>1){var step=Math.min(dd,followSpd*dt);myX+=dxx/dd*step;myY+=dyy/dd*step;}
+      }else{
+        var cx=canvas.width/2,cy=canvas.height/2,dxx=moveToX-cx,dyy=moveToY-cy,dd=Math.sqrt(dxx*dxx+dyy*dyy);
+        if(dd>5){dirX=dxx/dd;dirY=dyy/dd;}
+      }
     }else if(autoDir){dirX=autoDir.dx;dirY=autoDir.dy;}
     var sizePenalty=1-(mySize-BASE_SIZE)/(MAX_SIZE*2.5);if(sizePenalty<0.5)sizePenalty=0.5;
     spd*=sizePenalty;
