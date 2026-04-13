@@ -1152,6 +1152,7 @@ function studentLogout() {
   userCustomization = {};
   _rankingOrderCache = null;
   _rankingUsersCache = [];
+  _rpCache = {};
   _lojaLoaded = false;
   showScreen("student-auth");
 }
@@ -2311,6 +2312,7 @@ async function loadRankingAnimatedAvatars(users) {
 }
 
 // ── Ranking Profile Card ──
+var _rpCache = {}; // cache do card por userId: { avatar, frame, framStyle, banner, emblems }
 function openRankingProfile(userId) {
   if (!firebaseOk || !userId) return;
   var overlay = document.getElementById("ranking-profile-overlay");
@@ -2320,6 +2322,30 @@ function openRankingProfile(userId) {
   var frameEl = document.getElementById("rp-frame");
   var bannerBg = document.getElementById("rp-banner-bg");
   var emblemsEl = document.getElementById("rp-emblems");
+
+  // Se já tem cache, restaurar instantaneamente
+  var c = _rpCache[userId];
+  if (c) {
+    nameEl.textContent = c.name;
+    userEl.textContent = c.user;
+    avatarEl.innerHTML = c.avatar;
+    if (c.frameUrl) {
+      frameEl.src = c.frameUrl;
+      frameEl.style.display = "block";
+      if (c.frameStyle) Object.assign(frameEl.style, c.frameStyle);
+    } else {
+      frameEl.style.display = "none"; frameEl.src = "";
+    }
+    if (c.bannerHtml !== undefined) {
+      bannerBg.innerHTML = c.bannerHtml;
+      bannerBg.style.backgroundImage = c.bannerBg || "";
+    } else {
+      bannerBg.innerHTML = ""; bannerBg.style.backgroundImage = "";
+    }
+    emblemsEl.innerHTML = c.emblems || "";
+    overlay.classList.add("active");
+    return;
+  }
 
   // Reset
   nameEl.textContent = "…";
@@ -2332,23 +2358,30 @@ function openRankingProfile(userId) {
   emblemsEl.innerHTML = "";
   overlay.classList.add("active");
 
-  // Usar dados do cache do ranking (já carregados) em vez de buscar no Firestore
+  // Inicializar cache para este userId
+  _rpCache[userId] = { name: "", user: "", avatar: "", frameUrl: "", frameStyle: null, bannerHtml: "", bannerBg: "", emblems: "" };
+
   var cached = _rankingUsersCache.find(function(u) { return u.id === userId; });
 
   function applyUserData(d) {
-    nameEl.textContent = d.firstName || d.fullName || "—";
-    userEl.textContent = d.username ? ("@" + d.username) : "";
+    var name = d.firstName || d.fullName || "—";
+    var user = d.username ? ("@" + d.username) : "";
+    nameEl.textContent = name;
+    userEl.textContent = user;
+    _rpCache[userId].name = name;
+    _rpCache[userId].user = user;
     var photoUrl = d.photoURL || "";
     var equippedAvatarId = d.equippedAvatarItemId || "";
     if (equippedAvatarId) {
-      rpLoadAvatar(equippedAvatarId, photoUrl, avatarEl);
+      rpLoadAvatar(equippedAvatarId, photoUrl, avatarEl, userId);
     } else if (photoUrl) {
       avatarEl.innerHTML = '<img src="' + photoUrl + '" alt="">';
+      _rpCache[userId].avatar = avatarEl.innerHTML;
     } else {
       var initial = (d.firstName || "?")[0].toUpperCase();
       avatarEl.innerHTML = '<span style="font-size:36px;font-weight:800;color:#fff">' + initial + '</span>';
+      _rpCache[userId].avatar = avatarEl.innerHTML;
     }
-    // Carregar moldura, banner e emblemas em paralelo
     rpLoadFrame(userId, frameEl);
     rpLoadBanner(userId, bannerBg);
     rpLoadEmblems(userId, emblemsEl);
@@ -2371,7 +2404,7 @@ function closeRankingProfile() {
   document.getElementById("ranking-profile-overlay").classList.remove("active");
 }
 
-function rpLoadAvatar(itemId, fallback, el) {
+function rpLoadAvatar(itemId, fallback, el, userId) {
   db.collection("cuts_items").doc(itemId).get().then(function(itemDoc) {
     if (itemDoc.exists && itemDoc.data().chunked) {
       db.collection("cuts_items").doc(itemId).collection("chunks").get().then(function(snap) {
@@ -2384,14 +2417,18 @@ function rpLoadAvatar(itemId, fallback, el) {
         } else if (fallback) {
           el.innerHTML = '<img src="' + fallback + '" alt="">';
         }
+        if (userId && _rpCache[userId]) _rpCache[userId].avatar = el.innerHTML;
       });
     } else if (itemDoc.exists && itemDoc.data().url) {
       el.innerHTML = '<img src="' + itemDoc.data().url + '" alt="">';
+      if (userId && _rpCache[userId]) _rpCache[userId].avatar = el.innerHTML;
     } else if (fallback) {
       el.innerHTML = '<img src="' + fallback + '" alt="">';
+      if (userId && _rpCache[userId]) _rpCache[userId].avatar = el.innerHTML;
     }
   }).catch(function() {
     if (fallback) el.innerHTML = '<img src="' + fallback + '" alt="">';
+    if (userId && _rpCache[userId]) _rpCache[userId].avatar = el.innerHTML;
   });
 }
 
@@ -2419,26 +2456,28 @@ function rpLoadFrame(userId, frameEl) {
           if (!fUrl) return;
           frameEl.src = fUrl;
           frameEl.style.display = "block";
+          var fStyle = {};
           if (adj) {
             var sc = adj.scale || 128;
             var ox = adj.offsetX || 0;
             var oy = adj.offsetY || 0;
             var rot = adj.rotation || 0;
             var offset = -(sc - 100) / 2;
-            frameEl.style.inset = "auto";
-            frameEl.style.width = sc + "%";
-            frameEl.style.height = sc + "%";
-            frameEl.style.left = (offset + ox) + "%";
-            frameEl.style.top = (offset + oy) + "%";
-            frameEl.style.transform = rot ? ("rotate(" + rot + "deg)") : "";
+            frameEl.style.inset = "auto"; fStyle.inset = "auto";
+            frameEl.style.width = sc + "%"; fStyle.width = sc + "%";
+            frameEl.style.height = sc + "%"; fStyle.height = sc + "%";
+            frameEl.style.left = (offset + ox) + "%"; fStyle.left = (offset + ox) + "%";
+            frameEl.style.top = (offset + oy) + "%"; fStyle.top = (offset + oy) + "%";
+            frameEl.style.transform = rot ? ("rotate(" + rot + "deg)") : ""; fStyle.transform = rot ? ("rotate(" + rot + "deg)") : "";
           } else {
-            frameEl.style.inset = "-14%";
-            frameEl.style.width = "128%";
-            frameEl.style.height = "128%";
-            frameEl.style.left = "";
-            frameEl.style.top = "";
-            frameEl.style.transform = "";
+            frameEl.style.inset = "-14%"; fStyle.inset = "-14%";
+            frameEl.style.width = "128%"; fStyle.width = "128%";
+            frameEl.style.height = "128%"; fStyle.height = "128%";
+            frameEl.style.left = ""; fStyle.left = "";
+            frameEl.style.top = ""; fStyle.top = "";
+            frameEl.style.transform = ""; fStyle.transform = "";
           }
+          if (_rpCache[userId]) { _rpCache[userId].frameUrl = fUrl; _rpCache[userId].frameStyle = fStyle; }
         }
         if (isChunked) {
           db.collection("cuts_items").doc(itemId).collection("chunks").get().then(function(chSnap) {
@@ -2473,6 +2512,7 @@ function rpLoadBanner(userId, bannerBg) {
           bannerBg.innerHTML = "";
           bannerBg.style.backgroundImage = "url(" + url + ")";
         }
+        if (_rpCache[userId]) { _rpCache[userId].bannerHtml = bannerBg.innerHTML; _rpCache[userId].bannerBg = bannerBg.style.backgroundImage; }
       }
       db.collection("cuts_items").doc(itemId).get().then(function(itemDoc) {
         var isChunked = itemDoc.exists && itemDoc.data().chunked;
@@ -2519,10 +2559,12 @@ function rpLoadEmblems(userId, container) {
               var fullUrl = sorted.map(function(d){return d.data().data}).join("");
               var img = container.querySelector('img[data-emblem-id="' + inv.itemId + '"]');
               if (img) img.src = fullUrl;
+              if (_rpCache[userId]) _rpCache[userId].emblems = container.innerHTML;
             });
           } else if (data.url) {
             var img = container.querySelector('img[data-emblem-id="' + inv.itemId + '"]');
             if (img && data.url !== inv.url) img.src = data.url;
+            if (_rpCache[userId]) _rpCache[userId].emblems = container.innerHTML;
           }
         });
       });
