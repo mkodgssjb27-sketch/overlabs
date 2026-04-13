@@ -3593,9 +3593,11 @@ function fecharJogo() {
   document.getElementById('jogoContainer').style.display = 'none';
 }
 
-// Escutar recompensas enviadas pelo jogo via postMessage
+// Escutar mensagens enviadas pelo jogo via postMessage
 window.addEventListener('message', async function(event) {
-  if (!event.data || event.data.type !== 'GAME_REWARD') return;
+  if (!event.data) return;
+  if (event.data.type === 'GAME_GO_HOME') { fecharJogo(); showScreen('student-home'); return; }
+  if (event.data.type !== 'GAME_REWARD') return;
   var reward = event.data.reward;
   if (!reward || reward <= 0) return;
   try {
