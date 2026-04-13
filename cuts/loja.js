@@ -13,6 +13,8 @@ let myInventory = [];     // [{itemId, equipado}]
 let currentTab = "todos";
 let selectedItem = null;
 let chunkCache = {};       // { itemId: fullBase64Url }
+let itemsReady = false;    // flag: itens já chegaram do Firestore?
+let inventoryReady = false; // flag: inventário já chegou?
 
 // ── Init Firebase ──
 function initFirebase() {
@@ -29,10 +31,6 @@ function initFirebase() {
       firebase.initializeApp(firebaseConfig);
     }
     db = firebase.firestore();
-    // Habilitar cache offline do Firestore para carregamento instantâneo
-    db.enablePersistence({ synchronizeTabs: true }).catch(function(e) {
-      console.warn("[Loja] Persistence:", e.code);
-    });
     firebaseOk = true;
     console.log("[Loja] Firebase OK");
   } catch (e) {
@@ -88,19 +86,22 @@ function loadItems() {
     var first = true;
     db.collection("cuts_items").orderBy("criadoEm", "desc").onSnapshot(snap => {
       allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      itemsReady = true;
       console.log("[Loja] Itens atualizados:", allItems.length);
-      // Salvar cache local (sem campos Timestamp que não serializam bem)
+      // Salvar cache local — somente metadados (sem url base64 que é gigante)
       try {
         var toCache = allItems.map(function(it) {
-          var c = Object.assign({}, it);
-          if (c.expiraEm && c.expiraEm.toDate) c.expiraEm = c.expiraEm.toDate().toISOString();
-          if (c.criadoEm && c.criadoEm.toDate) c.criadoEm = c.criadoEm.toDate().toISOString();
+          var c = { id: it.id, nome: it.nome, tipo: it.tipo, preco: it.preco, raridade: it.raridade || '', hidden: it.hidden || false, chunked: it.chunked || false };
+          if (it.expiraEm) c.expiraEm = (it.expiraEm.toDate ? it.expiraEm.toDate() : new Date(it.expiraEm)).toISOString();
+          // Só salvar url se for URL http (pequena), não base64 (gigante)
+          if (it.url && it.url.length < 500) c.url = it.url;
+          else c.url = '';
           return c;
         });
         localStorage.setItem("loja_items_cache", JSON.stringify(toCache));
       } catch(e) {}
       renderItems();
-      if (myInventory.length) renderInventory();
+      if (inventoryReady) renderInventory();
       loadChunkedUrls();
       if (first) { first = false; resolve(); }
     }, err => {
@@ -162,16 +163,20 @@ function loadInventory() {
       .where("userId", "==", currentUser.id)
       .onSnapshot(snap => {
         myInventory = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
-        console.log("[Loja] Inventário atualizado:", myInventory.length, "itens");        // Salvar cache local
+        inventoryReady = true;
+        console.log("[Loja] Inventário atualizado:", myInventory.length, "itens");
+        // Salvar cache local — somente metadados leves
         try {
           var invCache = myInventory.map(function(it) {
-            var c = Object.assign({}, it);
-            if (c.compradoEm && c.compradoEm.toDate) c.compradoEm = c.compradoEm.toDate().toISOString();
+            var c = { docId: it.docId, itemId: it.itemId, nome: it.nome, tipo: it.tipo, equipado: it.equipado, chunked: it.chunked || false, raridade: it.raridade || '' };
+            if (it.url && it.url.length < 500) c.url = it.url;
+            else c.url = '';
             return c;
           });
           localStorage.setItem("loja_inv_cache_" + currentUser.id, JSON.stringify(invCache));
-        } catch(e) {}        renderInventory();
-        renderItems();
+        } catch(e) {}
+        renderInventory();
+        if (itemsReady) renderItems();
         loadInventoryChunks();
         if (first) { first = false; resolve(); }
       }, err => {
@@ -185,6 +190,12 @@ function loadInventory() {
 function renderItems() {
   const grid = document.getElementById("items-grid");
   const loading = document.getElementById("loja-loading");
+
+  // Se itens ainda não chegaram do Firestore nem do cache, manter loading visível
+  if (!itemsReady && allItems.length === 0) {
+    if (loading) loading.style.display = "";
+    return;
+  }
   if (loading) loading.style.display = "none";
 
   let filtered = allItems.filter(i => !i.hidden);
