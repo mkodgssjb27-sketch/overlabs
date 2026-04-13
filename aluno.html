@@ -1122,6 +1122,13 @@ function enterStudentApp() {
   }
   // Load customization data
   loadUserCustomization();
+  // Preload do mercado em segundo plano (após 2s para não competir com carregamento inicial)
+  setTimeout(function() {
+    if (!_lojaLoaded) {
+      var iframe = document.getElementById('loja-iframe');
+      if (iframe) { iframe.src = 'cuts/loja.html'; _lojaLoaded = true; }
+    }
+  }, 2000);
 }
 
 function studentLogout() {
