@@ -1,4 +1,18 @@
 {
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      ".gitignore",
+      "deploy.ps1",
+      "restore-pre-loja.ps1",
+      "DEPLOY.md",
+      "SETUP.md",
+      "functions/node_modules/**",
+      "node_modules/**"
+    ]
+  },
   "functions": {
     "source": "functions"
   }
