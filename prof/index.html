@@ -230,6 +230,11 @@ input,select,textarea{font-family:inherit;outline:none}
         <div class="mc-title">Registro de Log</div>
         <div class="mc-desc">Atividades e estatísticas</div>
       </div>
+      <div class="menu-card" onclick="showScreen('teacher-daily-login');loadDailyLoginConfig()">
+        <span class="mc-icon">📅</span>
+        <div class="mc-title">Login Diário</div>
+        <div class="mc-desc">Controlar check-in dos alunos</div>
+      </div>
     </div>
   </div>
 </div>
@@ -962,6 +967,56 @@ input,select,textarea{font-family:inherit;outline:none}
         <p class="err-txt" id="deco-file-err"></p>
       </div>
       <button onclick="saveDecoration()" class="btn-main" id="btn-save-deco">💾 Salvar Decoração</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — LOGIN DIÁRIO ═══════════════════════════════════ -->
+<div class="screen" id="screen-teacher-daily-login">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">Login Diário</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <!-- Toggle ativar/desativar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;margin-bottom:20px">
+      <div>
+        <div style="font-weight:800;color:#fff;font-size:15px">Ativar Login Diário</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px">Alunos verão o check-in ao abrir o app</div>
+      </div>
+      <div class="toggle-wrap">
+        <input type="checkbox" id="dl-enabled" onchange="toggleDailyLogin()">
+        <div class="toggle-track"></div>
+        <div class="toggle-dot"></div>
+      </div>
+    </div>
+
+    <!-- Info do ciclo -->
+    <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:14px;padding:14px;margin-bottom:20px;font-size:12px;color:#94a3b8;line-height:1.6">
+      <strong style="color:#f59e0b">ℹ️ Como funciona:</strong><br>
+      Cada ciclo vai de <strong style="color:#fff">12:00</strong> de um dia até <strong style="color:#fff">11:59</strong> do dia seguinte.<br>
+      A semana começa <strong style="color:#fff">segunda 12h</strong> e termina <strong style="color:#fff">segunda 11:59</strong> da próxima semana.
+    </div>
+
+    <!-- Recompensa semanal -->
+    <div class="section-title">🪙 Recompensa Semanal</div>
+    <div class="t-form" style="margin-bottom:20px">
+      <div style="margin-bottom:14px">
+        <label class="lbl">MOEDAS (CUTS) POR SEMANA COMPLETA (7/7)</label>
+        <input type="number" class="inp" id="dl-reward-coins" placeholder="Ex: 10" min="0" value="0">
+      </div>
+      <button onclick="saveDailyLoginConfig()" class="btn-main">💾 Salvar Configuração</button>
+    </div>
+
+    <!-- Status dos alunos esta semana -->
+    <div class="section-title">📊 Progresso dos Alunos (Semana Atual)</div>
+    <div style="margin-bottom:12px">
+      <button onclick="loadDailyLoginStudents()" style="padding:8px 16px;border-radius:10px;background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-weight:700;font-size:12px;cursor:pointer">🔄 Atualizar</button>
+    </div>
+    <div id="dl-students-list">
+      <div class="loading"><div class="spin"></div>Carregando...</div>
     </div>
   </div>
 </div>
@@ -4376,6 +4431,138 @@ async function setEditorItemRarity(itemId, rarity) {
   } catch(e) {
     console.error("[Editor] Erro ao alterar raridade:", e);
     showToast("❌ Erro ao alterar raridade");
+  }
+}
+
+// ── Login Diário (Professor) ──
+function getDailyCycleKeyProf() {
+  var d = new Date();
+  if (d.getHours() < 12) d.setDate(d.getDate() - 1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function getWeekCycleKeysProf(cycleKey) {
+  var d = new Date(cycleKey + 'T12:00:00');
+  var dow = d.getDay();
+  var diff = dow === 0 ? -6 : 1 - dow;
+  var monday = new Date(d);
+  monday.setDate(monday.getDate() + diff);
+  var keys = [];
+  for (var i = 0; i < 7; i++) {
+    var dd = new Date(monday);
+    dd.setDate(dd.getDate() + i);
+    keys.push(dd.getFullYear() + '-' + String(dd.getMonth()+1).padStart(2,'0') + '-' + String(dd.getDate()).padStart(2,'0'));
+  }
+  return keys;
+}
+
+async function loadDailyLoginConfig() {
+  if (!requireFirebase()) return;
+  try {
+    var doc = await db.collection('settings').doc('dailyLogin').get();
+    var data = doc.exists ? doc.data() : { enabled: false, weeklyRewardCoins: 0 };
+    document.getElementById('dl-enabled').checked = !!data.enabled;
+    document.getElementById('dl-reward-coins').value = data.weeklyRewardCoins || 0;
+    loadDailyLoginStudents();
+  } catch(e) {
+    console.error('[DailyLogin] Erro ao carregar config:', e);
+    showToast('❌ Erro ao carregar configuração');
+  }
+}
+
+async function toggleDailyLogin() {
+  if (!requireFirebase()) return;
+  var enabled = document.getElementById('dl-enabled').checked;
+  try {
+    await db.collection('settings').doc('dailyLogin').set({ enabled: enabled }, { merge: true });
+    showToast(enabled ? '✅ Login Diário ativado!' : '⚠️ Login Diário desativado');
+  } catch(e) {
+    console.error('[DailyLogin] Erro ao toggle:', e);
+    showToast('❌ Erro ao salvar');
+  }
+}
+
+async function saveDailyLoginConfig() {
+  if (!requireFirebase()) return;
+  var coins = parseInt(document.getElementById('dl-reward-coins').value) || 0;
+  var enabled = document.getElementById('dl-enabled').checked;
+  try {
+    await db.collection('settings').doc('dailyLogin').set({
+      enabled: enabled,
+      weeklyRewardCoins: coins
+    });
+    showToast('✅ Configuração salva!');
+  } catch(e) {
+    console.error('[DailyLogin] Erro ao salvar config:', e);
+    showToast('❌ Erro ao salvar');
+  }
+}
+
+async function loadDailyLoginStudents() {
+  if (!requireFirebase()) return;
+  var listEl = document.getElementById('dl-students-list');
+
+  try {
+    var currentCycle = getDailyCycleKeyProf();
+    var weekKeys = getWeekCycleKeysProf(currentCycle);
+
+    var usersSnap = await db.collection('users').get();
+    var students = [];
+    usersSnap.forEach(function(doc) {
+      var d = doc.data();
+      if (d.username === 'teste') return;
+      students.push({ id: doc.id, firstName: d.firstName || '', username: d.username || '' });
+    });
+
+    if (students.length === 0) {
+      listEl.innerHTML = '<div class="empty"><div class="icon">👥</div><p>Nenhum aluno cadastrado</p></div>';
+      return;
+    }
+
+    var loginsSnap = await db.collection('dailyLogins')
+      .where('cycleKey', 'in', weekKeys)
+      .get();
+
+    var loginMap = {};
+    loginsSnap.forEach(function(doc) {
+      var d = doc.data();
+      if (!loginMap[d.userId]) loginMap[d.userId] = [];
+      if (loginMap[d.userId].indexOf(d.cycleKey) === -1) loginMap[d.userId].push(d.cycleKey);
+    });
+
+    var dayLabels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+
+    students.sort(function(a, b) {
+      return (loginMap[b.id] || []).length - (loginMap[a.id] || []).length;
+    });
+
+    var html = '';
+    students.forEach(function(s) {
+      var checks = loginMap[s.id] || [];
+      var count = checks.length;
+      var dotsHtml = '';
+      for (var i = 0; i < 7; i++) {
+        var done = checks.indexOf(weekKeys[i]) !== -1;
+        dotsHtml += '<div style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;'
+          + (done ? 'background:rgba(34,197,94,.15);border:2px solid #22c55e;color:#22c55e' : 'background:rgba(255,255,255,.03);border:2px solid rgba(255,255,255,.1);color:#475569')
+          + '">' + (done ? '✓' : dayLabels[i]) + '</div>';
+      }
+      html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:10px">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+        + '<div><span style="font-weight:800;font-size:14px;color:#fff">' + escapeHtml(s.firstName) + '</span>'
+        + '<span style="color:#64748b;font-size:12px;margin-left:6px">@' + escapeHtml(s.username) + '</span></div>'
+        + '<span style="font-size:12px;font-weight:800;padding:3px 10px;border-radius:10px;'
+        + (count >= 7 ? 'background:rgba(34,197,94,.15);color:#22c55e' : 'background:rgba(255,255,255,.06);color:#94a3b8')
+        + '">' + count + '/7</span>'
+        + '</div>'
+        + '<div style="display:flex;gap:6px;justify-content:center">' + dotsHtml + '</div>'
+        + '</div>';
+    });
+
+    listEl.innerHTML = html;
+  } catch(e) {
+    console.error('[DailyLogin] Erro ao carregar alunos:', e);
+    listEl.innerHTML = '<div class="empty"><div class="icon">❌</div><p>Erro ao carregar</p></div>';
   }
 }
 

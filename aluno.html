@@ -102,7 +102,7 @@ input,select{font-family:inherit;outline:none}
 /* Profile */
 .profile-avatar-btn{width:36px;height:36px;border-radius:50%;border:2px solid rgba(245,158,11,.5);background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;cursor:pointer;overflow:hidden;flex-shrink:0;padding:0}
 .profile-avatar-btn img{width:100%;height:100%;object-fit:cover}
-.profile-photo-wrap{width:100px;height:100px;border-radius:50%;margin:0 auto 20px;position:relative;cursor:pointer}
+.profile-photo-wrap{width:90px;height:90px;border-radius:50%;margin:0 auto 20px;position:relative;cursor:pointer}
 .profile-photo-wrap .photo{width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid rgba(245,158,11,.5);background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;font-weight:800}
 .profile-photo-wrap .photo img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .profile-photo-wrap .cam-badge{position:absolute;bottom:2px;right:2px;width:28px;height:28px;border-radius:50%;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #0a0a0f}
@@ -169,6 +169,26 @@ input,select{font-family:inherit;outline:none}
 .rp-emblems{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 .rp-emblems img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
 .rp-close{position:absolute;top:12px;right:12px;z-index:10;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+
+/* Daily Login Check-in */
+#daily-login-overlay{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px}
+#daily-login-overlay.active{display:flex}
+.dl-card{width:100%;max-width:360px;background:#151929;border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:28px 24px;text-align:center;animation:rpCardIn .3s ease}
+.dl-title{font-size:18px;font-weight:900;color:#fff;margin-bottom:4px;letter-spacing:.5px}
+.dl-sub{font-size:13px;color:#94a3b8;margin-bottom:20px}
+.dl-week{display:flex;justify-content:center;gap:8px;margin-bottom:20px}
+.dl-day{display:flex;flex-direction:column;align-items:center;gap:4px}
+.dl-day-label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase}
+.dl-day-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;border:2px solid rgba(255,255,255,.12);color:#64748b;transition:.3s}
+.dl-day-circle.checked{background:rgba(34,197,94,.15);border-color:#22c55e;color:#22c55e}
+.dl-day-circle.today{border-color:#f59e0b;color:#f59e0b;box-shadow:0 0 12px rgba(245,158,11,.3)}
+.dl-day-circle.today.checked{background:rgba(34,197,94,.15);border-color:#22c55e;color:#22c55e;box-shadow:0 0 12px rgba(34,197,94,.3)}
+.dl-confirm-btn{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;color:#fff;font-size:32px;font-weight:900;cursor:pointer;box-shadow:0 4px 24px rgba(34,197,94,.4);margin:12px auto;display:flex;align-items:center;justify-content:center;transition:.2s;animation:seatPulse 2s ease-in-out infinite}
+.dl-confirm-btn:active{transform:scale(.9)}
+.dl-confirm-btn.done{background:rgba(34,197,94,.15);box-shadow:none;animation:none;cursor:default}
+.dl-progress{font-size:14px;font-weight:700;color:#94a3b8;margin-top:8px}
+.dl-reward{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:14px;padding:12px;margin-top:14px;color:#f59e0b;font-size:14px;font-weight:700}
+.dl-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.08);border:none;color:#94a3b8;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 </style>
 </head>
 <body>
@@ -710,6 +730,20 @@ input,select{font-family:inherit;outline:none}
   <iframe id="loja-iframe" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
 </div>
 
+<!-- Daily Login Overlay -->
+<div id="daily-login-overlay">
+  <div class="dl-card" style="position:relative">
+    <button class="dl-close" onclick="closeDailyLogin()">✕</button>
+    <div style="font-size:28px;margin-bottom:8px">📅</div>
+    <div class="dl-title">Login Diário</div>
+    <div class="dl-sub">Confirme sua presença diária!</div>
+    <div class="dl-week" id="dl-week"></div>
+    <div id="dl-action"></div>
+    <div class="dl-progress" id="dl-progress"></div>
+    <div id="dl-reward-msg" style="display:none" class="dl-reward"></div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -1115,6 +1149,8 @@ function enterStudentApp() {
           if (cutsEl) cutsEl.textContent = d.cuts || 0;
           localStorage.setItem("carolampra_cuts", d.cuts || 0);
         }).catch(() => {});
+        // Re-check daily login when returning from background
+        setTimeout(checkDailyLogin, 300);
       } else if (document.visibilityState === "hidden") {
         logActivity('app_minimizou', 'Minimizou/fechou o app');
       }
@@ -1122,6 +1158,8 @@ function enterStudentApp() {
   }
   // Load customization data
   loadUserCustomization();
+  // Check daily login
+  setTimeout(checkDailyLogin, 500);
   // Preload do mercado em segundo plano (após 2s para não competir com carregamento inicial)
   setTimeout(function() {
     if (!_lojaStarted) {
@@ -1155,6 +1193,164 @@ function studentLogout() {
   _rpCache = {};
   _lojaStarted = false;
   showScreen("student-auth");
+}
+
+// ── Login Diário ──
+var _dlConfig = null;
+var _dlCycleKeys = [];
+var _dlCheckedKeys = [];
+
+function getDailyCycleKey(date) {
+  var d = date ? new Date(date) : new Date();
+  if (d.getHours() < 12) d.setDate(d.getDate() - 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function getWeekCycleKeys(cycleKey) {
+  var d = new Date(cycleKey + 'T12:00:00');
+  var dow = d.getDay();
+  var diff = dow === 0 ? -6 : 1 - dow;
+  var monday = new Date(d);
+  monday.setDate(monday.getDate() + diff);
+  var keys = [];
+  for (var i = 0; i < 7; i++) {
+    var dd = new Date(monday);
+    dd.setDate(dd.getDate() + i);
+    keys.push(dd.getFullYear() + '-' + String(dd.getMonth() + 1).padStart(2, '0') + '-' + String(dd.getDate()).padStart(2, '0'));
+  }
+  return keys;
+}
+
+async function checkDailyLogin() {
+  if (!firebaseOk || !currentUser) return;
+  try {
+    var configDoc = await db.collection('settings').doc('dailyLogin').get();
+    if (!configDoc.exists) return;
+    _dlConfig = configDoc.data();
+    if (!_dlConfig.enabled) return;
+
+    var currentCycle = getDailyCycleKey();
+    _dlCycleKeys = getWeekCycleKeys(currentCycle);
+
+    var snap = await db.collection('dailyLogins')
+      .where('userId', '==', currentUser.id)
+      .where('cycleKey', 'in', _dlCycleKeys)
+      .get();
+
+    _dlCheckedKeys = [];
+    snap.forEach(function(doc) {
+      var k = doc.data().cycleKey;
+      if (_dlCheckedKeys.indexOf(k) === -1) _dlCheckedKeys.push(k);
+    });
+
+    // Only show overlay if current cycle not yet checked in
+    if (_dlCheckedKeys.indexOf(currentCycle) !== -1) return;
+
+    renderDailyLogin(currentCycle);
+    document.getElementById('daily-login-overlay').classList.add('active');
+  } catch(e) {
+    console.warn('[DailyLogin] Erro:', e);
+  }
+}
+
+function renderDailyLogin(currentCycle) {
+  var dayLabels = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM'];
+  var weekEl = document.getElementById('dl-week');
+  var html = '';
+  for (var i = 0; i < 7; i++) {
+    var key = _dlCycleKeys[i];
+    var isChecked = _dlCheckedKeys.indexOf(key) !== -1;
+    var isCurrent = key === currentCycle;
+    var classes = '';
+    if (isChecked) classes += ' checked';
+    if (isCurrent) classes += ' today';
+    html += '<div class="dl-day">'
+      + '<div class="dl-day-label">' + dayLabels[i] + '</div>'
+      + '<div class="dl-day-circle' + classes + '">'
+      + (isChecked ? '✓' : (i + 1))
+      + '</div></div>';
+  }
+  weekEl.innerHTML = html;
+
+  var checkedCount = _dlCheckedKeys.length;
+  var alreadyChecked = _dlCheckedKeys.indexOf(currentCycle) !== -1;
+  var actionEl = document.getElementById('dl-action');
+  var progressEl = document.getElementById('dl-progress');
+  var rewardEl = document.getElementById('dl-reward-msg');
+
+  if (alreadyChecked) {
+    actionEl.innerHTML = '<div class="dl-confirm-btn done">✓</div>';
+    progressEl.textContent = checkedCount + '/7 logins esta semana';
+  } else {
+    actionEl.innerHTML = '<button class="dl-confirm-btn" onclick="confirmDailyLogin()">✓</button>';
+    progressEl.textContent = checkedCount + '/7 — Confirme seu login!';
+  }
+
+  if (checkedCount >= 7 && _dlConfig) {
+    var coins = _dlConfig.weeklyRewardCoins || 0;
+    if (coins > 0) {
+      rewardEl.style.display = 'block';
+      rewardEl.textContent = '🎉 Semana completa! Você ganhou 🪙 ' + coins + ' CUTS!';
+    }
+  } else {
+    rewardEl.style.display = 'none';
+  }
+}
+
+async function confirmDailyLogin() {
+  if (!firebaseOk || !currentUser) return;
+  var currentCycle = getDailyCycleKey();
+  if (_dlCheckedKeys.indexOf(currentCycle) !== -1) return;
+
+  try {
+    await db.collection('dailyLogins').add({
+      userId: currentUser.id,
+      cycleKey: currentCycle,
+      checkedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    _dlCheckedKeys.push(currentCycle);
+    logActivity('daily_login', 'Check-in diário: ' + currentCycle, { cycleKey: currentCycle });
+
+    // Check if all 7 complete — award coins
+    if (_dlCheckedKeys.length >= 7 && _dlConfig && _dlConfig.weeklyRewardCoins > 0) {
+      var weekKey = _dlCycleKeys[0];
+      var rewardSnap = await db.collection('dailyLoginRewards')
+        .where('userId', '==', currentUser.id)
+        .where('weekKey', '==', weekKey)
+        .get();
+
+      if (rewardSnap.empty) {
+        var coins = _dlConfig.weeklyRewardCoins;
+        await db.collection('users').doc(currentUser.id).update({
+          cuts: firebase.firestore.FieldValue.increment(coins),
+          cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await db.collection('dailyLoginRewards').add({
+          userId: currentUser.id,
+          weekKey: weekKey,
+          coins: coins,
+          awardedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await db.collection('notifications').doc(currentUser.id).collection('items').add({
+          msg: '🎉 Parabéns! Você completou 7/7 logins diários e ganhou 🪙 ' + coins + ' CUTS!',
+          read: false,
+          at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast('🎉 Semana completa! +' + coins + ' CUTS!');
+      }
+    }
+
+    renderDailyLogin(currentCycle);
+    showToast('✅ Login diário confirmado!');
+  } catch(e) {
+    console.error('[DailyLogin] Erro ao confirmar:', e);
+    showToast('❌ Erro ao confirmar login');
+  }
+}
+
+function closeDailyLogin() {
+  document.getElementById('daily-login-overlay').classList.remove('active');
 }
 
 // ── Listeners em tempo real ──
