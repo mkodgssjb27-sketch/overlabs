@@ -245,26 +245,38 @@ function renderInventory() {
 
   // Agrupar por tipo (usa dados salvos no inventário, fallback para allItems para compras antigas)
   const groups = {};
+  const rarityCounts = { comum: 0, raro: 0, super_raro: 0, lendaria: 0 };
   myInventory.forEach(inv => {
     const fromShop = allItems.find(i => i.id === inv.itemId);
     const nome = inv.nome || (fromShop && fromShop.nome) || "Item";
     const url = chunkCache[inv.itemId] || inv.url || (fromShop && fromShop.url) || "";
     const tipo = inv.tipo || (fromShop && fromShop.tipo) || "outro";
+    const raridade = inv.raridade || (fromShop && fromShop.raridade) || '';
+    if (raridade && rarityCounts.hasOwnProperty(raridade)) rarityCounts[raridade]++;
     if (!url) return;
     if (!groups[tipo]) groups[tipo] = [];
-    groups[tipo].push({ id: inv.itemId, nome, url, tipo, docId: inv.docId, equipado: inv.equipado });
+    groups[tipo].push({ id: inv.itemId, nome, url, tipo, raridade, docId: inv.docId, equipado: inv.equipado });
   });
 
   const tipoLabels = { avatar: "🖼️ Avatares", moldura: "🖼️ Molduras", banner: "🌄 Banners", emblema: "🏅 Emblemas" };
 
-  let html = "";
+  // Mini display de raridades
+  let rarDisplay = '<div class="inv-rarity-display">';
+  rarDisplay += '<span class="ird-item ird-comum">C ' + rarityCounts.comum + '</span>';
+  rarDisplay += '<span class="ird-item ird-raro">R ' + rarityCounts.raro + '</span>';
+  rarDisplay += '<span class="ird-item ird-super_raro">SR ' + rarityCounts.super_raro + '</span>';
+  rarDisplay += '<span class="ird-item ird-lendaria">S+ ' + rarityCounts.lendaria + '</span>';
+  rarDisplay += '</div>';
+
+  let html = rarDisplay;
   for (const [tipo, items] of Object.entries(groups)) {
     html += `<div class="inv-section">`;
     html += `<div class="inv-title">${tipoLabels[tipo] || tipo}</div>`;
     html += `<div class="inv-grid">`;
     items.forEach(item => {
+      const rarClass = item.raridade ? ' inv-r-' + item.raridade : '';
       html += `
-        <div class="inv-item ${item.equipado ? 'equipped' : ''}" onclick="toggleEquip('${item.id}', '${tipo}')">
+        <div class="inv-item ${item.equipado ? 'equipped' : ''}${rarClass}" onclick="toggleEquip('${item.id}', '${tipo}')">
           <img data-item-id="${item.id}" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}">
           <div class="inv-name">${escapeHtml(item.nome)}</div>
         </div>
@@ -398,6 +410,7 @@ async function confirmPurchase() {
       compradoEm: firebase.firestore.FieldValue.serverTimestamp()
     };
     if (selectedItem.chunked) invData.chunked = true;
+    if (selectedItem.raridade) invData.raridade = selectedItem.raridade;
     batch.set(invRef, invData);
 
     // Registrar transação
