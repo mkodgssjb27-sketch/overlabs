@@ -320,7 +320,7 @@ function backToLobby(){cleanup();resetState();showScr('lobby');}
 function cleanup(){if(unsubRoom){unsubRoom();unsubRoom=null;}if(unsubPlayers){unsubPlayers();unsubPlayers=null;}}
 function resetState(){
   roomCode=null;isHost=false;players={};collectibles={};gameState='lobby';
-  myScore=0;mySize=BASE_SIZE;moveToX=null;moveToY=null;isDragging=false;autoDir=null;
+  myScore=0;mySize=BASE_SIZE;moveToX=null;moveToY=null;isDragging=false;autoDir=null;boostMode=false;lastTouchX=null;lastTouchY=null;
   amDead=false;spectatingId=null;leftEarly=false;
   document.getElementById('join-area').style.display='none';
   document.getElementById('btn-join').style.display='block';
@@ -335,11 +335,11 @@ var canvas,ctx;
 var myX=1500,myY=1500,myScore=0;
 var BASE_SIZE=28,GROW_RATE=0.6,MAX_SIZE=80;
 var mySize=BASE_SIZE;
-var SPEED=220,DRAG_BOOST_MULT=1.5;
+var SPEED=220;
 var lastFrame=0,gameStartTime=0,gameDuration=900000;
 var lastSync=0,lastRegen=0,nextCId=200;
 var renderedPos={};
-var moveToX=null,moveToY=null,autoDir=null,isDragging=false,touchInsideSelf=false;
+var moveToX=null,moveToY=null,autoDir=null,isDragging=false,boostMode=false,lastTouchX=null,lastTouchY=null;
 
 function setupCanvas(){
   canvas=document.getElementById('gc');ctx=canvas.getContext('2d');
@@ -357,16 +357,16 @@ function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.inne
 
 function insideSelf(sx,sy){var cx=canvas.width/2,cy=canvas.height/2,dx=sx-cx,dy=sy-cy;return Math.sqrt(dx*dx+dy*dy)<mySize*1.5;}
 
-function onTS(e){e.preventDefault();if(amDead)return;var t=e.touches[0];touchInsideSelf=insideSelf(t.clientX,t.clientY);isDragging=true;moveToX=t.clientX;moveToY=t.clientY;autoDir=null;}
-function onTM(e){e.preventDefault();if(amDead||!isDragging)return;var t=e.touches[0];moveToX=t.clientX;moveToY=t.clientY;touchInsideSelf=insideSelf(t.clientX,t.clientY);autoDir=null;}
+function onTS(e){e.preventDefault();if(amDead)return;var t=e.touches[0];boostMode=insideSelf(t.clientX,t.clientY);isDragging=true;moveToX=t.clientX;moveToY=t.clientY;lastTouchX=t.clientX;lastTouchY=t.clientY;autoDir=null;}
+function onTM(e){e.preventDefault();if(amDead||!isDragging)return;var t=e.touches[0];moveToX=t.clientX;moveToY=t.clientY;autoDir=null;}
 function onTE(e){e.preventDefault();if(amDead)return;
-  if(isDragging&&moveToX!==null&&!touchInsideSelf){var cx=canvas.width/2,cy=canvas.height/2,dx=moveToX-cx,dy=moveToY-cy,d=Math.sqrt(dx*dx+dy*dy);if(d>10)autoDir={dx:dx/d,dy:dy/d};}
-  isDragging=false;moveToX=null;moveToY=null;touchInsideSelf=false;}
-function onMD(e){if(amDead)return;touchInsideSelf=insideSelf(e.clientX,e.clientY);isDragging=true;moveToX=e.clientX;moveToY=e.clientY;autoDir=null;}
-function onMM(e){if(amDead||!isDragging)return;moveToX=e.clientX;moveToY=e.clientY;touchInsideSelf=insideSelf(e.clientX,e.clientY);autoDir=null;}
+  if(isDragging&&moveToX!==null&&!boostMode){var cx=canvas.width/2,cy=canvas.height/2,dx=moveToX-cx,dy=moveToY-cy,d=Math.sqrt(dx*dx+dy*dy);if(d>10)autoDir={dx:dx/d,dy:dy/d};}
+  isDragging=false;moveToX=null;moveToY=null;boostMode=false;lastTouchX=null;lastTouchY=null;}
+function onMD(e){if(amDead)return;boostMode=insideSelf(e.clientX,e.clientY);isDragging=true;moveToX=e.clientX;moveToY=e.clientY;lastTouchX=e.clientX;lastTouchY=e.clientY;autoDir=null;}
+function onMM(e){if(amDead||!isDragging)return;moveToX=e.clientX;moveToY=e.clientY;autoDir=null;}
 function onMU(e){if(amDead)return;
-  if(isDragging&&moveToX!==null&&!touchInsideSelf){var cx=canvas.width/2,cy=canvas.height/2,dx=moveToX-cx,dy=moveToY-cy,d=Math.sqrt(dx*dx+dy*dy);if(d>10)autoDir={dx:dx/d,dy:dy/d};}
-  isDragging=false;moveToX=null;moveToY=null;touchInsideSelf=false;}
+  if(isDragging&&moveToX!==null&&!boostMode){var cx=canvas.width/2,cy=canvas.height/2,dx=moveToX-cx,dy=moveToY-cy,d=Math.sqrt(dx*dx+dy*dy);if(d>10)autoDir={dx:dx/d,dy:dy/d};}
+  isDragging=false;moveToX=null;moveToY=null;boostMode=false;lastTouchX=null;lastTouchY=null;}
 
 function gameLoop(ts){
   if(gameState!=='playing')return;
@@ -378,13 +378,13 @@ function gameLoop(ts){
   if(!amDead){
     var spd=SPEED,dirX=0,dirY=0;
     if(isDragging&&moveToX!==null){
-      if(touchInsideSelf){
-        // Finger-follow mode: blob snaps toward finger position with boost
-        var cx=canvas.width/2,cy=canvas.height/2;
-        var targetWorldX=myX+(moveToX-cx),targetWorldY=myY+(moveToY-cy);
-        var dxx=targetWorldX-myX,dyy=targetWorldY-myY,dd=Math.sqrt(dxx*dxx+dyy*dyy);
-        var followSpd=SPEED*DRAG_BOOST_MULT*3;
-        if(dd>1){var step=Math.min(dd,followSpd*dt);myX+=dxx/dd*step;myY+=dyy/dd*step;}
+      if(boostMode){
+        // Direct finger-follow: blob moves exactly where the finger moves (delta tracking)
+        if(lastTouchX!==null){
+          var deltaX=moveToX-lastTouchX,deltaY=moveToY-lastTouchY;
+          myX+=deltaX;myY+=deltaY;
+        }
+        lastTouchX=moveToX;lastTouchY=moveToY;
       }else{
         var cx=canvas.width/2,cy=canvas.height/2,dxx=moveToX-cx,dyy=moveToY-cy,dd=Math.sqrt(dxx*dxx+dyy*dyy);
         if(dd>5){dirX=dxx/dd;dirY=dyy/dd;}
