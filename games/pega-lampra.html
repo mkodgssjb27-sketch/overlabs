@@ -320,7 +320,7 @@ function backToLobby(){cleanup();resetState();showScr('lobby');}
 function cleanup(){if(unsubRoom){unsubRoom();unsubRoom=null;}if(unsubPlayers){unsubPlayers();unsubPlayers=null;}}
 function resetState(){
   roomCode=null;isHost=false;players={};collectibles={};gameState='lobby';
-  myScore=0;mySize=BASE_SIZE;moveToX=null;moveToY=null;isDragging=false;autoDir=null;boostMode=false;lastTouchX=null;lastTouchY=null;lastDeltaX=0;lastDeltaY=0;
+  myScore=0;mySize=BASE_SIZE;isDragging=false;autoDir=null;boostMode=false;targetWorldX=null;targetWorldY=null;
   amDead=false;spectatingId=null;leftEarly=false;
   document.getElementById('join-area').style.display='none';
   document.getElementById('btn-join').style.display='block';
@@ -335,11 +335,12 @@ var canvas,ctx;
 var myX=1500,myY=1500,myScore=0;
 var BASE_SIZE=28,GROW_RATE=0.6,MAX_SIZE=80;
 var mySize=BASE_SIZE;
-var SPEED=220;
+var SPEED=220,BOOST_SPEED=440;
 var lastFrame=0,gameStartTime=0,gameDuration=900000;
 var lastSync=0,lastRegen=0,nextCId=200;
 var renderedPos={};
-var moveToX=null,moveToY=null,autoDir=null,isDragging=false,boostMode=false,lastTouchX=null,lastTouchY=null,lastDeltaX=0,lastDeltaY=0;
+var autoDir=null,isDragging=false,boostMode=false;
+var targetWorldX=null,targetWorldY=null;
 
 function setupCanvas(){
   canvas=document.getElementById('gc');ctx=canvas.getContext('2d');
@@ -355,28 +356,33 @@ function setupCanvas(){
 }
 function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
 
+function screenToWorld(sx,sy){return{x:myX+(sx-canvas.width/2),y:myY+(sy-canvas.height/2)};}
+
 function insideSelf(sx,sy){var cx=canvas.width/2,cy=canvas.height/2,dx=sx-cx,dy=sy-cy;return Math.sqrt(dx*dx+dy*dy)<mySize*1.5;}
 
-function onTS(e){e.preventDefault();if(amDead)return;var t=e.touches[0];boostMode=insideSelf(t.clientX,t.clientY);isDragging=true;moveToX=t.clientX;moveToY=t.clientY;lastTouchX=t.clientX;lastTouchY=t.clientY;autoDir=null;}
-function onTM(e){e.preventDefault();if(amDead||!isDragging)return;var t=e.touches[0];moveToX=t.clientX;moveToY=t.clientY;autoDir=null;}
+function onTS(e){e.preventDefault();if(amDead)return;var t=e.touches[0];
+  isDragging=true;boostMode=insideSelf(t.clientX,t.clientY);
+  var w=screenToWorld(t.clientX,t.clientY);targetWorldX=w.x;targetWorldY=w.y;autoDir=null;}
+function onTM(e){e.preventDefault();if(amDead||!isDragging)return;var t=e.touches[0];
+  var w=screenToWorld(t.clientX,t.clientY);targetWorldX=w.x;targetWorldY=w.y;}
 function onTE(e){e.preventDefault();if(amDead)return;
-  if(isDragging&&boostMode){
-    var d=Math.sqrt(lastDeltaX*lastDeltaX+lastDeltaY*lastDeltaY);
-    if(d>0.5){autoDir={dx:lastDeltaX/d,dy:lastDeltaY/d};}
-  }else if(isDragging&&moveToX!==null){
-    var cx=canvas.width/2,cy=canvas.height/2,dx=moveToX-cx,dy=moveToY-cy,d=Math.sqrt(dx*dx+dy*dy);if(d>10)autoDir={dx:dx/d,dy:dy/d};
+  // On release, set permanent auto-direction from last movement
+  if(isDragging&&targetWorldX!==null){
+    var dx=targetWorldX-myX,dy=targetWorldY-myY,d=Math.sqrt(dx*dx+dy*dy);
+    if(d>1)autoDir={dx:dx/d,dy:dy/d};
   }
-  isDragging=false;moveToX=null;moveToY=null;boostMode=false;lastTouchX=null;lastTouchY=null;lastDeltaX=0;lastDeltaY=0;}
-function onMD(e){if(amDead)return;boostMode=insideSelf(e.clientX,e.clientY);isDragging=true;moveToX=e.clientX;moveToY=e.clientY;lastTouchX=e.clientX;lastTouchY=e.clientY;autoDir=null;}
-function onMM(e){if(amDead||!isDragging)return;moveToX=e.clientX;moveToY=e.clientY;autoDir=null;}
+  isDragging=false;boostMode=false;targetWorldX=null;targetWorldY=null;}
+function onMD(e){if(amDead)return;
+  isDragging=true;boostMode=insideSelf(e.clientX,e.clientY);
+  var w=screenToWorld(e.clientX,e.clientY);targetWorldX=w.x;targetWorldY=w.y;autoDir=null;}
+function onMM(e){if(amDead||!isDragging)return;
+  var w=screenToWorld(e.clientX,e.clientY);targetWorldX=w.x;targetWorldY=w.y;}
 function onMU(e){if(amDead)return;
-  if(isDragging&&boostMode){
-    var d=Math.sqrt(lastDeltaX*lastDeltaX+lastDeltaY*lastDeltaY);
-    if(d>0.5){autoDir={dx:lastDeltaX/d,dy:lastDeltaY/d};}
-  }else if(isDragging&&moveToX!==null){
-    var cx=canvas.width/2,cy=canvas.height/2,dx=moveToX-cx,dy=moveToY-cy,d=Math.sqrt(dx*dx+dy*dy);if(d>10)autoDir={dx:dx/d,dy:dy/d};
+  if(isDragging&&targetWorldX!==null){
+    var dx=targetWorldX-myX,dy=targetWorldY-myY,d=Math.sqrt(dx*dx+dy*dy);
+    if(d>1)autoDir={dx:dx/d,dy:dy/d};
   }
-  isDragging=false;moveToX=null;moveToY=null;boostMode=false;lastTouchX=null;lastTouchY=null;lastDeltaX=0;lastDeltaY=0;}
+  isDragging=false;boostMode=false;targetWorldX=null;targetWorldY=null;}
 
 function gameLoop(ts){
   if(gameState!=='playing')return;
@@ -387,20 +393,11 @@ function gameLoop(ts){
 
   if(!amDead){
     var spd=SPEED,dirX=0,dirY=0;
-    if(isDragging&&moveToX!==null){
-      if(boostMode){
-        // Boost mode: finger delta amplified for fast traversal
-        var BOOST_MULT=4;
-        if(lastTouchX!==null){
-          var deltaX=(moveToX-lastTouchX)*BOOST_MULT,deltaY=(moveToY-lastTouchY)*BOOST_MULT;
-          myX+=deltaX;myY+=deltaY;
-          lastDeltaX=deltaX;lastDeltaY=deltaY;
-        }
-        lastTouchX=moveToX;lastTouchY=moveToY;
-      }else{
-        var cx=canvas.width/2,cy=canvas.height/2,dxx=moveToX-cx,dyy=moveToY-cy,dd=Math.sqrt(dxx*dxx+dyy*dyy);
-        if(dd>5){dirX=dxx/dd;dirY=dyy/dd;}
-      }
+    if(isDragging&&targetWorldX!==null){
+      // Dragging: move toward finger world position
+      var dxx=targetWorldX-myX,dyy=targetWorldY-myY,dd=Math.sqrt(dxx*dxx+dyy*dyy);
+      if(dd>2){dirX=dxx/dd;dirY=dyy/dd;}
+      if(boostMode)spd=BOOST_SPEED;
     }else if(autoDir){dirX=autoDir.dx;dirY=autoDir.dy;}
     var sizePenalty=1-(mySize-BASE_SIZE)/(MAX_SIZE*2.5);if(sizePenalty<0.5)sizePenalty=0.5;
     spd*=sizePenalty;
