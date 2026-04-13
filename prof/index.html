@@ -4153,6 +4153,26 @@ function renderEditorItemsList() {
         rarBtns += '<button onclick="setEditorItemRarity(\'' + item.id + '\',\'' + r + '\')" style="padding:3px 6px;border-radius:6px;font-size:8px;font-weight:800;border:1.5px solid ' + border + ';background:' + bg + ';color:#fff;cursor:pointer">' + rarLabels[r] + '</button>';
       });
       var rarRow = '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">' + rarBtns + '</div>';
+      // Temporizador
+      var timerInfo = '';
+      var timerVal = '';
+      if (item.expiraEm) {
+        var expDate = item.expiraEm.toDate ? item.expiraEm.toDate() : new Date(item.expiraEm);
+        var diff = expDate - new Date();
+        if (diff > 0) {
+          var dRest = Math.ceil(diff / (1000*60*60*24));
+          timerInfo = '<div style="font-size:9px;color:#f59e0b;margin-bottom:2px">⏰ ' + dRest + 'd restante' + (dRest!==1?'s':'') + '</div>';
+        } else {
+          timerInfo = '<div style="font-size:9px;color:#ef4444;margin-bottom:2px">⏰ Expirado</div>';
+        }
+      }
+      var timerRow = timerInfo +
+        '<div style="display:flex;align-items:center;gap:4px;margin-bottom:8px">' +
+          '<span style="font-size:10px">⏰</span>' +
+          '<input id="edit-dias-' + item.id + '" type="number" placeholder="dias" min="1" style="width:100%;padding:5px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#94a3b8;font-size:11px;font-family:inherit">' +
+          '<button onclick="editorSetTimer(\'' + item.id + '\')" style="padding:5px 8px;border-radius:8px;border:none;background:rgba(245,158,11,.15);color:#f59e0b;font-weight:700;font-size:10px;cursor:pointer;white-space:nowrap">Aplicar</button>' +
+          (item.expiraEm ? '<button onclick="editorClearTimer(\'' + item.id + '\')" style="padding:5px 6px;border-radius:8px;border:none;background:rgba(239,68,68,.12);color:#f87171;font-weight:700;font-size:10px;cursor:pointer">✕</button>' : '') +
+        '</div>';
       return '<div style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;position:relative;' + hiddenBorder + '">' +
         hiddenLabel +
         '<button onclick="editorDeleteItem(\'' + item.id + '\')" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(239,68,68,.9);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5">✕</button>' +
@@ -4165,6 +4185,7 @@ function renderEditorItemsList() {
             '<input id="edit-preco-' + item.id + '" type="number" value="' + (item.preco || 0) + '" min="0" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#f59e0b;font-size:12px;font-weight:900;font-family:inherit">' +
           '</div>' +
           rarRow +
+          timerRow +
           '<div style="display:flex;gap:6px">' +
             '<button onclick="editorSaveItem(\'' + item.id + '\')" style="flex:1;padding:7px;border-radius:8px;border:none;background:rgba(34,197,94,.15);color:#22c55e;font-weight:700;font-size:11px;cursor:pointer">💾 Salvar</button>' +
             '<button onclick="editorToggleHidden(\'' + item.id + '\',' + isHidden + ')" style="flex:1;padding:7px;border-radius:8px;border:none;background:' + (isHidden ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.12)') + ';color:' + (isHidden ? '#22c55e' : '#f87171') + ';font-weight:700;font-size:11px;cursor:pointer">' + (isHidden ? '👁 Mostrar' : '🙈 Ocultar') + '</button>' +
@@ -4218,10 +4239,44 @@ async function editorSaveItem(itemId) {
   if (isNaN(preco) || preco < 0) { showToast("❌ Preço inválido"); return; }
   try {
     await db.collection("cuts_items").doc(itemId).update({ nome, preco });
+    var item = editorPublishedItems.find(function(i){return i.id===itemId;});
+    if (item) { item.nome = nome; item.preco = preco; }
     showToast("✅ Item atualizado!");
   } catch(e) {
     console.error("[Editor] Erro ao salvar:", e);
     showToast("❌ Erro ao salvar");
+  }
+}
+
+async function editorSetTimer(itemId) {
+  var diasInput = document.getElementById('edit-dias-' + itemId);
+  var dias = parseInt(diasInput.value);
+  if (isNaN(dias) || dias < 1) { showToast('⚠️ Informe a quantidade de dias'); return; }
+  try {
+    var expiraEm = new Date();
+    expiraEm.setDate(expiraEm.getDate() + dias);
+    var ts = firebase.firestore.Timestamp.fromDate(expiraEm);
+    await db.collection('cuts_items').doc(itemId).update({ expiraEm: ts, hidden: false });
+    var item = editorPublishedItems.find(function(i){return i.id===itemId;});
+    if (item) { item.expiraEm = ts; item.hidden = false; }
+    showToast('⏰ Temporizador definido: ' + dias + ' dia' + (dias!==1?'s':''));
+    renderEditorItemsList();
+  } catch(e) {
+    console.error('[Editor] Erro ao definir timer:', e);
+    showToast('❌ Erro ao definir temporizador');
+  }
+}
+
+async function editorClearTimer(itemId) {
+  try {
+    await db.collection('cuts_items').doc(itemId).update({ expiraEm: firebase.firestore.FieldValue.delete() });
+    var item = editorPublishedItems.find(function(i){return i.id===itemId;});
+    if (item) delete item.expiraEm;
+    showToast('✅ Temporizador removido');
+    renderEditorItemsList();
+  } catch(e) {
+    console.error('[Editor] Erro ao remover timer:', e);
+    showToast('❌ Erro ao remover temporizador');
   }
 }
 
