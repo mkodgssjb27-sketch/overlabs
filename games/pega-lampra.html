@@ -279,7 +279,10 @@ function enterWaiting(){
     collectibles=d.collectibles||{};
     if(d.status==='countdown'&&gameState==='waiting')startCountdown();
     if(d.status==='playing'&&(gameState==='waiting'||gameState==='countdown'))beginPlay();
-    if(d.status==='finished'&&gameState==='playing')endGame();
+    if(d.status==='finished'&&gameState==='playing'){
+      // Guard: ignore premature finish signals (must be at least 30s into game)
+      if(gameStartTime&&(Date.now()-gameStartTime)>30000)endGame();
+    }
   });
 }
 
@@ -320,7 +323,7 @@ function backToLobby(){cleanup();resetState();showScr('lobby');}
 function cleanup(){if(unsubRoom){unsubRoom();unsubRoom=null;}if(unsubPlayers){unsubPlayers();unsubPlayers=null;}}
 function resetState(){
   roomCode=null;isHost=false;players={};collectibles={};gameState='lobby';
-  myScore=0;mySize=BASE_SIZE;isDragging=false;autoDir=null;boostMode=false;targetWorldX=null;targetWorldY=null;
+  myScore=0;mySize=BASE_SIZE;isDragging=false;autoDir=null;boostMode=false;targetWorldX=null;targetWorldY=null;collisionLog={};
   amDead=false;spectatingId=null;leftEarly=false;
   document.getElementById('join-area').style.display='none';
   document.getElementById('btn-join').style.display='block';
@@ -335,12 +338,13 @@ var canvas,ctx;
 var myX=1500,myY=1500,myScore=0;
 var BASE_SIZE=28,GROW_RATE=0.6,MAX_SIZE=80;
 var mySize=BASE_SIZE;
-var SPEED=220,BOOST_SPEED=440;
+var SPEED=264,BOOST_SPEED=528;
 var lastFrame=0,gameStartTime=0,gameDuration=900000;
 var lastSync=0,lastRegen=0,nextCId=200;
 var renderedPos={};
 var autoDir=null,isDragging=false,boostMode=false;
 var targetWorldX=null,targetWorldY=null;
+var collisionLog={};
 
 function setupCanvas(){
   canvas=document.getElementById('gc');ctx=canvas.getContext('2d');
@@ -442,15 +446,41 @@ function checkEatPlayers(){
   for(var pid in players){
     if(pid===myId)continue;var p=players[pid];if(!p||p.alive===false)continue;
     var pSize=Math.min(MAX_SIZE,BASE_SIZE+(p.score||0)*GROW_RATE);
-    if(mySize<pSize*1.25)continue;
     var rp=renderedPos[pid]||{x:p.x,y:p.y};
     var dx=myX-rp.x,dy=myY-rp.y,dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<mySize-pSize*0.3){
+    var touchDist=mySize+pSize-10;
+    if(dist>touchDist)continue;
+    // Can eat: 25% size advantage
+    if(mySize>=pSize*1.25&&dist<mySize-pSize*0.3){
       myScore+=Math.max(1,Math.floor((p.score||0)*0.5));
       mySize=Math.min(MAX_SIZE,BASE_SIZE+myScore*GROW_RATE);
       db.collection('game_rooms').doc(roomCode).collection('players').doc(pid).update({alive:false}).catch(function(){});
       db.collection('game_rooms').doc(roomCode).collection('players').doc(myId).update({score:myScore}).catch(function(){});
       document.getElementById('hud-aura').textContent='Aura: '+myScore;
+      continue;
+    }
+    // Mutual destruction: similar size (neither can eat the other)
+    if(mySize<pSize*1.25&&pSize<mySize*1.25){
+      var key=pid<myId?pid+'_'+myId:myId+'_'+pid;
+      if(!collisionLog[key])collisionLog[key]={count:0,time:0};
+      if(Date.now()-collisionLog[key].time>2000){collisionLog[key].count++;collisionLog[key].time=Date.now();}
+      if(collisionLog[key].count>=2){
+        // Both explode! Scatter auras as collectibles
+        var totalAura=myScore+Math.max(0,p.score||0);
+        var upd={};
+        for(var i=0;i<totalAura&&i<30;i++){
+          var cid='x'+(nextCId++);var nc={x:myX+(Math.random()-.5)*400,y:myY+(Math.random()-.5)*400,t:Math.floor(Math.random()*3)};
+          collectibles[cid]=nc;upd['collectibles.'+cid]=nc;
+        }
+        if(Object.keys(upd).length>0)db.collection('game_rooms').doc(roomCode).update(upd).catch(function(){});
+        db.collection('game_rooms').doc(roomCode).collection('players').doc(pid).update({alive:false,score:0}).catch(function(){});
+        db.collection('game_rooms').doc(roomCode).collection('players').doc(myId).update({alive:false,score:0}).catch(function(){});
+        myScore=0;amDead=true;
+        document.getElementById('hud-aura').textContent='Aura: 0';
+        document.getElementById('spectator-bar').style.display='block';pickSpectateTarget();
+        delete collisionLog[key];
+        return;
+      }
     }
   }
 }
@@ -467,8 +497,10 @@ function pickSpectateTarget(){
 }
 
 function checkLastAlive(){
+  var total=Object.keys(players).length;
+  if(total<=1)return;
   var alive=0;for(var pid in players){if(players[pid]&&players[pid].alive!==false)alive++;}
-  if(alive<=1&&Object.keys(players).length>1)finishGame();
+  if(alive<=1)finishGame();
 }
 
 function regenColls(){
