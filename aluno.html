@@ -1150,6 +1150,9 @@ function studentLogout() {
   cachedAlerts = [];
   allDecorations = [];
   userCustomization = {};
+  _rankingOrderCache = null;
+  _rankingUsersCache = [];
+  _lojaLoaded = false;
   showScreen("student-auth");
 }
 
@@ -2128,6 +2131,8 @@ function loadStudentPatchNotes() {
 }
 
 // ── Ranking ──
+var _rankingOrderCache = null; // cache da ordem personalizada
+var _rankingUsersCache = []; // cache dos users para o profile card
 function loadRanking() {
   const podiumEl = document.getElementById("ranking-podium");
   const listEl = document.getElementById("ranking-list");
@@ -2139,47 +2144,45 @@ function loadRanking() {
   if (unsubRanking) { unsubRanking(); unsubRanking = null; }
   if (!firebaseOk) return;
 
+  // Buscar ordem personalizada uma vez (e cachear)
+  var orderPromise = _rankingOrderCache !== null
+    ? Promise.resolve(_rankingOrderCache)
+    : db.collection('ranking_config').doc('custom_order').get().then(function(doc) {
+        _rankingOrderCache = doc.exists ? (doc.data().order || []) : [];
+        return _rankingOrderCache;
+      }).catch(function() { _rankingOrderCache = []; return []; });
+
   unsubRanking = db.collection("users").onSnapshot(snap => {
     const users = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(u => u.username && u.username !== "teste");
 
-    // Ordenar: CUTS desc, desempate por cutsUpdatedAt ASC (quem atingiu primeiro fica acima), 0 CUTS = alfabético
-    users.sort((a, b) => {
-      const ca = a.cuts || 0, cb = b.cuts || 0;
-      if (cb !== ca) return cb - ca;
-      // Empate
-      if (ca === 0) return (a.firstName || "").localeCompare(b.firstName || "", "pt-BR");
-      // Ambos > 0 com mesmo valor: quem atualizou primeiro fica acima
-      const ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
-      const tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
-      return ta - tb;
-    });
-
-    // Aplicar ordem personalizada do professor SOMENTE dentro do mesmo grupo de CUTS
-    db.collection('ranking_config').doc('custom_order').get().then(function(orderDoc) {
-      if (orderDoc.exists) {
-        const savedOrder = orderDoc.data().order || [];
-        if (savedOrder.length > 0) {
-          const orderMap = {};
-          savedOrder.forEach(function(uid, idx) { orderMap[uid] = idx; });
-          users.sort(function(a, b) {
-            const ca = a.cuts || 0, cb = b.cuts || 0;
-            if (ca !== cb) return cb - ca; // CUTS diferentes = moedas decidem
-            // Mesmo CUTS: ordem manual do professor
-            const ia = orderMap.hasOwnProperty(a.id) ? orderMap[a.id] : 9999;
-            const ib = orderMap.hasOwnProperty(b.id) ? orderMap[b.id] : 9999;
-            if (ia !== 9999 || ib !== 9999) return ia - ib;
-            // Nenhum tem ordem manual: desempate padrão
-            if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
-            var ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
-            var tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
-            return ta - tb;
-          });
-        }
+    orderPromise.then(function(savedOrder) {
+      // Ordenar com CUTS + ordem manual em empate
+      if (savedOrder.length > 0) {
+        var orderMap = {};
+        savedOrder.forEach(function(uid, idx) { orderMap[uid] = idx; });
+        users.sort(function(a, b) {
+          var ca = a.cuts || 0, cb = b.cuts || 0;
+          if (ca !== cb) return cb - ca;
+          var ia = orderMap.hasOwnProperty(a.id) ? orderMap[a.id] : 9999;
+          var ib = orderMap.hasOwnProperty(b.id) ? orderMap[b.id] : 9999;
+          if (ia !== 9999 || ib !== 9999) return ia - ib;
+          if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
+          var ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
+          var tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
+          return ta - tb;
+        });
+      } else {
+        users.sort(function(a, b) {
+          var ca = a.cuts || 0, cb = b.cuts || 0;
+          if (cb !== ca) return cb - ca;
+          if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
+          var ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
+          var tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
+          return ta - tb;
+        });
       }
-      if (loadingEl) loadingEl.style.display = "none";
-      renderRanking(users, podiumEl, listEl);
-    }).catch(function() {
+      _rankingUsersCache = users;
       if (loadingEl) loadingEl.style.display = "none";
       renderRanking(users, podiumEl, listEl);
     });
@@ -2329,19 +2332,15 @@ function openRankingProfile(userId) {
   emblemsEl.innerHTML = "";
   overlay.classList.add("active");
 
-  // Carregar dados do usuário
-  db.collection("users").doc(userId).get().then(function(doc) {
-    if (!doc.exists) { nameEl.textContent = "Não encontrado"; return; }
-    var d = doc.data();
+  // Usar dados do cache do ranking (já carregados) em vez de buscar no Firestore
+  var cached = _rankingUsersCache.find(function(u) { return u.id === userId; });
+
+  function applyUserData(d) {
     nameEl.textContent = d.firstName || d.fullName || "—";
     userEl.textContent = d.username ? ("@" + d.username) : "";
-
-    // Avatar: verificar se tem avatar equipado (GIF animado)
     var photoUrl = d.photoURL || "";
     var equippedAvatarId = d.equippedAvatarItemId || "";
-
     if (equippedAvatarId) {
-      // Carregar avatar da loja (pode ser GIF animado/chunked)
       rpLoadAvatar(equippedAvatarId, photoUrl, avatarEl);
     } else if (photoUrl) {
       avatarEl.innerHTML = '<img src="' + photoUrl + '" alt="">';
@@ -2349,17 +2348,23 @@ function openRankingProfile(userId) {
       var initial = (d.firstName || "?")[0].toUpperCase();
       avatarEl.innerHTML = '<span style="font-size:36px;font-weight:800;color:#fff">' + initial + '</span>';
     }
-
-    // Moldura
+    // Carregar moldura, banner e emblemas em paralelo
     rpLoadFrame(userId, frameEl);
-    // Banner
     rpLoadBanner(userId, bannerBg);
-    // Emblemas
     rpLoadEmblems(userId, emblemsEl);
-  }).catch(function(e) {
-    console.error("[RankingProfile] Erro:", e);
-    nameEl.textContent = "Erro";
-  });
+  }
+
+  if (cached) {
+    applyUserData(cached);
+  } else {
+    db.collection("users").doc(userId).get().then(function(doc) {
+      if (!doc.exists) { nameEl.textContent = "Não encontrado"; return; }
+      applyUserData(doc.data());
+    }).catch(function(e) {
+      console.error("[RankingProfile] Erro:", e);
+      nameEl.textContent = "Erro";
+    });
+  }
 }
 
 function closeRankingProfile() {
