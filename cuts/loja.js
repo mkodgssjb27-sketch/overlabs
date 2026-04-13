@@ -29,6 +29,10 @@ function initFirebase() {
       firebase.initializeApp(firebaseConfig);
     }
     db = firebase.firestore();
+    // Habilitar cache offline do Firestore para carregamento instantâneo
+    db.enablePersistence({ synchronizeTabs: true }).catch(function(e) {
+      console.warn("[Loja] Persistence:", e.code);
+    });
     firebaseOk = true;
     console.log("[Loja] Firebase OK");
   } catch (e) {
@@ -85,6 +89,16 @@ function loadItems() {
     db.collection("cuts_items").orderBy("criadoEm", "desc").onSnapshot(snap => {
       allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       console.log("[Loja] Itens atualizados:", allItems.length);
+      // Salvar cache local (sem campos Timestamp que não serializam bem)
+      try {
+        var toCache = allItems.map(function(it) {
+          var c = Object.assign({}, it);
+          if (c.expiraEm && c.expiraEm.toDate) c.expiraEm = c.expiraEm.toDate().toISOString();
+          if (c.criadoEm && c.criadoEm.toDate) c.criadoEm = c.criadoEm.toDate().toISOString();
+          return c;
+        });
+        localStorage.setItem("loja_items_cache", JSON.stringify(toCache));
+      } catch(e) {}
       renderItems();
       if (myInventory.length) renderInventory();
       loadChunkedUrls();
@@ -98,47 +112,45 @@ function loadItems() {
   });
 }
 
-// ── Carrega URLs completas de itens com chunks ──
+// ── Carrega URLs completas de itens com chunks (paralelo) ──
 async function loadChunkedUrls() {
   const chunked = allItems.filter(i => i.chunked && !chunkCache[i.id]);
   if (!chunked.length) return;
-  for (const item of chunked) {
+  // Carregar todos em paralelo
+  await Promise.all(chunked.map(async function(item) {
     try {
       const snap = await db.collection("cuts_items").doc(item.id)
         .collection("chunks").get();
-      if (snap.empty) continue;
+      if (snap.empty) return;
       const sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
       chunkCache[item.id] = sorted.map(d => d.data().data).join("");
-      console.log("[Loja] Chunks carregados para:", item.nome);
-      // Atualizar imagens sem re-renderizar toda a grid (preserva animação GIF)
       document.querySelectorAll('img[data-item-id="' + item.id + '"]').forEach(img => {
         img.src = chunkCache[item.id];
       });
     } catch(e) {
       console.error("[Loja] Erro chunks:", item.id, e);
     }
-  }
+  }));
 }
 
-// ── Carrega chunks de itens do inventário (para itens removidos da loja) ──
+// ── Carrega chunks de itens do inventário (paralelo) ──
 async function loadInventoryChunks() {
   const need = myInventory.filter(inv => inv.chunked && !chunkCache[inv.itemId]);
   if (!need.length) return;
-  for (const inv of need) {
+  await Promise.all(need.map(async function(inv) {
     try {
       const snap = await db.collection("cuts_inventory").doc(inv.docId)
         .collection("chunks").get();
-      if (snap.empty) continue;
+      if (snap.empty) return;
       const sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
       chunkCache[inv.itemId] = sorted.map(d => d.data().data).join("");
-      console.log("[Loja] Chunks inventário carregados:", inv.nome);
       document.querySelectorAll('img[data-item-id="' + inv.itemId + '"]').forEach(img => {
         img.src = chunkCache[inv.itemId];
       });
     } catch(e) {
       console.error("[Loja] Erro chunks inventário:", inv.docId, e);
     }
-  }
+  }));
 }
 
 // ── Listener tempo real do inventário do usuário ──
@@ -150,8 +162,15 @@ function loadInventory() {
       .where("userId", "==", currentUser.id)
       .onSnapshot(snap => {
         myInventory = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
-        console.log("[Loja] Inventário atualizado:", myInventory.length, "itens");
-        renderInventory();
+        console.log("[Loja] Inventário atualizado:", myInventory.length, "itens");        // Salvar cache local
+        try {
+          var invCache = myInventory.map(function(it) {
+            var c = Object.assign({}, it);
+            if (c.compradoEm && c.compradoEm.toDate) c.compradoEm = c.compradoEm.toDate().toISOString();
+            return c;
+          });
+          localStorage.setItem("loja_inv_cache_" + currentUser.id, JSON.stringify(invCache));
+        } catch(e) {}        renderInventory();
         renderItems();
         loadInventoryChunks();
         if (first) { first = false; resolve(); }
@@ -622,9 +641,25 @@ async function initLoja() {
       '<div class="empty"><div class="icon">⚠️</div><p>Firebase não disponível</p></div>';
     return;
   }
+
+  // Mostrar dados do cache local imediatamente enquanto Firestore carrega
+  try {
+    var cachedItems = localStorage.getItem("loja_items_cache");
+    if (cachedItems) {
+      allItems = JSON.parse(cachedItems);
+      renderItems();
+    }
+    var cachedInv = localStorage.getItem("loja_inv_cache_" + currentUser.id);
+    if (cachedInv) {
+      myInventory = JSON.parse(cachedInv);
+      renderInventory();
+    }
+  } catch(e) {}
+
   listenCuts();
-  await loadInventory();
-  await loadItems();
+
+  // Carregar itens e inventário em paralelo (não sequencial)
+  await Promise.all([loadItems(), loadInventory()]);
 
   // Atualizar contadores regressivos a cada minuto
   setInterval(function() { renderItems(); }, 60000);
