@@ -753,6 +753,29 @@ function closeLojaOverlay() {
 // Carrega GIF completo de avatar equipado (com chunks) para exibir animado
 async function loadEquippedAvatarGif(itemId, fallbackUrl) {
   try {
+    // 0. Verificar se o item ainda existe no inventário do aluno
+    const invSnap = await db.collection('cuts_inventory')
+      .where('userId', '==', currentUser.id)
+      .where('itemId', '==', itemId)
+      .get();
+    if (invSnap.empty) {
+      // Item foi removido do inventário — auto-corrigir user doc
+      console.log('[Avatar] Avatar removido do inventário, restaurando foto original');
+      var userDoc = await db.collection('users').doc(currentUser.id).get();
+      var userData = userDoc.exists ? userDoc.data() : {};
+      var restoreUpdates = { equippedAvatarItemId: '' };
+      if (userData.originalPhotoURL) {
+        restoreUpdates.photoURL = userData.originalPhotoURL;
+      }
+      await db.collection('users').doc(currentUser.id).update(restoreUpdates);
+      gifAvatarCache = null;
+      var restoredPhoto = userData.originalPhotoURL || userData.photoURL || '';
+      if (restoredPhoto) try { localStorage.setItem('carolampra_photo', restoredPhoto); } catch(e) {}
+      else localStorage.removeItem('carolampra_photo');
+      updateAllAvatars();
+      return;
+    }
+
     // 1. Tentar chunks da loja (cuts_items)
     const itemDoc = await db.collection('cuts_items').doc(itemId).get();
     if (itemDoc.exists && itemDoc.data().chunked) {
@@ -766,11 +789,7 @@ async function loadEquippedAvatarGif(itemId, fallbackUrl) {
         return;
       }
     }
-    // 2. Item removido da loja — tentar chunks do inventário (cuts_inventory)
-    const invSnap = await db.collection('cuts_inventory')
-      .where('userId', '==', currentUser.id)
-      .where('itemId', '==', itemId)
-      .get();
+    // 2. Item removido da loja — tentar chunks do inventário
     if (!invSnap.empty) {
       const invDoc = invSnap.docs[0];
       if (invDoc.data().chunked) {
