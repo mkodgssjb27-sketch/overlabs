@@ -306,6 +306,14 @@ input,select{font-family:inherit;outline:none}
     </div>
     <div class="s-content" id="s-rides-content">
       <div class="ptr-indicator" id="ptr-rides"><span class="ptr-spin"></span>Atualizando...</div>
+      <div id="rides-info-banner" style="display:none;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:14px;padding:14px;margin-bottom:12px;cursor:pointer" onclick="toggleRidesInfoExpand()">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">ℹ️</span>
+          <span style="font-size:13px;font-weight:700;color:#60a5fa">Como funcionam as caronas?</span>
+          <span id="rides-info-arrow" style="margin-left:auto;font-size:12px;color:#60a5fa;transition:.2s">▼</span>
+        </div>
+        <div id="rides-info-detail" style="display:none;margin-top:10px;font-size:13px;color:#94a3b8;line-height:1.6;white-space:pre-wrap"></div>
+      </div>
       <div class="loading" id="s-loading"><div class="spin"></div>Carregando...</div>
       <div class="empty" id="s-empty" style="display:none"><div class="icon">🛣️</div><p>Nenhuma carona disponível</p><small>O professor ainda não criou caronas</small></div>
       <div id="s-rides-list"></div>
@@ -1354,9 +1362,30 @@ function closeDailyLogin() {
   document.getElementById('daily-login-overlay').classList.remove('active');
 }
 
+// ── Rides Info Banner ──
+var _ridesInfoExpanded = false;
+function loadRidesInfo() {
+  if (!firebaseOk) return;
+  db.collection('settings').doc('ridesInfo').get().then(function(doc) {
+    var banner = document.getElementById('rides-info-banner');
+    var detail = document.getElementById('rides-info-detail');
+    if (!doc.exists || !doc.data().text) { banner.style.display = 'none'; return; }
+    detail.textContent = doc.data().text;
+    banner.style.display = 'block';
+  }).catch(function() {});
+}
+function toggleRidesInfoExpand() {
+  _ridesInfoExpanded = !_ridesInfoExpanded;
+  var detail = document.getElementById('rides-info-detail');
+  var arrow = document.getElementById('rides-info-arrow');
+  detail.style.display = _ridesInfoExpanded ? 'block' : 'none';
+  arrow.textContent = _ridesInfoExpanded ? '▲' : '▼';
+}
+
 // ── Listeners em tempo real ──
 function startStudentListeners() {
   if (!requireFirebase()) return;
+  loadRidesInfo();
 
   if (unsubRides) unsubRides();
   document.getElementById("s-loading").style.display = "flex";
