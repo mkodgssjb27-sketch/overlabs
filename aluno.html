@@ -714,14 +714,14 @@ input,select{font-family:inherit;outline:none}
 <div class="toast" id="toast"></div>
 
 <script>
-var _lojaLoaded = false;
+var _lojaStarted = false; // iframe src já foi definido
 function openLojaOverlay(hash) {
   logActivity('navegacao', 'Acessou: Mercado', { tela: 'mercado' });
   const overlay = document.getElementById('loja-overlay');
   const iframe = document.getElementById('loja-iframe');
-  if (!_lojaLoaded || hash) {
+  if (!_lojaStarted || hash) {
     iframe.src = 'cuts/loja.html' + (hash || '');
-    _lojaLoaded = true;
+    _lojaStarted = true;
   }
   overlay.style.display = 'block';
 }
@@ -1124,9 +1124,9 @@ function enterStudentApp() {
   loadUserCustomization();
   // Preload do mercado em segundo plano (após 2s para não competir com carregamento inicial)
   setTimeout(function() {
-    if (!_lojaLoaded) {
+    if (!_lojaStarted) {
       var iframe = document.getElementById('loja-iframe');
-      if (iframe) { iframe.src = 'cuts/loja.html'; _lojaLoaded = true; }
+      if (iframe) { iframe.src = 'cuts/loja.html'; _lojaStarted = true; }
     }
   }, 2000);
 }
@@ -1153,7 +1153,7 @@ function studentLogout() {
   _rankingOrderCache = null;
   _rankingUsersCache = [];
   _rpCache = {};
-  _lojaLoaded = false;
+  _lojaStarted = false;
   showScreen("student-auth");
 }
 

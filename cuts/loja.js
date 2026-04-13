@@ -200,12 +200,13 @@ function renderItems() {
   const grid = document.getElementById("items-grid");
   const loading = document.getElementById("loja-loading");
 
-  // Se itens ainda não chegaram do Firestore nem do cache, manter loading visível
-  if (!itemsReady && allItems.length === 0) {
+  // Se itens ainda não chegaram do Firestore, manter loading visível
+  if (!itemsReady) {
     if (loading) loading.style.display = "";
-    return;
+    if (allItems.length === 0) return;
+  } else {
+    if (loading) loading.style.display = "none";
   }
-  if (loading) loading.style.display = "none";
 
   let filtered = allItems.filter(i => !i.hidden);
 
@@ -222,6 +223,10 @@ function renderItems() {
   }
 
   if (filtered.length === 0) {
+    if (!itemsReady) {
+      grid.innerHTML = '';
+      return;
+    }
     grid.innerHTML = '<div class="empty"><div class="icon">🛒</div><p>Nenhum item disponível</p><small>Novos itens em breve!</small></div>';
     return;
   }
