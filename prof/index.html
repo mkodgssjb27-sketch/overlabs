@@ -235,6 +235,11 @@ input,select,textarea{font-family:inherit;outline:none}
         <div class="mc-title">Login Diário</div>
         <div class="mc-desc">Controlar check-in dos alunos</div>
       </div>
+      <div class="menu-card" onclick="showScreen('teacher-games');loadGamesConfig()" style="border-color:rgba(0,212,255,.2)">
+        <span class="mc-icon">🎮</span>
+        <div class="mc-title">Games</div>
+        <div class="mc-desc">Jogos e recompensas</div>
+      </div>
     </div>
   </div>
 </div>
@@ -1035,6 +1040,70 @@ input,select,textarea{font-family:inherit;outline:none}
     <div id="dl-students-list">
       <div class="loading"><div class="spin"></div>Carregando...</div>
     </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — GAMES ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-teacher-games">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">🎮 Games</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <div class="section-title">🕹️ Jogos Disponíveis</div>
+    <p style="color:#64748b;font-size:13px;margin-bottom:16px">Configure as recompensas em CUTS para cada jogo. O pódio (1º, 2º, 3º) pode receber moedas automaticamente.</p>
+
+    <!-- Jogo 1: Pega LAMPRA -->
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.15);border-radius:16px;padding:20px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#00d4ff,#0080ff);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🔵</div>
+        <div>
+          <div style="font-weight:800;color:#fff;font-size:16px">Pega LAMPRA</div>
+          <div style="font-size:12px;color:#22c55e;font-weight:700">✅ Ativo</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div>
+          <label class="lbl">🥇 1º LUGAR</label>
+          <input type="number" class="inp" id="game-pegalampra-1" placeholder="0" min="0" value="0" style="text-align:center">
+        </div>
+        <div>
+          <label class="lbl">🥈 2º LUGAR</label>
+          <input type="number" class="inp" id="game-pegalampra-2" placeholder="0" min="0" value="0" style="text-align:center">
+        </div>
+        <div>
+          <label class="lbl">🥉 3º LUGAR</label>
+          <input type="number" class="inp" id="game-pegalampra-3" placeholder="0" min="0" value="0" style="text-align:center">
+        </div>
+      </div>
+      <div style="font-size:11px;color:#64748b">Os valores acima são em moedas CUTS. Deixe 0 para não dar recompensa.</div>
+    </div>
+
+    <!-- Jogo 2: Em breve -->
+    <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:20px;margin-bottom:16px;opacity:.5">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🔒</div>
+        <div>
+          <div style="font-weight:800;color:#94a3b8;font-size:16px">Em breve</div>
+          <div style="font-size:12px;color:#475569">Próximo jogo a ser adicionado</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jogo 3: Em breve -->
+    <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:20px;margin-bottom:20px;opacity:.5">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🔒</div>
+        <div>
+          <div style="font-weight:800;color:#94a3b8;font-size:16px">Em breve</div>
+          <div style="font-size:12px;color:#475569">Próximo jogo a ser adicionado</div>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="saveGamesConfig()" class="btn-main">💾 Salvar Configuração de Recompensas</button>
   </div>
 </div>
 
@@ -4650,6 +4719,38 @@ if (localStorage.getItem("teacher_logged_in") === "true") {
   showScreen("teacher-dashboard");
   startTeacherListener();
   loadAlerts();
+}
+
+// ========== SISTEMA DE GAMES (CONFIG DE RECOMPENSAS) ==========
+async function loadGamesConfig() {
+  if (!requireFirebase()) return;
+  try {
+    var doc = await db.collection('settings').doc('games').get();
+    var data = doc.exists ? doc.data() : {};
+    var pl = data['pega-lampra'] || {};
+    document.getElementById('game-pegalampra-1').value = pl.first || 0;
+    document.getElementById('game-pegalampra-2').value = pl.second || 0;
+    document.getElementById('game-pegalampra-3').value = pl.third || 0;
+  } catch(e) {
+    console.error('[Games] Erro ao carregar config:', e);
+    showToast('❌ Erro ao carregar configuração');
+  }
+}
+
+async function saveGamesConfig() {
+  if (!requireFirebase()) return;
+  var first = parseInt(document.getElementById('game-pegalampra-1').value) || 0;
+  var second = parseInt(document.getElementById('game-pegalampra-2').value) || 0;
+  var third = parseInt(document.getElementById('game-pegalampra-3').value) || 0;
+  try {
+    await db.collection('settings').doc('games').set({
+      'pega-lampra': { first: first, second: second, third: third }
+    }, { merge: true });
+    showToast('✅ Recompensas de Games salvas!');
+  } catch(e) {
+    console.error('[Games] Erro ao salvar:', e);
+    showToast('❌ Erro ao salvar');
+  }
 }
 </script>
 </body>
