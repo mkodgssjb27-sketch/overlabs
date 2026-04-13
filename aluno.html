@@ -720,6 +720,7 @@ input,select{font-family:inherit;outline:none}
 
 <script>
 function openLojaOverlay(hash) {
+  logActivity('navegacao', 'Acessou: Mercado', { tela: 'mercado' });
   const overlay = document.getElementById('loja-overlay');
   const iframe = document.getElementById('loja-iframe');
   iframe.src = 'cuts/loja.html' + (hash || '');
@@ -873,6 +874,21 @@ function showScreen(name, skipHistory) {
   window.scrollTo(0, 0);
   if (name === "student-notifs") markNotifsRead();
 
+  // Log de navegação
+  var screenLabels = {
+    'student-personal': 'Dados Pessoais',
+    'student-ranking': 'Ranking',
+    'student-patchnotes': 'Notas de Patch',
+    'student-inscricoes': 'Inscrições',
+    'student-tournaments': 'Torneios',
+    'student-notifs': 'Notificações',
+    'student-list': 'Caronas',
+    'student-presence': 'Presença'
+  };
+  if (screenLabels[name]) {
+    logActivity('navegacao', 'Acessou: ' + screenLabels[name], { tela: name });
+  }
+
   // Gerenciar histórico para botão voltar do Android
   if (!skipHistory && prevName && prevName !== name) {
     screenHistory.push(prevName);
@@ -934,6 +950,8 @@ function requireFirebase() {
 
 function logActivity(action, detail, extra) {
   if (!firebaseOk || !currentUser) return;
+  // Não logar atividades do @teste
+  if (currentUser.username === 'teste') return;
   var data = {
     userId: currentUser.id,
     userName: currentUser.firstName || '',

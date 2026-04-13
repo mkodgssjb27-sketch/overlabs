@@ -990,7 +990,8 @@ input,select,textarea{font-family:inherit;outline:none}
         <button onclick="logFilterAction('perfil')" class="log-action-btn" data-logaction="perfil" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">👤 Perfil</button>
         <button onclick="logFilterAction('carona')" class="log-action-btn" data-logaction="carona" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🚗 Caronas</button>
         <button onclick="logFilterAction('presente')" class="log-action-btn" data-logaction="presente" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🎁 Presentes</button>
-        <button onclick="logFilterAction('novo_usuario')" class="log-action-btn" data-logaction="novo_usuario" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🆕 Novos Usuários</button>
+        <button onclick="logFilterAction('novo_usuario')" class="log-action-btn" data-logaction="novo_usuario" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🆕 Novos</button>
+        <button onclick="logFilterAction('navegacao')" class="log-action-btn" data-logaction="navegacao" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">📍 Navegação</button>
       </div>
       <div id="log-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
       <div style="text-align:center;margin-top:12px">
@@ -3515,9 +3516,14 @@ function loadMoreLogs() {
 
 function renderLogEntries() {
   const container = document.getElementById('log-list');
-  let filtered = logAllEntries;
+  // Filtrar @teste (conta do professor)
+  var testeUserIds = new Set();
+  allStudents.forEach(function(s) { if (s.username === 'teste') testeUserIds.add(s.id); });
+  let filtered = logAllEntries.filter(function(e) { return !e.userId || !testeUserIds.has(e.userId); });
   if (logCurrentFilter !== 'todos') {
-    if (logCurrentFilter === 'perfil') {
+    if (logCurrentFilter === 'navegacao') {
+      filtered = filtered.filter(e => e.action === 'navegacao');
+    } else if (logCurrentFilter === 'perfil') {
       filtered = filtered.filter(e => e.action && e.action.startsWith('perfil'));
     } else if (logCurrentFilter === 'carona') {
       filtered = filtered.filter(e => e.action && e.action.startsWith('carona'));
@@ -3543,7 +3549,10 @@ function renderLogEntries() {
     carona_cancelamento: '❌',
     presente_recebido: '🎁',
     novo_usuario: '🆕',
-    cuts_alterado: '🪙'
+    cuts_alterado: '🪙',
+    navegacao: '📍',
+    app_abriu: '📱',
+    app_minimizou: '🔒'
   };
   const actionColors = {
     compra_loja: '#f59e0b',
@@ -3553,7 +3562,10 @@ function renderLogEntries() {
     carona_cancelamento: '#f87171',
     presente_recebido: '#f59e0b',
     novo_usuario: '#22c55e',
-    cuts_alterado: '#f59e0b'
+    cuts_alterado: '#f59e0b',
+    navegacao: '#38bdf8',
+    app_abriu: '#22c55e',
+    app_minimizou: '#64748b'
   };
 
   container.innerHTML = filtered.map(entry => {
