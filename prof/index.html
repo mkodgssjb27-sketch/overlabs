@@ -3607,19 +3607,26 @@ async function loadCurrentRanking() {
       return ta - tb;
     });
 
-    // Aplicar ordem personalizada salva pelo professor
+    // Aplicar ordem personalizada SOMENTE dentro do mesmo grupo de CUTS
     try {
       const orderDoc = await db.collection('ranking_config').doc('custom_order').get();
       if (orderDoc.exists) {
-        const savedOrder = orderDoc.data().order || []; // array de userIds
+        const savedOrder = orderDoc.data().order || [];
         if (savedOrder.length > 0) {
-          // Reordenar com base na ordem salva
           const orderMap = {};
           savedOrder.forEach((uid, idx) => { orderMap[uid] = idx; });
           users.sort((a, b) => {
+            const ca = a.cuts || 0, cb = b.cuts || 0;
+            if (ca !== cb) return cb - ca; // CUTS diferentes = moedas decidem
+            // Mesmo CUTS: ordem manual do professor
             const ia = orderMap.hasOwnProperty(a.id) ? orderMap[a.id] : 9999;
             const ib = orderMap.hasOwnProperty(b.id) ? orderMap[b.id] : 9999;
-            return ia - ib;
+            if (ia !== 9999 || ib !== 9999) return ia - ib;
+            // Nenhum tem ordem manual: desempate padrão
+            if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
+            const ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
+            const tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
+            return ta - tb;
           });
         }
       }
