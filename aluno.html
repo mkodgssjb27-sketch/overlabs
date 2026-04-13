@@ -2154,7 +2154,7 @@ function renderRanking(users, podiumEl, listEl) {
       const h = heights[p.pos];
       const c = colors[p.pos];
       const initial = (p.firstName || "?")[0].toUpperCase();
-      const photo = p.photoURL ? `<img src="${p.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : `<span style="font-size:20px;font-weight:900;color:#fff">${initial}</span>`;
+      const photo = p.photoURL ? `<img data-ranking-uid="${p.id}" src="${p.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : `<span style="font-size:20px;font-weight:900;color:#fff">${initial}</span>`;
       html += `
         <div style="display:flex;flex-direction:column;align-items:center;flex:1;max-width:120px;cursor:pointer" onclick="openRankingProfile('${p.id}')">
           <div style="font-size:24px;margin-bottom:4px">${medals[p.pos]}</div>
@@ -2176,7 +2176,7 @@ function renderRanking(users, podiumEl, listEl) {
       rest.map((u, i) => {
         const pos = i + 4;
         const initial = (u.firstName || "?")[0].toUpperCase();
-        const photo = u.photoURL ? `<img src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : `<span style="font-size:14px;font-weight:800;color:#fff">${initial}</span>`;
+        const photo = u.photoURL ? `<img data-ranking-uid="${u.id}" src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : `<span style="font-size:14px;font-weight:800;color:#fff">${initial}</span>`;
         const isMe = currentUser && u.id === currentUser.id;
         const meBorder = isMe ? "border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06)" : "border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03)";
         return `
@@ -2196,6 +2196,59 @@ function renderRanking(users, podiumEl, listEl) {
     const myPos = users.findIndex(u => u.id === currentUser.id);
     if (myPos >= 0 && myPos < 3) {
       // Já está no pódio - nada extra necessário
+    }
+  }
+
+  // Carregar GIFs animados para avatares equipados
+  loadRankingAnimatedAvatars(users);
+}
+
+async function loadRankingAnimatedAvatars(users) {
+  var withAvatar = users.filter(function(u) { return u.equippedAvatarItemId; });
+  if (!withAvatar.length) return;
+  for (var i = 0; i < withAvatar.length; i++) {
+    var u = withAvatar[i];
+    var imgs = document.querySelectorAll('img[data-ranking-uid="' + u.id + '"]');
+    if (!imgs.length) continue;
+    // Para o próprio usuário, usar gifAvatarCache ou localStorage
+    if (currentUser && u.id === currentUser.id) {
+      var cached = gifAvatarCache || localStorage.getItem('carolampra_photo') || '';
+      if (cached && cached.length > 1000) {
+        imgs.forEach(function(img) { img.src = cached; });
+      }
+      continue;
+    }
+    // Para outros: buscar chunks da loja ou do inventário
+    try {
+      var fullGif = '';
+      // 1. Tentar chunks da loja
+      var shopDoc = await db.collection('cuts_items').doc(u.equippedAvatarItemId).get();
+      if (shopDoc.exists && shopDoc.data().chunked) {
+        var shopChunks = await db.collection('cuts_items').doc(u.equippedAvatarItemId).collection('chunks').get();
+        if (!shopChunks.empty) {
+          var sorted = shopChunks.docs.sort(function(a, b) { return parseInt(a.id) - parseInt(b.id); });
+          fullGif = sorted.map(function(d) { return d.data().data; }).join('');
+        }
+      }
+      // 2. Sem chunks na loja — tentar do inventário do aluno
+      if (!fullGif) {
+        var invSnap = await db.collection('cuts_inventory')
+          .where('userId', '==', u.id)
+          .where('itemId', '==', u.equippedAvatarItemId)
+          .get();
+        if (!invSnap.empty && invSnap.docs[0].data().chunked) {
+          var invChunks = await db.collection('cuts_inventory').doc(invSnap.docs[0].id).collection('chunks').get();
+          if (!invChunks.empty) {
+            var sorted2 = invChunks.docs.sort(function(a, b) { return parseInt(a.id) - parseInt(b.id); });
+            fullGif = sorted2.map(function(d) { return d.data().data; }).join('');
+          }
+        }
+      }
+      if (fullGif) {
+        imgs.forEach(function(img) { img.src = fullGif; });
+      }
+    } catch(e) {
+      console.warn('[Ranking] Erro ao carregar avatar animado:', u.id, e);
     }
   }
 }
