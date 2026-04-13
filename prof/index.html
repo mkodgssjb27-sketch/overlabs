@@ -1052,6 +1052,20 @@ input,select,textarea{font-family:inherit;outline:none}
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
+
+    <!-- Master toggle: Games visível para alunos -->
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px 20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-weight:800;color:#fff;font-size:15px">🎮 Botão Games para Alunos</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px">Mostrar ou ocultar o menu Games no app dos alunos</div>
+      </div>
+      <label style="position:relative;display:inline-block;width:52px;height:28px;flex-shrink:0;margin-left:12px">
+        <input type="checkbox" id="toggle-games-visible" onchange="saveGamesConfig()" style="opacity:0;width:0;height:0">
+        <span style="position:absolute;cursor:pointer;inset:0;background:#334155;border-radius:28px;transition:.3s"></span>
+        <span style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.3s" id="toggle-games-visible-dot"></span>
+      </label>
+    </div>
+
     <div class="section-title">🕹️ Jogos Disponíveis</div>
     <p style="color:#64748b;font-size:13px;margin-bottom:16px">Configure as recompensas em CUTS para cada jogo. O pódio (1º, 2º, 3º) pode receber moedas automaticamente.</p>
 
@@ -1059,10 +1073,15 @@ input,select,textarea{font-family:inherit;outline:none}
     <div style="background:rgba(255,255,255,.04);border:1px solid rgba(0,212,255,.15);border-radius:16px;padding:20px;margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
         <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#00d4ff,#0080ff);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🔵</div>
-        <div>
+        <div style="flex:1">
           <div style="font-weight:800;color:#fff;font-size:16px">Pega LAMPRAS</div>
-          <div style="font-size:12px;color:#22c55e;font-weight:700">✅ Ativo</div>
+          <div style="font-size:12px;font-weight:700;margin-top:2px" id="pegalampra-status-label">✅ Ativo</div>
         </div>
+        <label style="position:relative;display:inline-block;width:52px;height:28px;flex-shrink:0">
+          <input type="checkbox" id="toggle-pegalampra" onchange="saveGamesConfig()" style="opacity:0;width:0;height:0">
+          <span style="position:absolute;cursor:pointer;inset:0;background:#334155;border-radius:28px;transition:.3s"></span>
+          <span style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.3s" id="toggle-pegalampra-dot"></span>
+        </label>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
         <div>
@@ -4731,10 +4750,31 @@ async function loadGamesConfig() {
     document.getElementById('game-pegalampra-1').value = pl.first || 0;
     document.getElementById('game-pegalampra-2').value = pl.second || 0;
     document.getElementById('game-pegalampra-3').value = pl.third || 0;
+    // Toggles
+    var gamesVisible = data.gamesVisible !== false; // default true
+    var plEnabled = pl.enabled !== false; // default true
+    setToggle('toggle-games-visible', gamesVisible);
+    setToggle('toggle-pegalampra', plEnabled);
+    updatePegalampraStatus(plEnabled);
   } catch(e) {
     console.error('[Games] Erro ao carregar config:', e);
     showToast('❌ Erro ao carregar configuração');
   }
+}
+
+function setToggle(id, on) {
+  var inp = document.getElementById(id);
+  var dot = document.getElementById(id + '-dot');
+  if (!inp) return;
+  inp.checked = on;
+  var track = inp.nextElementSibling;
+  if (track) track.style.background = on ? '#22c55e' : '#334155';
+  if (dot) { dot.style.left = on ? '27px' : '3px'; dot.style.background = on ? '#fff' : '#94a3b8'; }
+}
+
+function updatePegalampraStatus(on) {
+  var lbl = document.getElementById('pegalampra-status-label');
+  if (lbl) { lbl.textContent = on ? '✅ Ativo' : '❌ Oculto'; lbl.style.color = on ? '#22c55e' : '#ef4444'; }
 }
 
 async function saveGamesConfig() {
@@ -4742,11 +4782,17 @@ async function saveGamesConfig() {
   var first = parseInt(document.getElementById('game-pegalampra-1').value) || 0;
   var second = parseInt(document.getElementById('game-pegalampra-2').value) || 0;
   var third = parseInt(document.getElementById('game-pegalampra-3').value) || 0;
+  var gamesVisible = document.getElementById('toggle-games-visible').checked;
+  var plEnabled = document.getElementById('toggle-pegalampra').checked;
+  setToggle('toggle-games-visible', gamesVisible);
+  setToggle('toggle-pegalampra', plEnabled);
+  updatePegalampraStatus(plEnabled);
   try {
     await db.collection('settings').doc('games').set({
-      'pega-lampra': { first: first, second: second, third: third }
+      gamesVisible: gamesVisible,
+      'pega-lampra': { first: first, second: second, third: third, enabled: plEnabled }
     }, { merge: true });
-    showToast('✅ Recompensas de Games salvas!');
+    showToast('✅ Configuração de Games salva!');
   } catch(e) {
     console.error('[Games] Erro ao salvar:', e);
     showToast('❌ Erro ao salvar');
