@@ -751,7 +751,10 @@ function closeLojaOverlay() {
 }
 
 // Carrega GIF completo de avatar equipado (com chunks) para exibir animado
+var _lastValidatedAvatarId = null;
 async function loadEquippedAvatarGif(itemId, fallbackUrl) {
+  // Se já validou este avatar nesta sessão e tem cache, pular
+  if (_lastValidatedAvatarId === itemId && gifAvatarCache) return;
   try {
     // 0. Verificar se o item ainda existe no inventário do aluno
     const invSnap = await db.collection('cuts_inventory')
@@ -769,6 +772,7 @@ async function loadEquippedAvatarGif(itemId, fallbackUrl) {
       }
       await db.collection('users').doc(currentUser.id).update(restoreUpdates);
       gifAvatarCache = null;
+      _lastValidatedAvatarId = null;
       var restoredPhoto = userData.originalPhotoURL || userData.photoURL || '';
       if (restoredPhoto) try { localStorage.setItem('carolampra_photo', restoredPhoto); } catch(e) {}
       else localStorage.removeItem('carolampra_photo');
@@ -784,6 +788,7 @@ async function loadEquippedAvatarGif(itemId, fallbackUrl) {
         const sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
         const fullGif = sorted.map(d => d.data().data).join('');
         gifAvatarCache = fullGif;
+        _lastValidatedAvatarId = itemId;
         try { localStorage.removeItem('carolampra_photo'); localStorage.setItem('carolampra_photo', fullGif); } catch(lsErr) { console.warn('[Avatar] GIF grande demais para localStorage, usando cache em memória'); }
         updateAllAvatars();
         return;
@@ -799,6 +804,7 @@ async function loadEquippedAvatarGif(itemId, fallbackUrl) {
           const sorted = chunkSnap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
           const fullGif = sorted.map(d => d.data().data).join('');
           gifAvatarCache = fullGif;
+          _lastValidatedAvatarId = itemId;
           try { localStorage.removeItem('carolampra_photo'); localStorage.setItem('carolampra_photo', fullGif); } catch(lsErr) { console.warn('[Avatar] GIF grande demais para localStorage, usando cache em memória'); }
           updateAllAvatars();
           return;
@@ -806,6 +812,7 @@ async function loadEquippedAvatarGif(itemId, fallbackUrl) {
       }
     }
     // 3. Sem chunks — usar URL direto
+    _lastValidatedAvatarId = itemId;
     gifAvatarCache = null;
     if (fallbackUrl) try { localStorage.setItem('carolampra_photo', fallbackUrl); } catch(e) {}
     updateAllAvatars();
@@ -1077,10 +1084,8 @@ function enterStudentApp() {
         try { localStorage.setItem("carolampra_photo", d.photoURL); } catch(lsErr) {}
         updateAllAvatars();
       } else if (d.equippedAvatarItemId) {
-        // Tem avatar equipado: carregar GIF dos chunks se não tem em memória
-        if (!gifAvatarCache) {
-          loadEquippedAvatarGif(d.equippedAvatarItemId, d.photoURL || '');
-        }
+        // Tem avatar equipado: sempre validar (inclui auto-correção se removido do inventário)
+        loadEquippedAvatarGif(d.equippedAvatarItemId, d.photoURL || '');
       }
     }, () => {});
     // Ao voltar do background, forçar refresh dos dados

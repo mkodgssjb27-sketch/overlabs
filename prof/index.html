@@ -2200,16 +2200,20 @@ async function removeInventoryItem(docId, itemName) {
     const invDoc = await db.collection('cuts_inventory').doc(docId).get();
     const invData = invDoc.exists ? invDoc.data() : {};
 
-    // Se era um avatar equipado, restaurar foto original do aluno
-    if (invData.equipado && invData.tipo === 'avatar' && invData.userId) {
+    // Se era um avatar (equipado ou não), verificar se o aluno tem este item como avatar ativo
+    if (invData.tipo === 'avatar' && invData.userId) {
       const userDoc = await db.collection('users').doc(invData.userId).get();
       if (userDoc.exists) {
         const userData = userDoc.data();
-        const updates = { equippedAvatarItemId: '' };
-        if (userData.originalPhotoURL) {
-          updates.photoURL = userData.originalPhotoURL;
+        // Verificar se o avatar equipado do aluno é este item (pelo itemId)
+        if (userData.equippedAvatarItemId === invData.itemId || invData.equipado) {
+          const updates = { equippedAvatarItemId: '' };
+          if (userData.originalPhotoURL) {
+            updates.photoURL = userData.originalPhotoURL;
+          }
+          await db.collection('users').doc(invData.userId).update(updates);
+          console.log('[Inventário] Avatar desquipado e foto restaurada para:', invData.userId);
         }
-        await db.collection('users').doc(invData.userId).update(updates);
       }
     }
 
