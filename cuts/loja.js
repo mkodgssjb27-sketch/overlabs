@@ -113,17 +113,20 @@ function loadItems() {
   });
 }
 
-// ── Carrega URLs completas de itens com chunks (paralelo) ──
+// ── Carrega URLs completas de itens com chunks (progressivo, um por vez) ──
+var _loadingChunks = false;
 async function loadChunkedUrls() {
+  if (_loadingChunks) return;
+  _loadingChunks = true;
   const chunked = allItems.filter(i => i.chunked && !chunkCache[i.id]);
-  if (!chunked.length) return;
-  // Carregar todos em paralelo
-  await Promise.all(chunked.map(async function(item) {
+  for (var idx = 0; idx < chunked.length; idx++) {
+    var item = chunked[idx];
+    if (chunkCache[item.id]) continue;
     try {
-      const snap = await db.collection("cuts_items").doc(item.id)
+      var snap = await db.collection("cuts_items").doc(item.id)
         .collection("chunks").get();
-      if (snap.empty) return;
-      const sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+      if (snap.empty) continue;
+      var sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
       chunkCache[item.id] = sorted.map(d => d.data().data).join("");
       document.querySelectorAll('img[data-item-id="' + item.id + '"]').forEach(img => {
         img.src = chunkCache[item.id];
@@ -131,19 +134,24 @@ async function loadChunkedUrls() {
     } catch(e) {
       console.error("[Loja] Erro chunks:", item.id, e);
     }
-  }));
+  }
+  _loadingChunks = false;
 }
 
-// ── Carrega chunks de itens do inventário (paralelo) ──
+// ── Carrega chunks de itens do inventário (progressivo, um por vez) ──
+var _loadingInvChunks = false;
 async function loadInventoryChunks() {
+  if (_loadingInvChunks) return;
+  _loadingInvChunks = true;
   const need = myInventory.filter(inv => inv.chunked && !chunkCache[inv.itemId]);
-  if (!need.length) return;
-  await Promise.all(need.map(async function(inv) {
+  for (var idx = 0; idx < need.length; idx++) {
+    var inv = need[idx];
+    if (chunkCache[inv.itemId]) continue;
     try {
-      const snap = await db.collection("cuts_inventory").doc(inv.docId)
+      var snap = await db.collection("cuts_inventory").doc(inv.docId)
         .collection("chunks").get();
-      if (snap.empty) return;
-      const sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+      if (snap.empty) continue;
+      var sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
       chunkCache[inv.itemId] = sorted.map(d => d.data().data).join("");
       document.querySelectorAll('img[data-item-id="' + inv.itemId + '"]').forEach(img => {
         img.src = chunkCache[inv.itemId];
@@ -151,7 +159,8 @@ async function loadInventoryChunks() {
     } catch(e) {
       console.error("[Loja] Erro chunks inventário:", inv.docId, e);
     }
-  }));
+  }
+  _loadingInvChunks = false;
 }
 
 // ── Listener tempo real do inventário do usuário ──
