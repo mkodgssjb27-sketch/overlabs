@@ -2196,6 +2196,23 @@ function renderInventoryModal(items) {
 async function removeInventoryItem(docId, itemName) {
   if (!confirm('Remover "' + itemName + '" do inventário deste aluno?')) return;
   try {
+    // Buscar dados do item antes de deletar
+    const invDoc = await db.collection('cuts_inventory').doc(docId).get();
+    const invData = invDoc.exists ? invDoc.data() : {};
+
+    // Se era um avatar equipado, restaurar foto original do aluno
+    if (invData.equipado && invData.tipo === 'avatar' && invData.userId) {
+      const userDoc = await db.collection('users').doc(invData.userId).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const updates = { equippedAvatarItemId: '' };
+        if (userData.originalPhotoURL) {
+          updates.photoURL = userData.originalPhotoURL;
+        }
+        await db.collection('users').doc(invData.userId).update(updates);
+      }
+    }
+
     // Verificar se o item tem chunks salvos e removê-los também
     const chunksSnap = await db.collection('cuts_inventory').doc(docId).collection('chunks').get();
     if (!chunksSnap.empty) {
