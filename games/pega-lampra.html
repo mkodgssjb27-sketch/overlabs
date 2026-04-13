@@ -1,0 +1,636 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Pega LAMPRA</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body{background:#0a0a1a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;height:100vh;height:100dvh;touch-action:none}
+.scr{display:none;position:fixed;inset:0;flex-direction:column;align-items:center;justify-content:center;padding:20px;z-index:5}
+.scr.active{display:flex}
+canvas{display:none;position:fixed;top:0;left:0;touch-action:none}
+.btn{padding:16px 32px;border-radius:16px;border:none;font-weight:800;font-size:16px;cursor:pointer;font-family:inherit;width:100%;max-width:320px;transition:.15s}
+.btn-blue{background:linear-gradient(135deg,#00d4ff,#0080ff);color:#fff;box-shadow:0 4px 20px rgba(0,128,255,.3)}
+.btn-amber{background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;box-shadow:0 4px 20px rgba(245,158,11,.3)}
+.btn-ghost{background:transparent;border:1.5px solid rgba(255,255,255,.12);color:#e2e8f0}
+.btn:active{opacity:.85;transform:scale(.97)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.inp{width:100%;max-width:320px;padding:16px;border-radius:14px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#fff;font-size:22px;text-align:center;font-weight:800;letter-spacing:8px;font-family:inherit;text-transform:uppercase}
+.inp:focus{outline:none;border-color:#00d4ff}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:24px;width:100%;max-width:380px}
+.player-list{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:16px 0}
+.player-tag{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border-radius:12px;padding:8px 14px}
+.player-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;overflow:hidden;flex-shrink:0}
+.player-dot img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+#hud{display:none;position:fixed;top:0;left:0;right:0;z-index:10;pointer-events:none}
+.hud-bar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:linear-gradient(180deg,rgba(0,0,0,.7) 0%,transparent 100%)}
+.hud-score{font-size:20px;font-weight:900;color:#00d4ff;text-shadow:0 0 10px rgba(0,212,255,.5)}
+.hud-timer{font-size:16px;font-weight:800;color:#fff;background:rgba(0,0,0,.5);padding:5px 16px;border-radius:20px}
+.hud-timer.urgent{color:#f87171;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+#scoreboard{display:none;position:fixed;top:54px;right:8px;z-index:10;pointer-events:none;font-size:12px;width:130px}
+.sb-item{display:flex;align-items:center;gap:5px;padding:4px 8px;background:rgba(0,0,0,.5);border-radius:8px;margin-bottom:3px;backdrop-filter:blur(4px)}
+.sb-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.sb-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;color:#ccc}
+.sb-pts{font-weight:900;color:#00d4ff;font-size:11px}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin:20px 0}
+.podium-item{text-align:center;border-radius:16px;padding:14px 10px;width:100px}
+.podium-1{background:rgba(245,158,11,.15);border:2px solid #f59e0b;min-height:170px}
+.podium-2{background:rgba(192,192,192,.1);border:2px solid #aaa;min-height:130px}
+.podium-3{background:rgba(205,127,50,.1);border:2px solid #cd7f32;min-height:100px}
+.podium-avatar{width:48px;height:48px;border-radius:50%;margin:0 auto 6px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+.podium-avatar img{width:100%;height:100%;object-fit:cover}
+.podium-name{font-weight:700;font-size:12px;color:#fff;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.podium-score{font-weight:900;font-size:18px;color:#00d4ff}
+.podium-reward{font-size:11px;color:#f59e0b;font-weight:700;margin-top:4px}
+#countdown{display:none;position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.8);align-items:center;justify-content:center;flex-direction:column}
+#countdown.active{display:flex}
+#countdown .num{font-size:100px;font-weight:900;color:#00d4ff;text-shadow:0 0 40px rgba(0,212,255,.5);animation:cPop .5s ease}
+@keyframes cPop{0%{transform:scale(2);opacity:0}50%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+</style></head><body>
+
+<!-- ═══ LOBBY ═══ -->
+<div class="scr active" id="scr-lobby">
+  <div style="text-align:center;margin-bottom:32px">
+    <div style="font-size:52px;margin-bottom:10px">🔵</div>
+    <h1 style="font-size:26px;font-weight:900;letter-spacing:1px">Pega LAMPRA</h1>
+    <p style="color:#64748b;font-size:14px;margin-top:8px">Colete o máximo de LAMPRAs!</p>
+    <div style="margin-top:14px;font-size:14px;font-weight:700;color:#94a3b8" id="lobby-name"></div>
+  </div>
+  <button class="btn btn-blue" onclick="createRoom()" style="margin-bottom:12px">🏠 Criar Sala</button>
+  <button class="btn btn-ghost" onclick="showJoinUI()" id="btn-join" style="margin-bottom:16px">🚪 Entrar na Sala</button>
+  <div id="join-area" style="display:none;text-align:center;width:100%;max-width:320px">
+    <input class="inp" id="join-code" placeholder="CÓDIGO" maxlength="6" autocomplete="off" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+    <button class="btn btn-amber" onclick="joinRoom()" style="margin-top:12px">Entrar →</button>
+  </div>
+  <div id="lobby-err" style="color:#f87171;font-size:14px;font-weight:700;margin-top:14px;text-align:center;min-height:20px"></div>
+</div>
+
+<!-- ═══ WAITING ROOM ═══ -->
+<div class="scr" id="scr-waiting">
+  <div class="card" style="text-align:center">
+    <div style="font-size:12px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Código da Sala</div>
+    <div style="font-size:38px;font-weight:900;color:#00d4ff;letter-spacing:8px;margin-bottom:16px" id="room-code-disp">-----</div>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:6px">Compartilhe o código com seus amigos!</div>
+    <div class="player-list" id="waiting-players"></div>
+    <div id="waiting-status" style="color:#64748b;font-size:13px;margin:10px 0 16px">Aguardando jogadores...</div>
+    <button class="btn btn-amber" id="btn-start" onclick="hostStartGame()" style="display:none;margin-bottom:10px">🎮 Iniciar Jogo</button>
+    <button class="btn btn-ghost" onclick="leaveRoom()" style="font-size:14px;padding:12px">Sair da Sala</button>
+  </div>
+</div>
+
+<!-- ═══ GAME CANVAS ═══ -->
+<canvas id="gc"></canvas>
+<div id="hud"><div class="hud-bar"><div class="hud-score" id="hud-score">🔵 0</div><div class="hud-timer" id="hud-timer">1:30</div></div></div>
+<div id="scoreboard"></div>
+<div id="countdown"><div class="num" id="cd-num">3</div></div>
+
+<!-- ═══ RESULTS ═══ -->
+<div class="scr" id="scr-results">
+  <div class="card" style="text-align:center;max-width:400px">
+    <div style="font-size:32px;margin-bottom:6px">🏆</div>
+    <h2 style="font-size:20px;font-weight:900;margin-bottom:2px">Fim de Jogo!</h2>
+    <p style="color:#64748b;font-size:13px;margin-bottom:12px">Resultado final</p>
+    <div class="podium" id="podium"></div>
+    <div id="rest-results" style="margin-bottom:12px"></div>
+    <div id="my-reward" style="display:none;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:14px;padding:14px;margin-bottom:16px;color:#f59e0b;font-weight:700;font-size:15px"></div>
+    <button class="btn btn-blue" onclick="backToLobby()" style="margin-bottom:10px">🔄 Jogar Novamente</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  FIREBASE
+// ═══════════════════════════════════════════
+firebase.initializeApp({
+  apiKey:"AIzaSyAc9Ews7WVz6GSBp9vzXF4sFI1SMwzklX0",authDomain:"carolampra.firebaseapp.com",
+  projectId:"carolampra",storageBucket:"carolampra.firebasestorage.app",
+  messagingSenderId:"821388549140",appId:"1:821388549140:web:3f60aa294f6f67949adb01"
+});
+var db = firebase.firestore();
+
+// ═══════════════════════════════════════════
+//  PLAYER DATA (do app pai)
+// ═══════════════════════════════════════════
+var params = new URLSearchParams(location.search);
+var myId = params.get('id') || ('g_'+Math.random().toString(36).substr(2,8));
+var myName = decodeURIComponent(params.get('name') || 'Jogador');
+var myPhoto = '';
+var COLORS = ['#f87171','#fb923c','#fbbf24','#34d399','#22d3ee','#818cf8','#c084fc','#f472b6','#4ade80','#f97316'];
+var myColor = COLORS[Math.abs(hc(myId)) % COLORS.length];
+function hc(s){var h=0;for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return h;}
+
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'PLAYER_DATA') {
+    if (e.data.name) myName = e.data.name;
+    if (e.data.photo) myPhoto = e.data.photo;
+    document.getElementById('lobby-name').textContent = '👤 ' + myName;
+    loadPhotoImg(myPhoto, function(img){ myPhotoImg = img; });
+  }
+});
+document.getElementById('lobby-name').textContent = '👤 ' + myName;
+
+var myPhotoImg = null;
+var playerPhotoImgs = {}; // pid → Image
+
+function loadPhotoImg(src, cb) {
+  if (!src) return;
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function(){ cb(img); };
+  img.onerror = function(){ cb(null); };
+  img.src = src;
+}
+
+// Tentar carregar foto do Firestore se não veio via postMessage
+(async function(){
+  try {
+    var ud = await db.collection('users').doc(myId).get();
+    if (ud.exists) {
+      var d = ud.data();
+      if (!myPhoto && d.photoURL) {
+        myPhoto = d.photoURL;
+        loadPhotoImg(myPhoto, function(img){ myPhotoImg = img; });
+      }
+    }
+  } catch(e){}
+})();
+
+// ═══════════════════════════════════════════
+//  SCREEN MANAGEMENT
+// ═══════════════════════════════════════════
+function showScr(n) {
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('active');});
+  var cv = document.getElementById('gc');
+  var hud = document.getElementById('hud');
+  var sb = document.getElementById('scoreboard');
+  if (n === 'game') {
+    cv.style.display = 'block'; hud.style.display = 'block'; sb.style.display = 'block';
+  } else {
+    cv.style.display = 'none'; hud.style.display = 'none'; sb.style.display = 'none';
+    var el = document.getElementById('scr-'+n);
+    if (el) el.classList.add('active');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  ROOM MANAGEMENT
+// ═══════════════════════════════════════════
+var roomCode = null, isHost = false;
+var unsubRoom = null, unsubPlayers = null;
+var players = {}, collectibles = {};
+var gameState = 'lobby'; // lobby|waiting|playing|finished
+var MAP_W = 3000, MAP_H = 3000, GAME_DURATION = 90;
+
+function genCode() {
+  var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r='';
+  for(var i=0;i<5;i++) r+=c[Math.floor(Math.random()*c.length)];
+  return r;
+}
+
+function seedCollectibles() {
+  var co = {};
+  for (var i=0;i<40;i++) co['c'+i] = {x:Math.random()*MAP_W, y:Math.random()*MAP_H, t:Math.floor(Math.random()*3)};
+  return co;
+}
+
+async function createRoom() {
+  setErr('Criando sala...',false);
+  try {
+    var code = genCode();
+    var ex = await db.collection('game_rooms').doc(code).get();
+    if (ex.exists && ex.data().status !== 'finished') code = genCode();
+    await db.collection('game_rooms').doc(code).set({
+      hostId:myId, hostName:myName, status:'waiting',
+      createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+      collectibles:seedCollectibles(), duration:GAME_DURATION
+    });
+    roomCode = code; isHost = true;
+    await addMeToRoom();
+    enterWaiting();
+  } catch(e) { setErr('Erro: '+e.message); }
+}
+
+function showJoinUI() {
+  document.getElementById('join-area').style.display = 'block';
+  document.getElementById('btn-join').style.display = 'none';
+  document.getElementById('join-code').focus();
+}
+
+async function joinRoom() {
+  var code = document.getElementById('join-code').value.trim();
+  if (code.length < 4) { setErr('Código inválido'); return; }
+  setErr('Entrando...',false);
+  try {
+    var doc = await db.collection('game_rooms').doc(code).get();
+    if (!doc.exists) { setErr('Sala não encontrada!'); return; }
+    var d = doc.data();
+    if (d.status === 'finished') { setErr('Sala já encerrou!'); return; }
+    if (d.status === 'playing') { setErr('Jogo já começou!'); return; }
+    roomCode = code; isHost = (d.hostId === myId);
+    await addMeToRoom();
+    enterWaiting();
+  } catch(e) { setErr('Erro: '+e.message); }
+}
+
+async function addMeToRoom() {
+  var storePhoto = myPhoto;
+  if (storePhoto && storePhoto.length > 400000) storePhoto = '';
+  await db.collection('game_rooms').doc(roomCode).collection('players').doc(myId).set({
+    name:myName, photoURL:storePhoto, color:myColor,
+    x: MAP_W/2+(Math.random()-.5)*600, y: MAP_H/2+(Math.random()-.5)*600,
+    score:0, lastUpdate:Date.now()
+  });
+}
+
+function enterWaiting() {
+  gameState = 'waiting';
+  showScr('waiting');
+  document.getElementById('room-code-disp').textContent = roomCode;
+  setErr('');
+
+  if (unsubPlayers) unsubPlayers();
+  unsubPlayers = db.collection('game_rooms').doc(roomCode).collection('players').onSnapshot(function(snap){
+    players = {};
+    var html = '';
+    snap.forEach(function(doc){
+      var d = doc.data(); players[doc.id] = d;
+      var ph = d.photoURL ? '<img src="'+esc(d.photoURL)+'">' : d.name.charAt(0).toUpperCase();
+      html += '<div class="player-tag"><div class="player-dot" style="background:'+d.color+'">'+ph+'</div><span style="font-weight:700;font-size:14px">'+esc(d.name)+'</span></div>';
+      // cache photo
+      if (doc.id !== myId && d.photoURL && !playerPhotoImgs[doc.id]) {
+        (function(pid,url){ loadPhotoImg(url, function(img){ if(img) playerPhotoImgs[pid]=img; }); })(doc.id, d.photoURL);
+      }
+    });
+    document.getElementById('waiting-players').innerHTML = html;
+    var n = Object.keys(players).length;
+    document.getElementById('waiting-status').textContent = n+' jogador'+(n!==1?'es':'')+' na sala';
+    if (isHost && n >= 1) document.getElementById('btn-start').style.display = 'block';
+  });
+
+  if (unsubRoom) unsubRoom();
+  unsubRoom = db.collection('game_rooms').doc(roomCode).onSnapshot(function(doc){
+    if (!doc.exists) return;
+    var d = doc.data();
+    collectibles = d.collectibles || {};
+    if (d.status === 'countdown' && gameState === 'waiting') startCountdown();
+    if (d.status === 'playing' && (gameState === 'waiting' || gameState === 'countdown')) beginPlay();
+    if (d.status === 'finished' && gameState === 'playing') endGame();
+  });
+}
+
+async function hostStartGame() {
+  if (!isHost) return;
+  document.getElementById('btn-start').disabled = true;
+  try {
+    await db.collection('game_rooms').doc(roomCode).update({status:'countdown'});
+    // After 3s countdown, set to playing
+    setTimeout(async function(){
+      try { await db.collection('game_rooms').doc(roomCode).update({status:'playing', startedAtLocal:Date.now()}); } catch(e){}
+    }, 3200);
+  } catch(e){ console.error(e); }
+}
+
+function startCountdown() {
+  if (gameState === 'countdown') return;
+  gameState = 'countdown';
+  var cdEl = document.getElementById('countdown');
+  var numEl = document.getElementById('cd-num');
+  cdEl.classList.add('active');
+  var count = 3;
+  numEl.textContent = count;
+  var iv = setInterval(function(){
+    count--;
+    if (count > 0) { numEl.textContent = count; numEl.style.animation='none'; void numEl.offsetWidth; numEl.style.animation='cPop .5s ease'; }
+    else if (count === 0) { numEl.textContent = 'GO!'; numEl.style.color='#22c55e'; numEl.style.animation='none'; void numEl.offsetWidth; numEl.style.animation='cPop .5s ease'; }
+    else { clearInterval(iv); cdEl.classList.remove('active'); numEl.style.color='#00d4ff'; }
+  }, 1000);
+}
+
+function beginPlay() {
+  if (gameState === 'playing') return;
+  gameState = 'playing';
+  document.getElementById('countdown').classList.remove('active');
+  gameStartTime = Date.now();
+  gameDuration = GAME_DURATION * 1000;
+  if (players[myId]) { myX=players[myId].x; myY=players[myId].y; myScore=players[myId].score||0; }
+  mySize = 25 + myScore * 0.8;
+  setupCanvas();
+  showScr('game');
+  lastFrame = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+function leaveRoom() {
+  cleanup();
+  if (roomCode && myId) db.collection('game_rooms').doc(roomCode).collection('players').doc(myId).delete().catch(function(){});
+  resetState();
+  showScr('lobby');
+}
+
+function backToLobby() {
+  cleanup();
+  resetState();
+  showScr('lobby');
+}
+
+function cleanup() {
+  if (unsubRoom) { unsubRoom(); unsubRoom=null; }
+  if (unsubPlayers) { unsubPlayers(); unsubPlayers=null; }
+}
+
+function resetState() {
+  roomCode=null; isHost=false; players={}; collectibles={}; gameState='lobby';
+  myScore=0; mySize=25; targetX=null; targetY=null;
+  document.getElementById('join-area').style.display='none';
+  document.getElementById('btn-join').style.display='block';
+  document.getElementById('btn-start').style.display='none';
+  document.getElementById('btn-start').disabled=false;
+  setErr('');
+}
+
+function setErr(msg, isError) {
+  var el = document.getElementById('lobby-err');
+  el.textContent = msg;
+  el.style.color = isError === false ? '#94a3b8' : '#f87171';
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+// ═══════════════════════════════════════════
+//  CANVAS GAME
+// ═══════════════════════════════════════════
+var canvas, ctx;
+var myX=1500, myY=1500, myScore=0, mySize=25;
+var targetX=null, targetY=null;
+var SPEED=230, lastFrame=0, gameStartTime=0, gameDuration=90000;
+var lastSync=0, lastRegen=0, nextCId=200;
+var renderedPos = {}; // pid → {x,y}
+
+function setupCanvas() {
+  canvas = document.getElementById('gc');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  canvas.addEventListener('touchstart', onT, {passive:false});
+  canvas.addEventListener('touchmove', onT, {passive:false});
+  canvas.addEventListener('touchend', onTE, {passive:false});
+  canvas.addEventListener('mousedown', onM);
+  canvas.addEventListener('mousemove', function(e){if(e.buttons)onM(e);});
+  canvas.addEventListener('mouseup', function(){targetX=null;targetY=null;});
+}
+function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+function onT(e){e.preventDefault();var t=e.touches[0];targetX=t.clientX;targetY=t.clientY;}
+function onTE(e){e.preventDefault();targetX=null;targetY=null;}
+function onM(e){targetX=e.clientX;targetY=e.clientY;}
+
+function gameLoop(ts) {
+  if (gameState !== 'playing') return;
+  var dt = (ts-lastFrame)/1000; if(dt>0.1) dt=0.1; lastFrame=ts;
+
+  // Timer
+  var elapsed = Date.now()-gameStartTime;
+  var remain = Math.max(0, gameDuration-elapsed);
+  updateTimer(remain);
+  if (remain<=0) { if(isHost) finishGame(); else endGame(); return; }
+
+  // Move
+  if (targetX!==null && targetY!==null) {
+    var cx=canvas.width/2, cy=canvas.height/2;
+    var dx=targetX-cx, dy=targetY-cy, d=Math.sqrt(dx*dx+dy*dy);
+    if(d>5){myX+=dx/d*SPEED*dt;myY+=dy/d*SPEED*dt;}
+  }
+  myX=Math.max(mySize,Math.min(MAP_W-mySize,myX));
+  myY=Math.max(mySize,Math.min(MAP_H-mySize,myY));
+
+  // Collect
+  checkCollect();
+
+  // Host regen
+  if(isHost && Date.now()-lastRegen>3000){regenColls();lastRegen=Date.now();}
+
+  // Sync
+  if(Date.now()-lastSync>180){syncPos();lastSync=Date.now();}
+
+  // Render
+  render();
+  requestAnimationFrame(gameLoop);
+}
+
+function checkCollect() {
+  var eaten=[];
+  for(var id in collectibles){
+    var c=collectibles[id]; if(!c) continue;
+    var dx=myX-c.x, dy=myY-c.y;
+    if(Math.sqrt(dx*dx+dy*dy) < mySize+10){eaten.push(id);myScore++;mySize=Math.min(65,25+myScore*0.8);}
+  }
+  if(eaten.length>0){
+    eaten.forEach(function(id){delete collectibles[id];});
+    var upd={};
+    eaten.forEach(function(id){upd['collectibles.'+id]=firebase.firestore.FieldValue.delete();});
+    db.collection('game_rooms').doc(roomCode).update(upd).catch(function(){});
+    db.collection('game_rooms').doc(roomCode).collection('players').doc(myId).update({score:myScore}).catch(function(){});
+    document.getElementById('hud-score').textContent='🔵 '+myScore;
+  }
+}
+
+function regenColls() {
+  var n=Object.keys(collectibles).length;
+  if(n>=35)return;
+  var add=Math.min(5,40-n), upd={};
+  for(var i=0;i<add;i++){
+    var id='c'+(nextCId++);
+    var nc={x:Math.random()*MAP_W,y:Math.random()*MAP_H,t:Math.floor(Math.random()*3)};
+    collectibles[id]=nc; upd['collectibles.'+id]=nc;
+  }
+  db.collection('game_rooms').doc(roomCode).update(upd).catch(function(){});
+}
+
+function syncPos() {
+  db.collection('game_rooms').doc(roomCode).collection('players').doc(myId).update({
+    x:Math.round(myX),y:Math.round(myY),score:myScore,lastUpdate:Date.now()
+  }).catch(function(){});
+}
+
+function updateTimer(r){
+  var s=Math.ceil(r/1000),m=Math.floor(s/60),ss=s%60;
+  var el=document.getElementById('hud-timer');
+  el.textContent=m+':'+(ss<10?'0':'')+ss;
+  el.classList.toggle('urgent', s<=10);
+}
+
+// ── RENDERING ──
+var CCOLS=['#00d4ff','#22d3ee','#818cf8'];
+
+function render(){
+  var W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  var camX=myX-W/2, camY=myY-H/2;
+
+  // BG
+  ctx.fillStyle='#080818';ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,0.025)';ctx.lineWidth=1;
+  var gs=80,gx0=-(camX%gs),gy0=-(camY%gs);
+  ctx.beginPath();
+  for(var gx=gx0;gx<W;gx+=gs){ctx.moveTo(gx,0);ctx.lineTo(gx,H);}
+  for(var gy=gy0;gy<H;gy+=gs){ctx.moveTo(0,gy);ctx.lineTo(W,gy);}
+  ctx.stroke();
+
+  // Map border
+  ctx.strokeStyle='rgba(255,80,80,0.25)';ctx.lineWidth=3;
+  ctx.strokeRect(-camX,-camY,MAP_W,MAP_H);
+
+  // Collectibles
+  for(var cid in collectibles){
+    var c=collectibles[cid]; if(!c)continue;
+    var sx=c.x-camX, sy=c.y-camY;
+    if(sx<-20||sx>W+20||sy<-20||sy>H+20)continue;
+    var col=CCOLS[c.t||0];
+    // Glow
+    var gr=ctx.createRadialGradient(sx,sy,0,sx,sy,16);
+    gr.addColorStop(0,col);gr.addColorStop(0.4,col+'99');gr.addColorStop(1,col+'00');
+    ctx.fillStyle=gr;ctx.beginPath();ctx.arc(sx,sy,16,0,Math.PI*2);ctx.fill();
+    // Core
+    ctx.fillStyle=col;ctx.globalAlpha=0.9;ctx.beginPath();ctx.arc(sx,sy,8,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+  }
+
+  // Other players (interpolated)
+  for(var pid in players){
+    if(pid===myId)continue;
+    var p=players[pid]; if(!p)continue;
+    if(!renderedPos[pid]) renderedPos[pid]={x:p.x,y:p.y};
+    renderedPos[pid].x+=(p.x-renderedPos[pid].x)*0.12;
+    renderedPos[pid].y+=(p.y-renderedPos[pid].y)*0.12;
+    var px=renderedPos[pid].x-camX, py=renderedPos[pid].y-camY;
+    var pSz=Math.min(65,25+(p.score||0)*0.8);
+    if(px<-100||px>W+100||py<-100||py>H+100)continue;
+    drawPlayer(px,py,pSz,p.color,p.name,playerPhotoImgs[pid]||null);
+  }
+
+  // Me
+  drawPlayer(W/2,H/2,mySize,myColor,myName,myPhotoImg);
+
+  // Scoreboard
+  renderSB();
+}
+
+function drawPlayer(x,y,sz,color,name,photoImg){
+  // Body glow
+  ctx.beginPath();ctx.arc(x,y,sz+4,0,Math.PI*2);
+  ctx.fillStyle=color+'33';ctx.fill();
+  // Body
+  ctx.beginPath();ctx.arc(x,y,sz,0,Math.PI*2);
+  ctx.fillStyle=color+'55';ctx.fill();
+  ctx.strokeStyle=color;ctx.lineWidth=3;ctx.stroke();
+  // Photo or initial
+  if(photoImg){
+    ctx.save();ctx.beginPath();ctx.arc(x,y,sz-3,0,Math.PI*2);ctx.clip();
+    ctx.drawImage(photoImg,x-sz+3,y-sz+3,(sz-3)*2,(sz-3)*2);
+    ctx.restore();
+  } else {
+    ctx.fillStyle='#fff';ctx.font='bold '+Math.max(12,sz*0.55)+'px sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(name.charAt(0).toUpperCase(),x,y);
+  }
+  // Name
+  ctx.fillStyle='#fff';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+  ctx.save();ctx.shadowColor='rgba(0,0,0,0.9)';ctx.shadowBlur=4;
+  ctx.fillText(name,x,y-sz-8);
+  ctx.restore();
+}
+
+function renderSB(){
+  var arr=[];
+  for(var pid in players){
+    arr.push({id:pid,name:players[pid].name,score:players[pid].score||0,color:players[pid].color});
+  }
+  var me=arr.find(function(e){return e.id===myId;});
+  if(me) me.score=myScore;
+  arr.sort(function(a,b){return b.score-a.score;});
+  var h='';
+  arr.forEach(function(e,i){
+    var mine=e.id===myId;
+    h+='<div class="sb-item" style="'+(mine?'border:1px solid '+e.color:'')+'">';
+    h+='<div class="sb-dot" style="background:'+e.color+'"></div>';
+    h+='<span class="sb-name">'+(i+1)+'. '+esc(e.name)+'</span>';
+    h+='<span class="sb-pts">'+e.score+'</span></div>';
+  });
+  document.getElementById('scoreboard').innerHTML=h;
+}
+
+// ═══════════════════════════════════════════
+//  GAME END
+// ═══════════════════════════════════════════
+async function finishGame(){
+  gameState='finished';
+  try{await db.collection('game_rooms').doc(roomCode).update({status:'finished'});}catch(e){}
+  endGame();
+}
+
+async function endGame(){
+  gameState='finished';
+  showScr('results');
+
+  var arr=[];
+  for(var pid in players){
+    arr.push({id:pid,name:players[pid].name,score:players[pid].score||0,color:players[pid].color,photoURL:players[pid].photoURL||''});
+  }
+  var me=arr.find(function(e){return e.id===myId;});
+  if(me) me.score=myScore;
+  arr.sort(function(a,b){return b.score-a.score;});
+
+  // Read reward config
+  var rewards={first:0,second:0,third:0};
+  try{
+    var sd=await db.collection('settings').doc('games').get();
+    if(sd.exists){var g=sd.data()['pega-lampra']||{};rewards={first:g.first||0,second:g.second||0,third:g.third||0};}
+  }catch(e){}
+
+  // Podium (2nd, 1st, 3rd visual order)
+  var order=[1,0,2];
+  var medals=['🥇','🥈','🥉'];
+  var rewardArr=[rewards.first,rewards.second,rewards.third];
+  var podHtml='';
+  order.forEach(function(idx){
+    if(idx>=arr.length)return;
+    var e=arr[idx],place=idx+1,cls='podium-'+place;
+    var phHtml=e.photoURL?'<img src="'+esc(e.photoURL)+'">':'<span>'+e.name.charAt(0)+'</span>';
+    podHtml+='<div class="podium-item '+cls+'">';
+    podHtml+='<div style="font-size:24px">'+medals[idx]+'</div>';
+    podHtml+='<div class="podium-avatar" style="background:'+e.color+'">'+phHtml+'</div>';
+    podHtml+='<div class="podium-name">'+esc(e.name)+'</div>';
+    podHtml+='<div class="podium-score">'+e.score+'</div>';
+    if(rewardArr[idx]>0) podHtml+='<div class="podium-reward">+'+rewardArr[idx]+' CUTS 🪙</div>';
+    podHtml+='</div>';
+  });
+  document.getElementById('podium').innerHTML=podHtml;
+
+  // Rest
+  var rHtml='';
+  for(var i=3;i<arr.length;i++){
+    rHtml+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:5px">';
+    rHtml+='<span style="font-weight:700;color:#94a3b8">'+(i+1)+'º '+esc(arr[i].name)+'</span>';
+    rHtml+='<span style="font-weight:900;color:#64748b">'+arr[i].score+' pts</span></div>';
+  }
+  document.getElementById('rest-results').innerHTML=rHtml;
+
+  // My reward
+  var myPos=arr.findIndex(function(e){return e.id===myId;});
+  var myReward=0;
+  if(myPos===0) myReward=rewards.first;
+  else if(myPos===1) myReward=rewards.second;
+  else if(myPos===2) myReward=rewards.third;
+
+  if(myReward>0){
+    document.getElementById('my-reward').style.display='block';
+    document.getElementById('my-reward').textContent='🎉 Você ganhou +'+myReward+' CUTS!';
+    window.parent.postMessage({type:'GAME_REWARD',game:'pega-lampra',reward:myReward},'*');
+  } else {
+    document.getElementById('my-reward').style.display='none';
+  }
+
+  cleanup();
+}
+</script>
+</body></html>

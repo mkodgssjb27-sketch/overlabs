@@ -3562,7 +3562,7 @@ checkInstallGate();
 
 // ========== SISTEMA DE JOGOS (NÃO ALTERA NADA EXISTENTE) ==========
 var JOGOS_CONFIG = {
-  'pega-lampra': { url: 'https://SEU-SERVIDOR-DO-JOGO.com', nome: 'Pega LAMPRA' },
+  'pega-lampra': { url: 'games/pega-lampra.html', nome: 'Pega LAMPRA' },
   'jogo2': { url: '', nome: 'Jogo 2' },
   'jogo3': { url: '', nome: 'Jogo 3' }
 };
@@ -3577,8 +3577,16 @@ function abrirJogo(nome) {
   var jogo = JOGOS_CONFIG[nome];
   if (!jogo || !jogo.url) { alert('Jogo ainda não disponível!'); return; }
   fecharMenuJogos();
-  document.getElementById('jogoFrame').src = jogo.url;
+  var playerName = (currentUser.nickname || currentUser.firstName || currentUser.username);
+  var playerId = currentUser.id;
+  var url = jogo.url + '?id=' + encodeURIComponent(playerId) + '&name=' + encodeURIComponent(playerName);
+  document.getElementById('jogoFrame').src = url;
   document.getElementById('jogoContainer').style.display = 'block';
+  var iframe = document.getElementById('jogoFrame');
+  iframe.onload = function() {
+    var photo = gifAvatarCache || localStorage.getItem('carolampra_photo') || '';
+    iframe.contentWindow.postMessage({ type: 'PLAYER_DATA', id: playerId, name: playerName, photo: photo }, '*');
+  };
 }
 function fecharJogo() {
   document.getElementById('jogoFrame').src = '';
