@@ -216,18 +216,17 @@ function renderItems() {
     const rarLabels = { comum: 'Comum', raro: 'Raro', super_raro: 'Super Raro', lendaria: 'Lendária' };
     let rarBadge = '';
     if (rar) {
-      rarBadge = '<div class="item-rarity ir-' + rar + '">' + (rarLabels[rar] || '') + '</div>';
+      rarBadge = '<span class="item-rarity ir-' + rar + '">' + (rarLabels[rar] || '') + '</span>';
     }
 
     return `
       <div class="loja-item ${owned ? 'owned' : ''}${rarClass}" onclick="openBuyModal('${item.id}')">
         ${countdownHtml}
-        ${rarBadge}
         <img class="item-img" data-item-id="${item.id}" src="${escapeHtml(imgUrl)}" alt="${escapeHtml(item.nome)}">
         <div class="item-info">
           <div class="item-name">${escapeHtml(item.nome)}</div>
           <div class="item-type">${escapeHtml(item.tipo)}</div>
-          <div class="item-price"><span class="coin">🪙</span> ${item.preco}</div>
+          <div class="item-price"><span class="coin">🪙</span> ${item.preco}${rarBadge}</div>
         </div>
       </div>
     `;
