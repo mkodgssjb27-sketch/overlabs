@@ -149,6 +149,30 @@ input,select{font-family:inherit;outline:none}
 .banner-item img{width:100%;height:100%;object-fit:cover}
 .banner-item .bi-name{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.8));padding:6px 8px 4px;font-size:10px;font-weight:700;color:#fff}
 .banner-item.none-item{display:flex;align-items:center;justify-content:center;color:#64748b;font-size:24px;background:rgba(255,255,255,.02)}
+
+/* Ranking — Profile Card Flutuante */
+#ranking-profile-overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px}
+#ranking-profile-overlay.active{display:flex}
+#ranking-profile-card{width:100%;max-width:320px;border-radius:24px;overflow:hidden;background:#151929;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 60px rgba(0,0,0,.6);animation:rpCardIn .25s ease}
+@keyframes rpCardIn{from{opacity:0;transform:scale(.92) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.rp-banner{position:relative;min-height:200px;overflow:hidden;background:#1a1a2e;text-align:center;padding:40px 20px 24px}
+.rp-banner-bg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0}
+.rp-banner-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(21,25,41,.3) 0%,rgba(21,25,41,.88) 100%);z-index:1}
+.rp-banner-content{position:relative;z-index:2}
+.rp-avatar-wrap{width:120px;height:120px;border-radius:50%;margin:0 auto 12px;position:relative}
+.rp-avatar-inner{width:100%;height:100%;border-radius:50%;overflow:hidden;background:#1a1a2e;display:flex;align-items:center;justify-content:center}
+.rp-avatar-inner img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.rp-avatar-frame{position:absolute;inset:-14%;width:128%;height:128%;pointer-events:none;z-index:2;display:none}
+.rp-name{font-weight:800;font-size:18px;color:#fff;letter-spacing:-.3px;text-shadow:0 1px 4px rgba(0,0,0,.5);margin-top:28px}
+.rp-username{font-size:13px;color:#94a3b8;margin-top:3px;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.rp-footer{display:flex;align-items:center;gap:6px;padding:10px 16px 14px;flex-wrap:wrap}
+.rp-cuts{display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:5px 12px}
+.rp-cuts .coin{font-size:14px}
+.rp-cuts .val{font-weight:900;font-size:13px;color:#f59e0b}
+.rp-cuts .lbl{font-size:9px;font-weight:700;color:#f59e0b;margin-left:1px}
+.rp-emblems{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.rp-emblems img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.rp-close{position:absolute;top:12px;right:12px;z-index:10;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 </style>
 </head>
 <body>
@@ -494,7 +518,7 @@ input,select{font-family:inherit;outline:none}
       <span style="font-size:18px">🛒</span> Mercado
     </button>
     <button onclick="closeSidebar();showScreen('student-ranking');loadRanking()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
-      <span style="font-size:18px">🏆</span> Ranking de Moedas
+      <span style="font-size:18px">🏆</span> Ranking
     </button>
     <button disabled style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.02);color:#475569;font-weight:700;font-size:14px;cursor:not-allowed;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
       <span style="font-size:18px">⚙️</span> Configurações
@@ -599,12 +623,35 @@ input,select{font-family:inherit;outline:none}
   </div>
 </div>
 
-<!-- ══ ALUNO — RANKING DE MOEDAS ═══════════════════════════════════ -->
+<!-- ══ RANKING — Profile Card Flutuante ═══════════════════════════ -->
+<div id="ranking-profile-overlay" onclick="if(event.target===this)closeRankingProfile()">
+  <div id="ranking-profile-card">
+    <div class="rp-banner">
+      <button class="rp-close" onclick="closeRankingProfile()">✕</button>
+      <div class="rp-banner-bg" id="rp-banner-bg"></div>
+      <div class="rp-banner-overlay"></div>
+      <div class="rp-banner-content">
+        <div class="rp-avatar-wrap">
+          <div class="rp-avatar-inner" id="rp-avatar"></div>
+          <img class="rp-avatar-frame" id="rp-frame" src="">
+        </div>
+        <div class="rp-name" id="rp-name">—</div>
+        <div class="rp-username" id="rp-username">—</div>
+      </div>
+    </div>
+    <div class="rp-footer">
+      <div class="rp-cuts"><span class="coin">🪙</span><span class="val" id="rp-cuts">0</span><span class="lbl">CUTS</span></div>
+      <div class="rp-emblems" id="rp-emblems"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — RANKING ═════════════════════════════════════════════ -->
 <div class="screen" id="screen-student-ranking">
   <div class="app-wrap">
     <div class="s-header" style="display:flex;align-items:center;gap:14px">
       <button onclick="if(unsubRanking){unsubRanking();unsubRanking=null}showScreen('student-home')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
-      <div class="s-htitle" style="flex:1;font-size:16px">🏆 Ranking de Moedas</div>
+      <div class="s-htitle" style="flex:1;font-size:16px">🏆 Ranking</div>
     </div>
     <div class="s-content" style="padding-top:20px">
       <div id="ranking-podium"></div>
@@ -2034,7 +2081,7 @@ function loadStudentPatchNotes() {
     });
 }
 
-// ── Ranking de Moedas ──
+// ── Ranking ──
 function loadRanking() {
   const podiumEl = document.getElementById("ranking-podium");
   const listEl = document.getElementById("ranking-list");
@@ -2109,7 +2156,7 @@ function renderRanking(users, podiumEl, listEl) {
       const initial = (p.firstName || "?")[0].toUpperCase();
       const photo = p.photoURL ? `<img src="${p.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : `<span style="font-size:20px;font-weight:900;color:#fff">${initial}</span>`;
       html += `
-        <div style="display:flex;flex-direction:column;align-items:center;flex:1;max-width:120px">
+        <div style="display:flex;flex-direction:column;align-items:center;flex:1;max-width:120px;cursor:pointer" onclick="openRankingProfile('${p.id}')">
           <div style="font-size:24px;margin-bottom:4px">${medals[p.pos]}</div>
           <div style="width:52px;height:52px;border-radius:50%;border:3px solid ${c};overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);margin-bottom:6px">${photo}</div>
           <div style="font-weight:800;font-size:13px;color:#fff;text-align:center;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.firstName || "—"}</div>
@@ -2133,7 +2180,7 @@ function renderRanking(users, podiumEl, listEl) {
         const isMe = currentUser && u.id === currentUser.id;
         const meBorder = isMe ? "border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06)" : "border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03)";
         return `
-        <div style="${meBorder};border-radius:14px;padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px">
+        <div style="${meBorder};border-radius:14px;padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openRankingProfile('${u.id}')">
           <span style="font-weight:900;font-size:14px;color:#64748b;min-width:28px;text-align:center">${pos}º</span>
           <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">${photo}</div>
           <div style="flex:1;min-width:0">
@@ -2151,6 +2198,226 @@ function renderRanking(users, podiumEl, listEl) {
       // Já está no pódio - nada extra necessário
     }
   }
+}
+
+// ── Ranking Profile Card ──
+function openRankingProfile(userId) {
+  if (!firebaseOk || !userId) return;
+  var overlay = document.getElementById("ranking-profile-overlay");
+  var nameEl = document.getElementById("rp-name");
+  var userEl = document.getElementById("rp-username");
+  var avatarEl = document.getElementById("rp-avatar");
+  var frameEl = document.getElementById("rp-frame");
+  var bannerBg = document.getElementById("rp-banner-bg");
+  var cutsEl = document.getElementById("rp-cuts");
+  var emblemsEl = document.getElementById("rp-emblems");
+
+  // Reset
+  nameEl.textContent = "…";
+  userEl.textContent = "";
+  avatarEl.innerHTML = '<div class="spin" style="width:24px;height:24px"></div>';
+  frameEl.style.display = "none";
+  frameEl.src = "";
+  bannerBg.style.backgroundImage = "";
+  bannerBg.innerHTML = "";
+  cutsEl.textContent = "0";
+  emblemsEl.innerHTML = "";
+  overlay.classList.add("active");
+
+  // Carregar dados do usuário
+  db.collection("users").doc(userId).get().then(function(doc) {
+    if (!doc.exists) { nameEl.textContent = "Não encontrado"; return; }
+    var d = doc.data();
+    nameEl.textContent = d.firstName || d.fullName || "—";
+    userEl.textContent = d.username ? ("@" + d.username) : "";
+    cutsEl.textContent = d.cuts || 0;
+
+    // Avatar: verificar se tem avatar equipado (GIF animado)
+    var photoUrl = d.photoURL || "";
+    var equippedAvatarId = d.equippedAvatarItemId || "";
+
+    if (equippedAvatarId) {
+      // Carregar avatar da loja (pode ser GIF animado/chunked)
+      rpLoadAvatar(equippedAvatarId, photoUrl, avatarEl);
+    } else if (photoUrl) {
+      avatarEl.innerHTML = '<img src="' + photoUrl + '" alt="">';
+    } else {
+      var initial = (d.firstName || "?")[0].toUpperCase();
+      avatarEl.innerHTML = '<span style="font-size:36px;font-weight:800;color:#fff">' + initial + '</span>';
+    }
+
+    // Moldura
+    rpLoadFrame(userId, frameEl);
+    // Banner
+    rpLoadBanner(userId, bannerBg);
+    // Emblemas
+    rpLoadEmblems(userId, emblemsEl);
+  }).catch(function(e) {
+    console.error("[RankingProfile] Erro:", e);
+    nameEl.textContent = "Erro";
+  });
+}
+
+function closeRankingProfile() {
+  document.getElementById("ranking-profile-overlay").classList.remove("active");
+}
+
+function rpLoadAvatar(itemId, fallback, el) {
+  db.collection("cuts_items").doc(itemId).get().then(function(itemDoc) {
+    if (itemDoc.exists && itemDoc.data().chunked) {
+      db.collection("cuts_items").doc(itemId).collection("chunks").get().then(function(snap) {
+        if (!snap.empty) {
+          var sorted = snap.docs.sort(function(a,b){return parseInt(a.id)-parseInt(b.id)});
+          var full = sorted.map(function(d){return d.data().data}).join("");
+          el.innerHTML = '<img src="' + full + '" alt="">';
+        } else if (itemDoc.data().url) {
+          el.innerHTML = '<img src="' + itemDoc.data().url + '" alt="">';
+        } else if (fallback) {
+          el.innerHTML = '<img src="' + fallback + '" alt="">';
+        }
+      });
+    } else if (itemDoc.exists && itemDoc.data().url) {
+      el.innerHTML = '<img src="' + itemDoc.data().url + '" alt="">';
+    } else if (fallback) {
+      el.innerHTML = '<img src="' + fallback + '" alt="">';
+    }
+  }).catch(function() {
+    if (fallback) el.innerHTML = '<img src="' + fallback + '" alt="">';
+  });
+}
+
+function rpLoadFrame(userId, frameEl) {
+  db.collection("cuts_inventory")
+    .where("userId", "==", userId)
+    .where("tipo", "==", "moldura")
+    .where("equipado", "==", true)
+    .limit(1)
+    .get().then(function(snap) {
+      if (snap.empty) return;
+      var inv = snap.docs[0].data();
+      var itemId = inv.itemId;
+      db.collection("cuts_items").doc(itemId).get().then(function(itemDoc) {
+        var url = inv.url || "";
+        var adj = null;
+        var isChunked = false;
+        if (itemDoc.exists) {
+          var data = itemDoc.data();
+          if (data.url) url = data.url;
+          adj = data.frameAdjust || null;
+          isChunked = !!data.chunked;
+        }
+        function applyFrame(fUrl) {
+          if (!fUrl) return;
+          frameEl.src = fUrl;
+          frameEl.style.display = "block";
+          if (adj) {
+            var sc = adj.scale || 128;
+            var ox = adj.offsetX || 0;
+            var oy = adj.offsetY || 0;
+            var rot = adj.rotation || 0;
+            var offset = -(sc - 100) / 2;
+            frameEl.style.inset = "auto";
+            frameEl.style.width = sc + "%";
+            frameEl.style.height = sc + "%";
+            frameEl.style.left = (offset + ox) + "%";
+            frameEl.style.top = (offset + oy) + "%";
+            frameEl.style.transform = rot ? ("rotate(" + rot + "deg)") : "";
+          } else {
+            frameEl.style.inset = "-14%";
+            frameEl.style.width = "128%";
+            frameEl.style.height = "128%";
+            frameEl.style.left = "";
+            frameEl.style.top = "";
+            frameEl.style.transform = "";
+          }
+        }
+        if (isChunked) {
+          db.collection("cuts_items").doc(itemId).collection("chunks").get().then(function(chSnap) {
+            if (chSnap.empty) { applyFrame(url); return; }
+            var sorted = chSnap.docs.sort(function(a,b){return parseInt(a.id)-parseInt(b.id)});
+            applyFrame(sorted.map(function(d){return d.data().data}).join(""));
+          }).catch(function() { applyFrame(url); });
+        } else {
+          applyFrame(url);
+        }
+      });
+    }).catch(function(){});
+}
+
+function rpLoadBanner(userId, bannerBg) {
+  db.collection("cuts_inventory")
+    .where("userId", "==", userId)
+    .where("tipo", "==", "banner")
+    .where("equipado", "==", true)
+    .limit(1)
+    .get().then(function(snap) {
+      if (snap.empty) return;
+      var inv = snap.docs[0].data();
+      var itemId = inv.itemId;
+      var fallbackUrl = inv.url || "";
+      function applyBanner(url) {
+        if (!url) return;
+        if (url.indexOf("data:image/gif") === 0 || url.indexOf(".gif") !== -1) {
+          bannerBg.style.backgroundImage = "";
+          bannerBg.innerHTML = '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">';
+        } else {
+          bannerBg.innerHTML = "";
+          bannerBg.style.backgroundImage = "url(" + url + ")";
+        }
+      }
+      db.collection("cuts_items").doc(itemId).get().then(function(itemDoc) {
+        var isChunked = itemDoc.exists && itemDoc.data().chunked;
+        if (isChunked) {
+          db.collection("cuts_items").doc(itemId).collection("chunks").get().then(function(chSnap) {
+            if (chSnap.empty) { applyBanner(fallbackUrl); return; }
+            var sorted = chSnap.docs.sort(function(a,b){return parseInt(a.id)-parseInt(b.id)});
+            applyBanner(sorted.map(function(d){return d.data().data}).join(""));
+          }).catch(function() { applyBanner(fallbackUrl); });
+        } else {
+          var url = (itemDoc.exists && itemDoc.data().url) ? itemDoc.data().url : fallbackUrl;
+          applyBanner(url);
+        }
+      }).catch(function() { applyBanner(fallbackUrl); });
+    }).catch(function(){});
+}
+
+function rpLoadEmblems(userId, container) {
+  db.collection("cuts_inventory")
+    .where("userId", "==", userId)
+    .where("tipo", "==", "emblema")
+    .where("equipado", "==", true)
+    .get().then(function(snap) {
+      if (snap.empty) { container.innerHTML = ""; return; }
+      var html = "";
+      snap.docs.forEach(function(doc) {
+        var inv = doc.data();
+        if (inv.url) {
+          html += '<img src="' + inv.url + '" data-emblem-id="' + (inv.itemId || "") + '">';
+        }
+      });
+      container.innerHTML = html;
+      // Carregar versão completa de emblemas chunked
+      snap.docs.forEach(function(doc) {
+        var inv = doc.data();
+        if (!inv.itemId) return;
+        db.collection("cuts_items").doc(inv.itemId).get().then(function(itemDoc) {
+          if (!itemDoc.exists) return;
+          var data = itemDoc.data();
+          if (data.chunked) {
+            db.collection("cuts_items").doc(inv.itemId).collection("chunks").get().then(function(chSnap) {
+              if (chSnap.empty) return;
+              var sorted = chSnap.docs.sort(function(a,b){return parseInt(a.id)-parseInt(b.id)});
+              var fullUrl = sorted.map(function(d){return d.data().data}).join("");
+              var img = container.querySelector('img[data-emblem-id="' + inv.itemId + '"]');
+              if (img) img.src = fullUrl;
+            });
+          } else if (data.url) {
+            var img = container.querySelector('img[data-emblem-id="' + inv.itemId + '"]');
+            if (img && data.url !== inv.url) img.src = data.url;
+          }
+        });
+      });
+    }).catch(function(){});
 }
 
 // ── Customização de Perfil ──
