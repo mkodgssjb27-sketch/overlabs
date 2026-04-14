@@ -719,7 +719,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <input type="file" class="inp" id="fe-image" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" onchange="previewFeedImage(this)">
       </div>
       <div id="fe-image-preview" style="margin-bottom:16px"></div>
-      <button onclick="saveFeedItem()" class="btn-main" id="btn-save-feed">💾 Salvar</button>
+      <button type="button" onclick="saveFeedItem()" class="btn-main" id="btn-save-feed" style="width:100%">➕ Publicar</button>
     </div>
   </div>
 </div>
@@ -2778,6 +2778,7 @@ function renderFeedManager(items) {
 }
 
 function openNewFeed() {
+  console.log("openNewFeed chamado");
   editingFeedId = null;
   document.getElementById("fe-icon").value = "";
   document.getElementById("fe-text").value = "";
@@ -2785,6 +2786,8 @@ function openNewFeed() {
   document.getElementById("fe-image").value = "";
   const preview = document.getElementById("fe-image-preview");
   if (preview) preview.innerHTML = "";
+  const btn = document.getElementById("btn-save-feed");
+  if (btn) btn.textContent = "➕ Publicar";
   showScreen("teacher-feed-edit");
 }
 
@@ -2805,8 +2808,12 @@ function previewFeedImage(input) {
 }
 
 function openEditFeed(id) {
+  console.log("openEditFeed chamado com id:", id);
   const item = allFeedItems.find(f => f.id === id);
-  if (!item) return;
+  if (!item) {
+    console.error("Item não encontrado:", id);
+    return;
+  }
   editingFeedId = id;
   document.getElementById("fe-icon").value = item.icon || "";
   document.getElementById("fe-text").value = item.text || "";
@@ -2820,16 +2827,24 @@ function openEditFeed(id) {
       preview.innerHTML = "";
     }
   }
+  const btn = document.getElementById("btn-save-feed");
+  if (btn) btn.textContent = "💾 Salvar";
   showScreen("teacher-feed-edit");
 }
 
 async function saveFeedItem() {
-  if (!firebaseOk) return;
+  if (!firebaseOk) {
+    showToast("❌ Firebase não configurado");
+    return;
+  }
+  
   const icon = document.getElementById("fe-icon").value.trim();
   const text = document.getElementById("fe-text").value.trim();
   const detail = document.getElementById("fe-detail").value.trim();
   const fileInput = document.getElementById("fe-image");
   const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+  
+  console.log("saveFeedItem chamado:", { icon, text, detail, file: file ? file.name : null });
   
   // Validar que há pelo menos ALGO (texto, detalhe ou imagem)
   if (!text && !detail && !file) {
@@ -2838,29 +2853,44 @@ async function saveFeedItem() {
   }
 
   const btn = document.getElementById("btn-save-feed");
+  if (!btn) {
+    showToast("❌ Erro - botão não encontrado");
+    return;
+  }
+  
   const isNew = !editingFeedId;
   btn.disabled = true;
-  btn.textContent = isNew ? "Publicando..." : "Salvando...";
+  btn.textContent = isNew ? "⏳ Publicando..." : "⏳ Salvando...";
   
   try {
     let imageURL = null;
     const docId = editingFeedId || db.collection("feed").doc().id;
     const docRef = db.collection("feed").doc(docId);
 
+    console.log("Iniciando salvar post com docId:", docId);
+
     // Upload da imagem se houver
     if (file) {
+      console.log("Enviando imagem:", file.name, file.type);
       const validTypes = ["image/jpeg","image/png","image/webp","image/avif","image/gif"];
       if (!validTypes.includes(file.type)) {
-        throw new Error("Formato inválido. Use JPEG, PNG, WEBP, AVIF ou GIF.");
+        throw new Error("❌ Formato inválido. Use JPEG, PNG, WEBP, AVIF ou GIF.");
       }
       
-      const storageRef = firebase.storage().ref();
-      const fileName = file.name.split('.')[0];
-      const ext = file.name.split('.').pop() || 'jpg';
-      const imageRef = storageRef.child(`feed_images/${docId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`);
-      
-      await imageRef.put(file, { contentType: file.type });
-      imageURL = await imageRef.getDownloadURL();
+      try {
+        const storageRef = firebase.storage().ref();
+        const ext = file.name.split('.').pop() || 'jpg';
+        const storagePath = `feed_images/${docId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
+        const imageRef = storageRef.child(storagePath);
+        
+        console.log("Fazendo upload para:", storagePath);
+        const snapshot = await imageRef.put(file, { contentType: file.type });
+        imageURL = await snapshot.ref.getDownloadURL();
+        console.log("Imagem enviada com sucesso:", imageURL);
+      } catch(uploadErr) {
+        console.error("Erro no upload:", uploadErr);
+        throw new Error("❌ Falha ao enviar imagem: " + uploadErr.message);
+      }
     }
 
     // Preparar payload
@@ -2876,17 +2906,23 @@ async function saveFeedItem() {
       payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
     }
 
+    console.log("Payload para salvar:", payload);
+
     // Salvar
     if (editingFeedId) {
+      console.log("Atualizando post existente:", editingFeedId);
       await docRef.update(payload);
       showToast("✅ Item atualizado!");
     } else {
+      console.log("Criando novo post");
       await docRef.set(payload);
+      console.log("Post salvo com sucesso!");
       showToast("✅ Post publicado!");
       
       // Notificar todos os alunos
       try {
         const notifText = text || detail?.substring(0, 50) || "Nova imagem no feed";
+        console.log("Criando notificação para alunos:", notifText);
         await db.collection("notifications").add({
           type: "new_feed_post",
           title: "NOVO POST NO FEED",
@@ -2895,20 +2931,24 @@ async function saveFeedItem() {
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           createdAt: new Date()
         });
+        console.log("Notificação criada com sucesso");
       } catch(notifErr) {
-        console.log("Notificação não crítica:", notifErr);
+        console.log("Notificação não crítica (erro ignorado):", notifErr);
       }
     }
 
     editingFeedId = null;
     document.getElementById("fe-image").value = "";
+    console.log("Voltando para tela do feed");
     showScreen("teacher-feed");
     loadFeedManager();
   } catch(e) {
-    console.error("Erro ao salvar:", e);
+    console.error("❌ ERRO ao salvar:", e);
     showToast(e.message || "❌ Erro ao publicar. Tente novamente.");
   } finally {
-    btn.disabled = false; btn.textContent = "💾 Salvar";
+    console.log("Finally executado - resetando botão");
+    btn.disabled = false;
+    btn.textContent = isNew ? "➕ Publicar" : "💾 Salvar";
   }
 }
 
