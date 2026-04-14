@@ -4785,13 +4785,23 @@ async function manualDailyLogin(studentId, dayIndex) {
   var cycleKey = _dlWeekKeys[dayIndex];
   if (!cycleKey) return;
 
-  // Check if already confirmed
   var existing = await db.collection('dailyLogins')
     .where('userId', '==', studentId)
     .where('cycleKey', '==', cycleKey)
     .limit(1).get();
+
   if (!existing.empty) {
-    showToast('⚠️ Este dia já está confirmado');
+    // Already confirmed — remove it (toggle off)
+    try {
+      var batch = db.batch();
+      existing.forEach(function(doc) { batch.delete(doc.ref); });
+      await batch.commit();
+      showToast('🗑️ Login desmarcado!');
+      loadDailyLoginStudents();
+    } catch(e) {
+      console.error('[DailyLogin] Erro ao desmarcar:', e);
+      showToast('❌ Erro ao desmarcar');
+    }
     return;
   }
 
