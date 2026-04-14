@@ -1,4 +1,4 @@
-const CACHE_NAME_PROF = "overhost-v130";
+const CACHE_NAME_PROF = "overhost-v131";
 const URLS_TO_CACHE = [
   "./",
   "./index.html",
@@ -31,6 +31,9 @@ self.addEventListener("message", event => {
 });
 
 self.addEventListener("fetch", event => {
+  if (event.request.url.includes("googleapis.com")) return;
+  if (event.request.url.includes("firebaseio.com")) return;
+  if (event.request.url.includes("firebaseinstallations")) return;
   event.respondWith(
     fetch(event.request)
       .then(response => {

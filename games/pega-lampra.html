@@ -468,43 +468,21 @@ function checkCollect(){
 function checkEatPlayers(){
   for(var pid in players){
     if(pid===myId)continue;var p=players[pid];if(!p||p.alive===false)continue;
-    var pSize=Math.min(MAX_SIZE,BASE_SIZE+(p.score||0)*GROW_RATE);
+    var pScore=p.score||0;
+    var pSize=Math.min(MAX_SIZE,BASE_SIZE+pScore*GROW_RATE);
     var rp=renderedPos[pid]||{x:p.x,y:p.y};
     var dx=myX-rp.x,dy=myY-rp.y,dist=Math.sqrt(dx*dx+dy*dy);
-    var touchDist=mySize+pSize-10;
-    if(dist>touchDist)continue;
-    // Can eat: 25% size advantage
-    if(mySize>=pSize*1.25&&dist<mySize-pSize*0.3){
-      myScore+=Math.max(1,Math.floor((p.score||0)*0.5));
+    // Need to overlap enough to eat
+    if(dist>mySize-pSize*0.3)continue;
+    // Can eat: need at least 5 more aura points
+    if(myScore>=pScore+5){
+      myScore+=Math.max(1,Math.floor(pScore*0.5));
       mySize=Math.min(MAX_SIZE,BASE_SIZE+myScore*GROW_RATE);
       db.collection('game_rooms').doc(roomCode).collection('players').doc(pid).update({alive:false}).catch(function(){});
       db.collection('game_rooms').doc(roomCode).collection('players').doc(myId).update({score:myScore}).catch(function(){});
       document.getElementById('hud-aura').textContent='Aura: '+myScore;
-      continue;
     }
-    // Mutual destruction: similar size (neither can eat the other)
-    if(mySize<pSize*1.25&&pSize<mySize*1.25){
-      var key=pid<myId?pid+'_'+myId:myId+'_'+pid;
-      if(!collisionLog[key])collisionLog[key]={count:0,time:0};
-      if(Date.now()-collisionLog[key].time>2000){collisionLog[key].count++;collisionLog[key].time=Date.now();}
-      if(collisionLog[key].count>=2){
-        // Both explode! Scatter auras as collectibles
-        var totalAura=myScore+Math.max(0,p.score||0);
-        var upd={};
-        for(var i=0;i<totalAura&&i<30;i++){
-          var cid='x'+(nextCId++);var nc={x:myX+(Math.random()-.5)*400,y:myY+(Math.random()-.5)*400,t:Math.floor(Math.random()*3)};
-          collectibles[cid]=nc;upd['collectibles.'+cid]=nc;
-        }
-        if(Object.keys(upd).length>0)db.collection('game_rooms').doc(roomCode).update(upd).catch(function(){});
-        db.collection('game_rooms').doc(roomCode).collection('players').doc(pid).update({alive:false,score:0}).catch(function(){});
-        db.collection('game_rooms').doc(roomCode).collection('players').doc(myId).update({alive:false,score:0}).catch(function(){});
-        myScore=0;amDead=true;
-        document.getElementById('hud-aura').textContent='Aura: 0';
-        document.getElementById('spectator-bar').style.display='block';pickSpectateTarget();
-        delete collisionLog[key];
-        return;
-      }
-    }
+    // Otherwise: same size / not enough advantage — just pass through
   }
 }
 

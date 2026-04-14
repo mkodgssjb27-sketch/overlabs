@@ -28,7 +28,7 @@ messaging.onBackgroundMessage(payload => {
   return self.registration.showNotification(title, options);
 });
 
-const CACHE_NAME = "overlabs-v204";
+const CACHE_NAME = "overlabs-v205";
 const URLS_TO_CACHE = [
   "./aluno.html",
   "./manifest.json",
@@ -79,10 +79,13 @@ self.addEventListener("notificationclick", event => {
   );
 });
 
-// Network first, fallback to cache (ignora requests do /prof/ e /cuts/)
+// Network first, fallback to cache (ignora requests do /prof/, /cuts/ e Firebase APIs)
 self.addEventListener("fetch", event => {
   if (event.request.url.includes("/prof/")) return;
   if (event.request.url.includes("/cuts/")) return;
+  if (event.request.url.includes("googleapis.com")) return;
+  if (event.request.url.includes("firebaseio.com")) return;
+  if (event.request.url.includes("firebaseinstallations")) return;
   event.respondWith(
     fetch(event.request)
       .then(response => {
