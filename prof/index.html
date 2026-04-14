@@ -4709,6 +4709,8 @@ async function saveDailyLoginConfig() {
   }
 }
 
+var _dlWeekKeys = [];
+
 async function loadDailyLoginStudents() {
   if (!requireFirebase()) return;
   var listEl = document.getElementById('dl-students-list');
@@ -4716,6 +4718,7 @@ async function loadDailyLoginStudents() {
   try {
     var currentCycle = getDailyCycleKeyProf();
     var weekKeys = getWeekCycleKeysProf(currentCycle);
+    _dlWeekKeys = weekKeys;
 
     var usersSnap = await db.collection('users').get();
     var students = [];
@@ -4754,7 +4757,7 @@ async function loadDailyLoginStudents() {
       var dotsHtml = '';
       for (var i = 0; i < 7; i++) {
         var done = checks.indexOf(weekKeys[i]) !== -1;
-        dotsHtml += '<div style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;'
+        dotsHtml += '<div onclick="manualDailyLogin(\'' + s.id + '\',' + i + ')" style="cursor:pointer;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;'
           + (done ? 'background:rgba(34,197,94,.15);border:2px solid #22c55e;color:#22c55e' : 'background:rgba(255,255,255,.03);border:2px solid rgba(255,255,255,.1);color:#475569')
           + '">' + (done ? '✓' : dayLabels[i]) + '</div>';
       }
@@ -4774,6 +4777,36 @@ async function loadDailyLoginStudents() {
   } catch(e) {
     console.error('[DailyLogin] Erro ao carregar alunos:', e);
     listEl.innerHTML = '<div class="empty"><div class="icon">❌</div><p>Erro ao carregar</p></div>';
+  }
+}
+
+async function manualDailyLogin(studentId, dayIndex) {
+  if (!requireFirebase()) return;
+  var cycleKey = _dlWeekKeys[dayIndex];
+  if (!cycleKey) return;
+
+  // Check if already confirmed
+  var existing = await db.collection('dailyLogins')
+    .where('userId', '==', studentId)
+    .where('cycleKey', '==', cycleKey)
+    .limit(1).get();
+  if (!existing.empty) {
+    showToast('⚠️ Este dia já está confirmado');
+    return;
+  }
+
+  try {
+    await db.collection('dailyLogins').add({
+      userId: studentId,
+      cycleKey: cycleKey,
+      checkedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      manualByTeacher: true
+    });
+    showToast('✅ Login confirmado manualmente!');
+    loadDailyLoginStudents();
+  } catch(e) {
+    console.error('[DailyLogin] Erro ao confirmar manualmente:', e);
+    showToast('❌ Erro ao confirmar');
   }
 }
 
