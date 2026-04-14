@@ -908,6 +908,7 @@ let unsubRides = null;
 let unsubNotifs = null;
 let unsubAlerts = null;
 let unsubFeed = null;
+let expandedFeedIds = new Set();
 let unsubPresence = null;
 let unsubUserDoc = null;
 let unsubRanking = null;
@@ -1511,7 +1512,7 @@ function renderFilteredFeed() {
     if (item.type === 'personal_msg' || item.type === 'waitlist_promotion') {
       return item.targetUserId === currentUser.id;
     }
-    if (item.type !== "ride_created" && item.type !== "alert") return false;
+    if (item.type !== "ride_created" && item.type !== "alert" && item.type !== "feed_post") return false;
     if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h24) return false;
     return true;
   });
@@ -1535,21 +1536,50 @@ function renderFeed(items) {
     const colors = {
       ride_created: { bg: "rgba(34,197,94,.08)", border: "rgba(34,197,94,.2)" },
       alert:        { bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.2)" },
+      feed_post:    { bg: "rgba(59,130,246,.08)", border: "rgba(59,130,246,.2)" },
       personal_msg: { bg: "rgba(139,92,246,.08)", border: "rgba(139,92,246,.2)" },
       waitlist_promotion: { bg: "rgba(34,197,94,.08)", border: "rgba(34,197,94,.2)" }
     };
     const c = colors[item.type] || colors.alert;
     const time = item.createdAt ? fmtTs(item.createdAt) : "agora";
+    const hasMore = (item.detail && item.detail.trim()) || item.imageURL;
+    const expanded = expandedFeedIds.has(item.id);
 
     return `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:16px;padding:16px;margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <span style="font-size:22px">${item.icon || "📌"}</span>
         <span style="font-weight:800;font-size:14px;color:#fff;flex:1">${escapeHtml(item.text || "")}</span>
       </div>
-      ${item.detail ? `<p style="color:#94a3b8;font-size:13px;margin-left:32px">${escapeHtml(item.detail)}</p>` : ""}
-      <p style="color:#64748b;font-size:11px;margin-top:8px;margin-left:32px">${time}</p>
+      ${hasMore ? `<button onclick="toggleFeedDetails('${item.id}')" id="feed-btn-${item.id}" style="margin-top:8px;padding:10px 14px;border:none;border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-weight:700;cursor:pointer">${expanded ? 'Ver menos' : 'Ver mais'}</button>` : ""}
+      <div id="feed-detail-${item.id}" style="display:${expanded ? 'block' : 'none'};margin-top:12px;color:#94a3b8;font-size:13px">
+        ${item.detail ? `<p style="margin:0 0 10px">${escapeHtml(item.detail)}</p>` : ""}
+        ${item.imageURL ? `<img id="feed-img-${item.id}" data-src="${item.imageURL}" src="${expanded ? item.imageURL : ''}" style="width:100%;border-radius:16px;object-fit:cover;${expanded ? 'display:block' : 'display:none'}">` : ""}
+      </div>
+      <p style="color:#64748b;font-size:11px;margin-top:8px">${time}</p>
     </div>`;
   }).join("");
+}
+
+function toggleFeedDetails(id) {
+  const detailEl = document.getElementById(`feed-detail-${id}`);
+  const btn = document.getElementById(`feed-btn-${id}`);
+  if (!detailEl || !btn) return;
+
+  const expanded = expandedFeedIds.has(id);
+  if (expanded) {
+    expandedFeedIds.delete(id);
+    detailEl.style.display = "none";
+    btn.textContent = "Ver mais";
+  } else {
+    expandedFeedIds.add(id);
+    btn.textContent = "Ver menos";
+    const img = document.getElementById(`feed-img-${id}`);
+    if (img && !img.src) {
+      img.src = img.dataset.src;
+      img.style.display = "block";
+    }
+    detailEl.style.display = "block";
+  }
 }
 
 function renderStudentRides(rides) {
