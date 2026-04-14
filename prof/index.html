@@ -1419,11 +1419,11 @@ window.addEventListener("popstate", function(e) {
 // ── Helpers ──
 function clearErr(id) { const el = document.getElementById(id); if(el) el.textContent = ""; }
 function setErr(id, msg) { const el = document.getElementById(id); if(el) el.textContent = msg; }
-function showToast(msg) {
+function showToast(msg, duration = 3000) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 3000);
+  setTimeout(() => t.classList.remove("show"), duration);
 }
 function showConfirmModal(title, msg, onConfirm) {
   const modal = document.getElementById("confirm-modal");
@@ -2831,29 +2831,35 @@ async function saveFeedItem() {
   if (!text) { showToast("Informe o texto"); return; }
 
   const btn = document.getElementById("btn-save-feed");
-  btn.disabled = true; btn.textContent = editingFeedId ? "Salvando..." : "Publicando...";
+  const isNew = !editingFeedId;
+  btn.disabled = true; btn.textContent = isNew ? "Publicando..." : "Salvando...";
+  
   try {
     const fileInput = document.getElementById("fe-image");
     const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
     let imageURL = null;
-    const docRef = editingFeedId ? db.collection("feed").doc(editingFeedId) : db.collection("feed").doc();
+    const docId = editingFeedId || db.collection("feed").doc().id;
+    const docRef = db.collection("feed").doc(docId);
 
     if (file) {
       const validTypes = ["image/jpeg","image/png","image/webp","image/avif","image/gif"];
       if (!validTypes.includes(file.type)) {
-        showToast("Formato inválido. Use JPEG, PNG, WEBP, AVIF ou GIF.");
-        btn.disabled = false;
-        btn.textContent = "💾 Salvar";
-        return;
+        throw new Error("Formato inválido. Use JPEG, PNG, WEBP, AVIF ou GIF.");
       }
-      const storageRef = firebase.storage().ref();
-      const imageRef = storageRef.child(`feed_images/${docRef.id}_${Date.now()}_${file.name}`);
-      await imageRef.put(file);
-      imageURL = await imageRef.getDownloadURL();
+      try {
+        const storageRef = firebase.storage().ref();
+        const fileName = file.name.split('.')[0];
+        const imageRef = storageRef.child(`feed_images/${docId}_${Date.now()}_${fileName}.jpg`);
+        await imageRef.put(file, { contentType: file.type });
+        imageURL = await imageRef.getDownloadURL();
+      } catch(storageErr) {
+        console.error("Erro ao upload:", storageErr);
+        throw new Error("Falha ao enviar imagem. Tente novamente.");
+      }
     }
 
     const payload = { icon, text, detail };
-    if (!editingFeedId) {
+    if (isNew) {
       payload.type = "feed_post";
       payload.hidden = false;
       payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
@@ -2866,6 +2872,19 @@ async function saveFeedItem() {
     } else {
       await docRef.set(payload);
       showToast("✅ Post publicado!");
+      // Notificar todos os alunos sobre novo post
+      try {
+        await db.collection("notifications").doc().set({
+          type: "new_feed_post",
+          title: "NOVO POST NO FEED",
+          message: text,
+          icon: icon,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          createdAt: new Date()
+        });
+      } catch(notifErr) {
+        console.log("Notificação não crítica:", notifErr);
+      }
     }
 
     editingFeedId = null;
@@ -2873,10 +2892,11 @@ async function saveFeedItem() {
     showScreen("teacher-feed");
     loadFeedManager();
   } catch(e) {
-    console.error(e);
-    showToast("Erro ao salvar");
+    console.error("Erro ao salvar:", e);
+    showToast(e.message || "Erro ao salvar");
+  } finally {
+    btn.disabled = false; btn.textContent = "💾 Salvar";
   }
-  btn.disabled = false; btn.textContent = "💾 Salvar";
 }
 
 async function toggleFeedVisibility(id, hide) {
