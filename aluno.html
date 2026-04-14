@@ -1256,6 +1256,17 @@ async function checkDailyLogin() {
     var configDoc = await db.collection('settings').doc('dailyLogin').get();
     if (!configDoc.exists) return;
     _dlConfig = configDoc.data();
+    if (!_dlConfig.rewardCoinsByDay) {
+      _dlConfig.rewardCoinsByDay = {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: _dlConfig.weeklyRewardCoins4 || 0,
+        5: 0,
+        6: 0,
+        7: _dlConfig.weeklyRewardCoins || 0
+      };
+    }
     if (!_dlConfig.enabled) return;
 
     var currentCycle = getDailyCycleKey();
@@ -1315,11 +1326,27 @@ function renderDailyLogin(currentCycle) {
     progressEl.textContent = checkedCount + '/7 — Confirme seu login!';
   }
 
-  if (checkedCount >= 7 && _dlConfig) {
-    var coins = _dlConfig.weeklyRewardCoins || 0;
+  if (_dlConfig && _dlConfig.rewardCoinsByDay) {
+    var coins = _dlConfig.rewardCoinsByDay[checkedCount] || 0;
     if (coins > 0) {
       rewardEl.style.display = 'block';
-      rewardEl.textContent = '🎉 Semana completa! Você ganhou 🪙 ' + coins + ' CUTS!';
+      rewardEl.textContent = '🎉 Recompensa configurada para ' + checkedCount + '/7: 🪙 ' + coins + ' CUTS!';
+    } else if (!alreadyChecked) {
+      var nextRewardDay = 0;
+      for (var rewardDay = checkedCount + 1; rewardDay <= 7; rewardDay++) {
+        if ((_dlConfig.rewardCoinsByDay[rewardDay] || 0) > 0) {
+          nextRewardDay = rewardDay;
+          break;
+        }
+      }
+      if (nextRewardDay > 0) {
+        rewardEl.style.display = 'block';
+        rewardEl.textContent = '🪙 Próxima recompensa em ' + nextRewardDay + '/7: ' + (_dlConfig.rewardCoinsByDay[nextRewardDay] || 0) + ' CUTS';
+      } else {
+        rewardEl.style.display = 'none';
+      }
+    } else {
+      rewardEl.style.display = 'none';
     }
   } else {
     rewardEl.style.display = 'none';
@@ -1341,32 +1368,41 @@ async function confirmDailyLogin() {
     _dlCheckedKeys.push(currentCycle);
     logActivity('daily_login', 'Check-in diário: ' + currentCycle, { cycleKey: currentCycle });
 
-    // Check if all 7 complete — award coins
-    if (_dlCheckedKeys.length >= 7 && _dlConfig && _dlConfig.weeklyRewardCoins > 0) {
+    // Award coins for the configured day count
+    if (_dlConfig && _dlConfig.rewardCoinsByDay) {
+      var checkedCount = _dlCheckedKeys.length;
+      var rewardCoins = _dlConfig.rewardCoinsByDay[checkedCount] || 0;
       var weekKey = _dlCycleKeys[0];
       var rewardSnap = await db.collection('dailyLoginRewards')
         .where('userId', '==', currentUser.id)
         .where('weekKey', '==', weekKey)
         .get();
 
-      if (rewardSnap.empty) {
-        var coins = _dlConfig.weeklyRewardCoins;
+      var alreadyAwardedForDay = false;
+      rewardSnap.forEach(function(doc) {
+        var data = doc.data();
+        if (data.rewardDay === checkedCount) alreadyAwardedForDay = true;
+        if (!data.rewardDay && checkedCount === 7) alreadyAwardedForDay = true;
+      });
+
+      if (rewardCoins > 0 && !alreadyAwardedForDay) {
         await db.collection('users').doc(currentUser.id).update({
-          cuts: firebase.firestore.FieldValue.increment(coins),
+          cuts: firebase.firestore.FieldValue.increment(rewardCoins),
           cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         await db.collection('dailyLoginRewards').add({
           userId: currentUser.id,
           weekKey: weekKey,
-          coins: coins,
+          rewardDay: checkedCount,
+          coins: rewardCoins,
           awardedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         await db.collection('notifications').doc(currentUser.id).collection('items').add({
-          msg: '🎉 Parabéns! Você completou 7/7 logins diários e ganhou 🪙 ' + coins + ' CUTS!',
+          msg: '🎉 Parabéns! Você ganhou 🪙 ' + rewardCoins + ' CUTS ao completar ' + checkedCount + '/7 logins diários!',
           read: false,
           at: firebase.firestore.FieldValue.serverTimestamp()
         });
-        showToast('🎉 Semana completa! +' + coins + ' CUTS!');
+        showToast('🎉 Recompensa de ' + checkedCount + '/7: +' + rewardCoins + ' CUTS!');
       }
     }
 

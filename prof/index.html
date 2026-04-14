@@ -1025,13 +1025,35 @@ input,select,textarea{font-family:inherit;outline:none}
     <!-- Recompensa semanal -->
     <div class="section-title">🪙 Recompensa Semanal</div>
     <div class="t-form" style="margin-bottom:20px">
-      <div style="margin-bottom:14px">
-        <label class="lbl">MOEDAS (CUTS) POR SEMANA COMPLETA (7/7)</label>
-        <input type="number" class="inp" id="dl-reward-coins" placeholder="Ex: 10" min="0" value="0">
-      </div>
-      <div style="margin-bottom:14px">
-        <label class="lbl">MOEDAS (CUTS) POR PRESENÇA PARCIAL (4/7)</label>
-        <input type="number" class="inp" id="dl-reward-coins-4" placeholder="Ex: 2" min="0" value="0">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:14px">
+        <div>
+          <label class="lbl">DIA 1</label>
+          <input type="number" class="inp" id="dl-reward-day-1" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 2</label>
+          <input type="number" class="inp" id="dl-reward-day-2" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 3</label>
+          <input type="number" class="inp" id="dl-reward-day-3" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 4</label>
+          <input type="number" class="inp" id="dl-reward-day-4" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 5</label>
+          <input type="number" class="inp" id="dl-reward-day-5" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 6</label>
+          <input type="number" class="inp" id="dl-reward-day-6" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 7</label>
+          <input type="number" class="inp" id="dl-reward-day-7" placeholder="0" min="0" value="0">
+        </div>
       </div>
       <button onclick="saveDailyLoginConfig()" class="btn-main">💾 Salvar Configuração</button>
     </div>
@@ -4638,10 +4660,15 @@ async function loadDailyLoginConfig() {
   if (!requireFirebase()) return;
   try {
     var doc = await db.collection('settings').doc('dailyLogin').get();
-    var data = doc.exists ? doc.data() : { enabled: false, weeklyRewardCoins: 0, weeklyRewardCoins4: 0 };
+    var data = doc.exists ? doc.data() : { enabled: false, rewardCoinsByDay: {} };
+    var rewardCoinsByDay = data.rewardCoinsByDay || {};
     document.getElementById('dl-enabled').checked = !!data.enabled;
-    document.getElementById('dl-reward-coins').value = data.weeklyRewardCoins || 0;
-    document.getElementById('dl-reward-coins-4').value = data.weeklyRewardCoins4 || 0;
+    for (var day = 1; day <= 7; day++) {
+      var fallback = 0;
+      if (day === 4 && data.weeklyRewardCoins4 != null) fallback = data.weeklyRewardCoins4;
+      if (day === 7 && data.weeklyRewardCoins != null) fallback = data.weeklyRewardCoins;
+      document.getElementById('dl-reward-day-' + day).value = rewardCoinsByDay[day] != null ? rewardCoinsByDay[day] : fallback;
+    }
     loadDailyLoginStudents();
   } catch(e) {
     console.error('[DailyLogin] Erro ao carregar config:', e);
@@ -4663,14 +4690,17 @@ async function toggleDailyLogin() {
 
 async function saveDailyLoginConfig() {
   if (!requireFirebase()) return;
-  var coins = parseInt(document.getElementById('dl-reward-coins').value) || 0;
-  var coins4 = parseInt(document.getElementById('dl-reward-coins-4').value) || 0;
   var enabled = document.getElementById('dl-enabled').checked;
+  var rewardCoinsByDay = {};
+  for (var day = 1; day <= 7; day++) {
+    rewardCoinsByDay[day] = parseInt(document.getElementById('dl-reward-day-' + day).value) || 0;
+  }
   try {
     await db.collection('settings').doc('dailyLogin').set({
       enabled: enabled,
-      weeklyRewardCoins: coins,
-      weeklyRewardCoins4: coins4
+      rewardCoinsByDay: rewardCoinsByDay,
+      weeklyRewardCoins4: rewardCoinsByDay[4] || 0,
+      weeklyRewardCoins: rewardCoinsByDay[7] || 0
     });
     showToast('✅ Configuração salva!');
   } catch(e) {
