@@ -2879,38 +2879,7 @@ async function saveFeedItem() {
     const docId = editingFeedId || db.collection("feed").doc().id;
     console.log("[4] DocId: " + docId);
     
-    let imageURL = null;
-
-    // Upload da imagem se houver
-    if (file) {
-      console.log("[5] INICIANDO UPLOAD DE IMAGEM: " + file.name);
-      const validTypes = ["image/jpeg","image/png","image/webp","image/avif","image/gif"];
-      if (!validTypes.includes(file.type)) {
-        throw new Error("❌ Formato inválido. Use JPEG, PNG, WEBP, AVIF ou GIF.");
-      }
-      
-      try {
-        const storageRef = firebase.storage().ref();
-        const ext = file.name.split('.').pop() || 'jpg';
-        const storagePath = `feed_images/${docId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
-        
-        console.log("[6] Path de storage: " + storagePath);
-        const uploadTask = storageRef.child(storagePath).put(file, { contentType: file.type });
-        
-        uploadTask.on('state_changed', function(snapshot) {
-          console.log("[PROGRESS] " + Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100) + "%");
-        });
-        
-        const snapshot = await uploadTask;
-        imageURL = await snapshot.ref.getDownloadURL();
-        console.log("[7] IMAGEM ENVIADA: " + imageURL);
-      } catch(uploadErr) {
-        console.error("[ERRO UPLOAD]", uploadErr);
-        throw new Error("❌ Falha ao enviar imagem: " + uploadErr.message);
-      }
-    }
-
-    // Preparar payload
+    // Preparar payload BÁSICO (sem imagem ainda)
     const payload = {
       type: "feed_post",
       hidden: false
@@ -2919,33 +2888,40 @@ async function saveFeedItem() {
     if (icon) payload.icon = icon;
     if (text) payload.text = text;
     if (detail) payload.detail = detail;
-    if (imageURL) payload.imageURL = imageURL;
     
     if (isNew) {
       payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
     }
 
-    console.log("[8] PAYLOAD FINAL:", JSON.stringify(payload));
+    console.log("[5] PAYLOAD (sem imagem ainda):", JSON.stringify(payload));
 
-    // Salvar no Firestore
+    // Salvar POST PRIMEIRO no Firestore (isso é rápido)
     const docRef = db.collection("feed").doc(docId);
     
     if (editingFeedId) {
-      console.log("[9A] Atualizando documento...");
+      console.log("[6A] Atualizando documento...");
       await docRef.update(payload);
-      console.log("[9A-OK] Documento atualizado");
+      console.log("[6A-OK] Documento atualizado");
       showToast("✅ Item atualizado!");
     } else {
-      console.log("[9B] Criando novo documento...");
+      console.log("[6B] Criando novo documento...");
       await docRef.set(payload);
-      console.log("[9B-OK] Documento criado com sucesso!");
+      console.log("[6B-OK] Documento criado com sucesso!");
       showToast("✅ Post publicado!");
+    }
+
+    // Agora fazer upload da imagem EM BACKGROUND (não espera)
+    if (file) {
+      console.log("[7] Iniciando upload de imagem em BACKGROUND");
+      uploadFeedImageAsync(docId, file).catch(err => {
+        console.log("[WARN] Upload de imagem falhou (não crítico):", err.message);
+      });
     }
 
     // Notificar todos os alunos (não crítico)
     try {
       const notifText = text || detail?.substring(0, 50) || "Nova imagem no feed";
-      console.log("[10] Criando notificação...");
+      console.log("[8] Criando notificação...");
       await db.collection("notifications").add({
         type: "new_feed_post",
         title: "NOVO POST NO FEED",
@@ -2954,19 +2930,19 @@ async function saveFeedItem() {
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         createdAt: new Date()
       });
-      console.log("[10-OK] Notificação criada");
+      console.log("[8-OK] Notificação criada");
     } catch(notifErr) {
-      console.log("[10-WARN] Notificação falhou (não crítico):", notifErr.message);
+      console.log("[8-WARN] Notificação falhou (não crítico):", notifErr.message);
     }
 
     // Limpar e voltar
-    console.log("[11] Limpando formulário...");
+    console.log("[9] Limpando formulário...");
     editingFeedId = null;
     document.getElementById("fe-image").value = "";
-    console.log("[12] Voltando para tela do feed...");
+    console.log("[10] Voltando para tela do feed...");
     showScreen("teacher-feed");
     loadFeedManager();
-    console.log("[13] FIM - Sucesso");
+    console.log("[11] FIM - Sucesso");
   } catch(e) {
     console.error("[ERRO PRINCIPAL]", e);
     console.error("[ERRO STACK]", e.stack);
@@ -2976,6 +2952,38 @@ async function saveFeedItem() {
     btn.disabled = false;
     btn.textContent = isNew ? "➕ Publicar" : "💾 Salvar";
     console.log("=== FIM saveFeedItem ===");
+  }
+}
+
+// Upload de imagem em background (async, não bloqueia)
+async function uploadFeedImageAsync(docId, file) {
+  console.log("[BG-1] Iniciando upload async de imagem: " + file.name);
+  
+  const validTypes = ["image/jpeg","image/png","image/webp","image/avif","image/gif"];
+  if (!validTypes.includes(file.type)) {
+    throw new Error("Tipo inválido: " + file.type);
+  }
+  
+  try {
+    const storageRef = firebase.storage().ref();
+    const ext = file.name.split('.').pop() || 'jpg';
+    const storagePath = `feed_images/${docId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
+    
+    console.log("[BG-2] Iniciando upload para: " + storagePath);
+    const snapshot = await storageRef.child(storagePath).put(file, { contentType: file.type });
+    const imageURL = await snapshot.ref.getDownloadURL();
+    
+    console.log("[BG-3] Imagem enviada! URL: " + imageURL);
+    console.log("[BG-4] Atualizando documento com imageURL...");
+    
+    // Atualizar o documento com a URL da imagem
+    const docRef = db.collection("feed").doc(docId);
+    await docRef.update({ imageURL: imageURL });
+    
+    console.log("[BG-5] Documento atualizado com sucesso!");
+  } catch(err) {
+    console.error("[BG-ERROR] Erro no upload async:", err.message);
+    throw err;
   }
 }
 
