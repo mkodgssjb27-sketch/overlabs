@@ -4724,7 +4724,6 @@ async function loadDailyLoginStudents() {
     var students = [];
     usersSnap.forEach(function(doc) {
       var d = doc.data();
-      if (d.username === 'teste') return;
       students.push({ id: doc.id, firstName: d.firstName || '', username: d.username || '' });
     });
 
