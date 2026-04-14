@@ -1555,7 +1555,7 @@ function renderFilteredFeed() {
       return item.targetUserId === currentUser.id;
     }
     if (item.type !== "ride_created" && item.type !== "alert" && item.type !== "feed_post") return false;
-    if (item.type !== 'feed_post' && item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h24) return false;
+    if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h24) return false;
     return true;
   });
   renderFeed(items);
