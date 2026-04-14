@@ -28,7 +28,7 @@ messaging.onBackgroundMessage(payload => {
   return self.registration.showNotification(title, options);
 });
 
-const CACHE_NAME = "overlabs-v211";
+const CACHE_NAME = "overlabs-v212";
 const URLS_TO_CACHE = [
   "./aluno.html",
   "./manifest.json",
