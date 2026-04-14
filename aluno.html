@@ -380,6 +380,14 @@ input,select{font-family:inherit;outline:none}
         <label class="lbl">MÊS</label>
         <input type="month" class="inp" id="my-presence-month" style="color-scheme:dark" onchange="loadMyPresence()">
       </div>
+      <!-- Painel de Debug -->
+      <div id="presence-debug-panel" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:16px;display:none">
+        <div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px">🔧 DEBUG PRESENÇA</div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px">ID: <span id="debug-user-id" style="color:#fff">carregando...</span></div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px">Mês: <span id="debug-month-val" style="color:#fff">carregando...</span></div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:8px">Status: <span id="debug-status" style="color:#fff">carregando...</span></div>
+        <button onclick="forcePresenceSync()" style="background:rgba(56,189,248,.12);color:#38bdf8;border:none;border-radius:8px;padding:6px 10px;font-weight:700;font-size:11px;cursor:pointer">🔄 Sincronizar</button>
+      </div>
       <div id="my-presence-stats"></div>
       <div id="my-presence-list"></div>
       <div class="empty" id="my-presence-empty" style="display:none"><div class="icon">📋</div><p>Nenhuma presença neste mês</p></div>
@@ -1551,18 +1559,24 @@ function renderFeed(items) {
     };
     const c = colors[item.type] || colors.alert;
     const time = item.createdAt ? fmtTs(item.createdAt) : "agora";
-    const hasMore = (item.detail && item.detail.trim()) || item.imageURL;
+    const hasDetail = item.detail && item.detail.trim();
+    const hasImage = item.imageURL;
+    const hasTitle = item.text && item.text.trim();
+    const hasMore = hasDetail || hasImage;
     const expanded = expandedFeedIds.has(item.id);
 
+    // Se não há NADA, não renderiza (deveria ser filtrado antes, mas por segurança)
+    if (!hasTitle && !hasMore) return "";
+
     return `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:16px;padding:16px;margin-bottom:10px">
-      ${item.text ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      ${hasTitle ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <span style="font-size:22px">${item.icon || "📌"}</span>
         <span style="font-weight:800;font-size:14px;color:#fff;flex:1">${escapeHtml(item.text)}</span>
-      </div>` : ""}
-      ${hasMore ? `<button onclick="toggleFeedDetails('${item.id}')" id="feed-btn-${item.id}" style="margin-top:8px;padding:10px 14px;border:none;border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-weight:700;cursor:pointer;width:100%">${expanded ? 'Ver menos' : 'Ver mais'}</button>` : ""}
-      <div id="feed-detail-${item.id}" style="display:${expanded ? 'block' : 'none'};margin-top:12px;color:#94a3b8;font-size:13px">
-        ${item.detail ? `<p style="margin:0 0 10px">${escapeHtml(item.detail)}</p>` : ""}
-        ${item.imageURL ? `<img id="feed-img-${item.id}" data-src="${item.imageURL}" src="${expanded ? item.imageURL : ''}" style="width:100%;border-radius:16px;object-fit:cover;${expanded ? 'display:block' : 'display:none'}">` : ""}
+      </div>` : `<div style="margin-bottom:10px"><span style="font-size:22px">${item.icon || "📌"}</span></div>`}
+      ${hasMore ? `<button onclick="toggleFeedDetails('${item.id}')" id="feed-btn-${item.id}" style="margin-top:8px;padding:10px 14px;border:none;border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-weight:700;cursor:pointer;width:100%;font-size:13px">${expanded ? 'Ver menos ▲' : 'Ver mais ▼'}</button>` : ""}
+      <div id="feed-detail-${item.id}" style="display:${expanded ? 'block' : 'none'};margin-top:12px">
+        ${hasDetail ? `<p style="color:#94a3b8;font-size:13px;margin:0 0 10px">${escapeHtml(item.detail)}</p>` : ""}
+        ${hasImage ? `<img id="feed-img-${item.id}" data-src="${item.imageURL}" src="${expanded ? item.imageURL : ''}" style="width:100%;border-radius:16px;object-fit:cover;${expanded ? 'display:block' : 'display:none'}">` : ""}
       </div>
       <p style="color:#64748b;font-size:11px;margin-top:8px">${time}</p>
     </div>`;
@@ -3282,6 +3296,8 @@ if (currentUser && firebaseOk) {
     }
     // Sincronizar dados do Firestore com localStorage (caso professor tenha editado)
     const freshData = doc.data();
+    // SEMPRE SINCRONIZAR O ID
+    if (!currentUser.id) currentUser.id = doc.id;
     if (freshData.firstName && freshData.firstName !== currentUser.firstName) {
       currentUser.firstName = freshData.firstName;
     }
@@ -3342,11 +3358,77 @@ function initMyPresence() {
     const now = new Date();
     monthEl.value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
   }
+  updatePresenceDebug();
   loadMyPresence();
 }
 
+// Força sincronização do currentUser.id com Firestore
+function forcePresenceSync() {
+  if (!firebaseOk || !currentUser) {
+    updatePresenceDebug("Erro: Firebase ou usuário não disponível");
+    return;
+  }
+
+  updatePresenceDebug("🔄 Sincronizando...");
+  db.collection("users").doc(currentUser.id).get().then(doc => {
+    if (doc.exists) {
+      const freshData = doc.data();
+      // Sincronizar ID se necessário
+      if (!currentUser.id) currentUser.id = doc.id;
+      if (freshData.firstName && freshData.firstName !== currentUser.firstName) {
+        currentUser.firstName = freshData.firstName;
+      }
+      if (freshData.username && freshData.username !== currentUser.username) {
+        currentUser.username = freshData.username;
+      }
+      localStorage.setItem("carolampra_user", JSON.stringify(currentUser));
+      updatePresenceDebug("✅ Sincronizado! Recarregando...");
+      setTimeout(() => loadMyPresence(), 500);
+    } else {
+      updatePresenceDebug("❌ Usuário não encontrado no Firestore");
+    }
+  }).catch(e => {
+    updatePresenceDebug("❌ Erro na sincronização: " + e.message);
+  });
+}
+
+// Atualiza o painel de debug
+function updatePresenceDebug(status = null) {
+  const panel = document.getElementById("presence-debug-panel");
+  const userIdEl = document.getElementById("debug-user-id");
+  const monthEl = document.getElementById("debug-month-val");
+  const statusEl = document.getElementById("debug-status");
+
+  if (userIdEl) userIdEl.textContent = currentUser?.id || "N/A";
+  if (monthEl) monthEl.textContent = document.getElementById("my-presence-month")?.value || "N/A";
+  if (statusEl && status) statusEl.textContent = status;
+}
+
+// Debug function: window.debugPresence() no console
+window.debugPresence = function() {
+  console.log("=== DEBUG PRESENÇA ===");
+  console.log("currentUser:", currentUser);
+  console.log("currentUser.id:", currentUser?.id);
+  console.log("localStorage carolampra_user:", localStorage.getItem("carolampra_user"));
+  console.log("firebaseOk:", firebaseOk);
+  const monthEl = document.getElementById("my-presence-month");
+  console.log("month input value:", monthEl?.value);
+  console.log("my-presence-empty display:", document.getElementById("my-presence-empty")?.style.display);
+  console.log("my-presence-list innerHTML length:", document.getElementById("my-presence-list")?.innerHTML?.length);
+  console.log("my-presence-stats innerHTML:", document.getElementById("my-presence-stats")?.innerHTML?.substring(0, 100));
+};
+
 function loadMyPresence() {
-  if (!firebaseOk || !currentUser) return;
+  if (!firebaseOk) return;
+  
+  // Garantir que currentUser e ID estão válidos
+  if (!currentUser || !currentUser.id) {
+    console.warn("[loadMyPresence] currentUser inválido:", currentUser);
+    const empty = document.getElementById("my-presence-empty");
+    if (empty) empty.style.display = "block";
+    return;
+  }
+
   const monthVal = document.getElementById("my-presence-month").value;
   if (!monthVal) return;
 
@@ -3361,14 +3443,28 @@ function loadMyPresence() {
   const list = document.getElementById("my-presence-list");
   const empty = document.getElementById("my-presence-empty");
 
+  console.log("[loadMyPresence] Consultando userId:", currentUser.id, "| mês:", monthVal);
+
   unsubPresence = db.collection("attendance")
     .where("userId", "==", currentUser.id)
     .onSnapshot(snap => {
+      console.log("[loadMyPresence] Resultados recebidos:", snap.docs.length, "docs");
+      if (snap.docs.length > 0) {
+        console.log("[loadMyPresence] Alguns docs:", snap.docs.slice(0, 2).map(d => ({ userId: d.data().userId, date: d.data().date })));
+      }
       const allItems = snap.docs.map(d => d.data());
       // Filtrar pelo mês selecionado e ordenar no JS
       const items = allItems.filter(a => a.date >= startDate && a.date < endMonth);
       items.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      console.log("[loadMyPresence] Após filtro de mês:", items.length, "registros");
       if (empty) empty.style.display = items.length === 0 ? "block" : "none";
+
+      // Mostrar painel de debug se não há presenças
+      const debugPanel = document.getElementById("presence-debug-panel");
+      if (debugPanel) {
+        debugPanel.style.display = items.length === 0 ? "block" : "none";
+        updatePresenceDebug(items.length === 0 ? "Nenhuma presença encontrada" : "Presenças carregadas");
+      }
 
       const monthNames = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
       const mName = monthNames[Number(month) - 1] + " " + year;
