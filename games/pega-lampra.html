@@ -209,7 +209,7 @@ function goHome(){ window.parent.postMessage({type:'GAME_GO_HOME'},'*'); }
 // ═══ ROOM MANAGEMENT ═══
 var roomCode=null, isHost=false, unsubRoom=null, unsubPlayers=null;
 var players={}, collectibles={};
-var gameState='lobby';
+var gameState='lobby', minPlayersRequired=2;
 var MAP_W=3000, MAP_H=3000, GAME_DURATION=900;
 var leftEarly=false, amDead=false, spectatingId=null;
 
@@ -217,9 +217,14 @@ function genCode(){var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r='';for(var i=0;i<5
 
 function seedCollectibles(){var co={};for(var i=0;i<50;i++)co['c'+i]={x:Math.random()*MAP_W,y:Math.random()*MAP_H,t:Math.floor(Math.random()*3)};return co;}
 
+async function loadMinPlayers(){
+  try{var sd=await db.collection('settings').doc('games').get();if(sd.exists){var pl=sd.data()['pega-lampra']||{};minPlayersRequired=Math.max(1,pl.minPlayers||2);}else{minPlayersRequired=2;}}catch(e){minPlayersRequired=2;}
+}
+
 async function createRoom(){
   setErr('Criando sala...',false);
   try{
+    await loadMinPlayers();
     var code=genCode();
     var ex=await db.collection('game_rooms').doc(code).get();
     if(ex.exists&&ex.data().status!=='finished') code=genCode();
@@ -236,6 +241,7 @@ async function joinRoom(){
   if(code.length<4){setErr('Código inválido');return;}
   setErr('Entrando...',false);
   try{
+    await loadMinPlayers();
     var doc=await db.collection('game_rooms').doc(code).get();
     if(!doc.exists){setErr('Sala não encontrada!');return;}
     var d=doc.data();
@@ -270,8 +276,11 @@ function enterWaiting(){
     });
     document.getElementById('waiting-players').innerHTML=html;
     var n=Object.keys(players).length;
-    document.getElementById('waiting-status').textContent=n+' jogador'+(n!==1?'es':'')+' na sala';
-    if(isHost&&n>=1)document.getElementById('btn-start').style.display='block';
+    document.getElementById('waiting-status').textContent=n+' jogador'+(n!==1?'es':'')+' na sala'+(isHost?' (mín: '+minPlayersRequired+')':'');
+    if(isHost){
+      if(n>=minPlayersRequired){document.getElementById('btn-start').style.display='block';document.getElementById('btn-start').disabled=false;}
+      else{document.getElementById('btn-start').style.display='block';document.getElementById('btn-start').disabled=true;}
+    }
   });
   if(unsubRoom)unsubRoom();
   unsubRoom=db.collection('game_rooms').doc(roomCode).onSnapshot(function(doc){
@@ -298,6 +307,8 @@ function enterWaiting(){
 
 async function hostStartGame(){
   if(!isHost)return;
+  var n=Object.keys(players).length;
+  if(n<minPlayersRequired){setErr('Mínimo de '+minPlayersRequired+' jogador'+(minPlayersRequired>1?'es':'')+' para iniciar');return;}
   document.getElementById('btn-start').disabled=true;
   try{
     await db.collection('game_rooms').doc(roomCode).update({status:'countdown'});
@@ -346,7 +357,7 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 // ═══ CANVAS GAME ═══
 var canvas,ctx;
 var myX=1500,myY=1500,myScore=0;
-var BASE_SIZE=28,GROW_RATE=0.6,MAX_SIZE=80;
+var BASE_SIZE=28,GROW_RATE=0.6,MAX_SIZE=240;
 var mySize=BASE_SIZE;
 var SPEED=264,BOOST_SPEED=528;
 var lastFrame=0,gameStartTime=0,gameDuration=900000;

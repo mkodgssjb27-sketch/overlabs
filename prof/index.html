@@ -1097,7 +1097,14 @@ input,select,textarea{font-family:inherit;outline:none}
           <input type="number" class="inp" id="game-pegalampra-3" placeholder="0" min="0" value="0" style="text-align:center">
         </div>
       </div>
-      <div style="font-size:11px;color:#64748b">Os valores acima são em moedas CUTS. Deixe 0 para não dar recompensa.</div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:14px">Os valores acima são em moedas CUTS. Deixe 0 para não dar recompensa.</div>
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px">
+        <div style="flex:1">
+          <div style="font-weight:700;color:#fff;font-size:13px">👥 Mínimo de Jogadores</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px">Quantos alunos precisam estar na sala para iniciar</div>
+        </div>
+        <input type="number" class="inp" id="game-pegalampra-minplayers" min="1" max="20" value="2" style="text-align:center;width:64px;flex-shrink:0">
+      </div>
     </div>
 
     <!-- Jogo 2: Em breve -->
@@ -4750,6 +4757,7 @@ async function loadGamesConfig() {
     document.getElementById('game-pegalampra-1').value = pl.first || 0;
     document.getElementById('game-pegalampra-2').value = pl.second || 0;
     document.getElementById('game-pegalampra-3').value = pl.third || 0;
+    document.getElementById('game-pegalampra-minplayers').value = pl.minPlayers || 2;
     // Toggles
     var gamesVisible = data.gamesVisible !== false; // default true
     var plEnabled = pl.enabled !== false; // default true
@@ -4782,6 +4790,7 @@ async function saveGamesConfig() {
   var first = parseInt(document.getElementById('game-pegalampra-1').value) || 0;
   var second = parseInt(document.getElementById('game-pegalampra-2').value) || 0;
   var third = parseInt(document.getElementById('game-pegalampra-3').value) || 0;
+  var minPlayers = Math.max(1, parseInt(document.getElementById('game-pegalampra-minplayers').value) || 2);
   var gamesVisible = document.getElementById('toggle-games-visible').checked;
   var plEnabled = document.getElementById('toggle-pegalampra').checked;
   setToggle('toggle-games-visible', gamesVisible);
@@ -4790,7 +4799,7 @@ async function saveGamesConfig() {
   try {
     await db.collection('settings').doc('games').set({
       gamesVisible: gamesVisible,
-      'pega-lampra': { first: first, second: second, third: third, enabled: plEnabled }
+      'pega-lampra': { first: first, second: second, third: third, enabled: plEnabled, minPlayers: minPlayers }
     }, { merge: true });
     showToast('✅ Configuração de Games salva!');
   } catch(e) {
