@@ -964,6 +964,12 @@ function showScreen(name, skipHistory) {
 
 // Botão voltar do Android (hardware/software)
 window.addEventListener("popstate", function(e) {
+  // Fechar lightbox de imagem se estiver aberto
+  var lb = document.getElementById('img-lightbox');
+  if (lb && lb.style.display === 'flex') {
+    lb.style.display = 'none';
+    return;
+  }
   if (screenHistory.length > 0) {
     const prev = screenHistory.pop();
     showScreen(prev, true);
@@ -1634,9 +1640,14 @@ function openImgLightbox(src) {
   var el = document.getElementById('img-lightbox');
   document.getElementById('img-lightbox-src').src = src;
   el.style.display = 'flex';
+  history.pushState({ lightbox: true }, '');
 }
 function closeImgLightbox() {
-  document.getElementById('img-lightbox').style.display = 'none';
+  var el = document.getElementById('img-lightbox');
+  if (el.style.display === 'flex') {
+    el.style.display = 'none';
+    history.back();
+  }
 }
 
 function renderStudentRides(rides) {
