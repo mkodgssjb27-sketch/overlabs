@@ -703,11 +703,11 @@ input,select,textarea{font-family:inherit;outline:none}
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
       <div style="margin-bottom:16px">
-        <label class="lbl">ÍCONE</label>
-        <input class="inp" id="fe-icon" placeholder="🚗" maxlength="4">
+        <label class="lbl">ÍCONE (opcional)</label>
+        <input class="inp" id="fe-icon" placeholder="📌" maxlength="4">
       </div>
       <div style="margin-bottom:16px">
-        <label class="lbl">TEXTO</label>
+        <label class="lbl">TEXTO (opcional)</label>
         <input class="inp" id="fe-text" placeholder="Título do post">
       </div>
       <div style="margin-bottom:16px">
@@ -2828,57 +2828,70 @@ async function saveFeedItem() {
   const icon = document.getElementById("fe-icon").value.trim();
   const text = document.getElementById("fe-text").value.trim();
   const detail = document.getElementById("fe-detail").value.trim();
-  if (!text) { showToast("Informe o texto"); return; }
+  const fileInput = document.getElementById("fe-image");
+  const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+  
+  // Validar que há pelo menos ALGO (texto, detalhe ou imagem)
+  if (!text && !detail && !file) {
+    showToast("❌ Preencha pelo menos um campo ou envie uma imagem");
+    return;
+  }
 
   const btn = document.getElementById("btn-save-feed");
   const isNew = !editingFeedId;
-  btn.disabled = true; btn.textContent = isNew ? "Publicando..." : "Salvando...";
+  btn.disabled = true;
+  btn.textContent = isNew ? "Publicando..." : "Salvando...";
   
   try {
-    const fileInput = document.getElementById("fe-image");
-    const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
     let imageURL = null;
     const docId = editingFeedId || db.collection("feed").doc().id;
     const docRef = db.collection("feed").doc(docId);
 
+    // Upload da imagem se houver
     if (file) {
       const validTypes = ["image/jpeg","image/png","image/webp","image/avif","image/gif"];
       if (!validTypes.includes(file.type)) {
         throw new Error("Formato inválido. Use JPEG, PNG, WEBP, AVIF ou GIF.");
       }
-      try {
-        const storageRef = firebase.storage().ref();
-        const fileName = file.name.split('.')[0];
-        const imageRef = storageRef.child(`feed_images/${docId}_${Date.now()}_${fileName}.jpg`);
-        await imageRef.put(file, { contentType: file.type });
-        imageURL = await imageRef.getDownloadURL();
-      } catch(storageErr) {
-        console.error("Erro ao upload:", storageErr);
-        throw new Error("Falha ao enviar imagem. Tente novamente.");
-      }
+      
+      const storageRef = firebase.storage().ref();
+      const fileName = file.name.split('.')[0];
+      const ext = file.name.split('.').pop() || 'jpg';
+      const imageRef = storageRef.child(`feed_images/${docId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`);
+      
+      await imageRef.put(file, { contentType: file.type });
+      imageURL = await imageRef.getDownloadURL();
     }
 
-    const payload = { icon, text, detail };
+    // Preparar payload
+    const payload = {};
+    if (icon) payload.icon = icon;
+    if (text) payload.text = text;
+    if (detail) payload.detail = detail;
+    if (imageURL) payload.imageURL = imageURL;
+    
     if (isNew) {
       payload.type = "feed_post";
       payload.hidden = false;
       payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
     }
-    if (imageURL) payload.imageURL = imageURL;
 
+    // Salvar
     if (editingFeedId) {
       await docRef.update(payload);
       showToast("✅ Item atualizado!");
     } else {
       await docRef.set(payload);
       showToast("✅ Post publicado!");
-      // Notificar todos os alunos sobre novo post
+      
+      // Notificar todos os alunos
       try {
-        await db.collection("notifications").doc().set({
+        const notifText = text || detail?.substring(0, 50) || "Nova imagem no feed";
+        await db.collection("notifications").add({
           type: "new_feed_post",
           title: "NOVO POST NO FEED",
-          message: text,
-          icon: icon,
+          message: notifText,
+          icon: icon || "📌",
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           createdAt: new Date()
         });
@@ -2893,7 +2906,7 @@ async function saveFeedItem() {
     loadFeedManager();
   } catch(e) {
     console.error("Erro ao salvar:", e);
-    showToast(e.message || "Erro ao salvar");
+    showToast(e.message || "❌ Erro ao publicar. Tente novamente.");
   } finally {
     btn.disabled = false; btn.textContent = "💾 Salvar";
   }

@@ -1555,11 +1555,11 @@ function renderFeed(items) {
     const expanded = expandedFeedIds.has(item.id);
 
     return `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:16px;padding:16px;margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      ${item.text ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <span style="font-size:22px">${item.icon || "📌"}</span>
-        <span style="font-weight:800;font-size:14px;color:#fff;flex:1">${escapeHtml(item.text || "")}</span>
-      </div>
-      ${hasMore ? `<button onclick="toggleFeedDetails('${item.id}')" id="feed-btn-${item.id}" style="margin-top:8px;padding:10px 14px;border:none;border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-weight:700;cursor:pointer">${expanded ? 'Ver menos' : 'Ver mais'}</button>` : ""}
+        <span style="font-weight:800;font-size:14px;color:#fff;flex:1">${escapeHtml(item.text)}</span>
+      </div>` : ""}
+      ${hasMore ? `<button onclick="toggleFeedDetails('${item.id}')" id="feed-btn-${item.id}" style="margin-top:8px;padding:10px 14px;border:none;border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-weight:700;cursor:pointer;width:100%">${expanded ? 'Ver menos' : 'Ver mais'}</button>` : ""}
       <div id="feed-detail-${item.id}" style="display:${expanded ? 'block' : 'none'};margin-top:12px;color:#94a3b8;font-size:13px">
         ${item.detail ? `<p style="margin:0 0 10px">${escapeHtml(item.detail)}</p>` : ""}
         ${item.imageURL ? `<img id="feed-img-${item.id}" data-src="${item.imageURL}" src="${expanded ? item.imageURL : ''}" style="width:100%;border-radius:16px;object-fit:cover;${expanded ? 'display:block' : 'display:none'}">` : ""}
