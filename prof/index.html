@@ -1029,6 +1029,10 @@ input,select,textarea{font-family:inherit;outline:none}
         <label class="lbl">MOEDAS (CUTS) POR SEMANA COMPLETA (7/7)</label>
         <input type="number" class="inp" id="dl-reward-coins" placeholder="Ex: 10" min="0" value="0">
       </div>
+      <div style="margin-bottom:14px">
+        <label class="lbl">MOEDAS (CUTS) POR PRESENÇA PARCIAL (4/7)</label>
+        <input type="number" class="inp" id="dl-reward-coins-4" placeholder="Ex: 2" min="0" value="0">
+      </div>
       <button onclick="saveDailyLoginConfig()" class="btn-main">💾 Salvar Configuração</button>
     </div>
 
@@ -4634,9 +4638,10 @@ async function loadDailyLoginConfig() {
   if (!requireFirebase()) return;
   try {
     var doc = await db.collection('settings').doc('dailyLogin').get();
-    var data = doc.exists ? doc.data() : { enabled: false, weeklyRewardCoins: 0 };
+    var data = doc.exists ? doc.data() : { enabled: false, weeklyRewardCoins: 0, weeklyRewardCoins4: 0 };
     document.getElementById('dl-enabled').checked = !!data.enabled;
     document.getElementById('dl-reward-coins').value = data.weeklyRewardCoins || 0;
+    document.getElementById('dl-reward-coins-4').value = data.weeklyRewardCoins4 || 0;
     loadDailyLoginStudents();
   } catch(e) {
     console.error('[DailyLogin] Erro ao carregar config:', e);
@@ -4659,11 +4664,13 @@ async function toggleDailyLogin() {
 async function saveDailyLoginConfig() {
   if (!requireFirebase()) return;
   var coins = parseInt(document.getElementById('dl-reward-coins').value) || 0;
+  var coins4 = parseInt(document.getElementById('dl-reward-coins-4').value) || 0;
   var enabled = document.getElementById('dl-enabled').checked;
   try {
     await db.collection('settings').doc('dailyLogin').set({
       enabled: enabled,
-      weeklyRewardCoins: coins
+      weeklyRewardCoins: coins,
+      weeklyRewardCoins4: coins4
     });
     showToast('✅ Configuração salva!');
   } catch(e) {
