@@ -27,7 +27,6 @@ window.addEventListener("beforeinstallprompt", function(e) {
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -683,9 +682,6 @@ input,select,textarea{font-family:inherit;outline:none}
     </div>
   </div>
   <div class="t-content" style="max-width:660px">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:18px">
-      <button onclick="openNewFeed()" class="btn-main" style="padding:10px 18px">➕ Novo post</button>
-    </div>
     <div class="loading" id="feed-mgr-loading"><div class="spin"></div>Carregando...</div>
     <div class="empty" id="feed-mgr-empty" style="display:none"><div class="icon">📭</div><p>Nenhum item no feed</p></div>
     <div id="feed-mgr-list"></div>
@@ -703,23 +699,18 @@ input,select,textarea{font-family:inherit;outline:none}
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
       <div style="margin-bottom:16px">
-        <label class="lbl">ÍCONE (opcional)</label>
-        <input class="inp" id="fe-icon" placeholder="📌" maxlength="4">
+        <label class="lbl">ÍCONE</label>
+        <input class="inp" id="fe-icon" placeholder="🚗" maxlength="4">
       </div>
       <div style="margin-bottom:16px">
-        <label class="lbl">TEXTO (opcional)</label>
-        <input class="inp" id="fe-text" placeholder="Título do post">
+        <label class="lbl">TEXTO</label>
+        <input class="inp" id="fe-text" placeholder="Texto da atualização">
       </div>
       <div style="margin-bottom:16px">
         <label class="lbl">DETALHE (opcional)</label>
-        <textarea class="inp" id="fe-detail" placeholder="Conteúdo do post" style="min-height:140px"></textarea>
+        <input class="inp" id="fe-detail" placeholder="Informação extra">
       </div>
-      <div style="margin-bottom:16px">
-        <label class="lbl">FOTO (opcional)</label>
-        <input type="file" class="inp" id="fe-image" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" onchange="previewFeedImage(this)">
-      </div>
-      <div id="fe-image-preview" style="margin-bottom:16px"></div>
-      <button type="button" onclick="saveFeedItem()" class="btn-main" id="btn-save-feed" style="width:100%">➕ Publicar</button>
+      <button onclick="saveFeedItem()" class="btn-main" id="btn-save-feed">💾 Salvar</button>
     </div>
   </div>
 </div>
@@ -1419,11 +1410,11 @@ window.addEventListener("popstate", function(e) {
 // ── Helpers ──
 function clearErr(id) { const el = document.getElementById(id); if(el) el.textContent = ""; }
 function setErr(id, msg) { const el = document.getElementById(id); if(el) el.textContent = msg; }
-function showToast(msg, duration = 3000) {
+function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), duration);
+  setTimeout(() => t.classList.remove("show"), 3000);
 }
 function showConfirmModal(title, msg, onConfirm) {
   const modal = document.getElementById("confirm-modal");
@@ -2766,7 +2757,6 @@ function renderFeedManager(items) {
           <span style="font-size:11px;color:#64748b">${hidden?'OCULTO':''}</span>
         </div>
         ${item.detail ? `<p style="color:#94a3b8;font-size:13px;margin-left:32px;margin-bottom:8px">${escapeHtml(item.detail)}</p>` : ""}
-        ${item.imageURL ? `<p style="color:#94a3b8;font-size:13px;margin-left:32px;margin-bottom:8px">Imagem: ${escapeHtml(item.imageURL)}</p>` : ""}
         <p style="color:#64748b;font-size:11px;margin-left:32px;margin-bottom:10px">${time}</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button onclick="openEditFeed('${item.id}')" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">✏️ Editar</button>
@@ -2777,214 +2767,33 @@ function renderFeedManager(items) {
   }).join("");
 }
 
-function openNewFeed() {
-  console.log("openNewFeed chamado");
-  editingFeedId = null;
-  document.getElementById("fe-icon").value = "";
-  document.getElementById("fe-text").value = "";
-  document.getElementById("fe-detail").value = "";
-  document.getElementById("fe-image").value = "";
-  const preview = document.getElementById("fe-image-preview");
-  if (preview) preview.innerHTML = "";
-  const btn = document.getElementById("btn-save-feed");
-  if (btn) btn.textContent = "➕ Publicar";
-  showScreen("teacher-feed-edit");
-}
-
-function previewFeedImage(input) {
-  const preview = document.getElementById("fe-image-preview");
-  if (!preview) return;
-  const file = input.files[0];
-  if (!file) { preview.innerHTML = ""; return; }
-  const validTypes = ["image/jpeg","image/png","image/webp","image/avif","image/gif"];
-  if (!validTypes.includes(file.type)) {
-    showToast("Formato inválido. Use JPEG, PNG, WEBP, AVIF ou GIF.");
-    input.value = "";
-    preview.innerHTML = "";
-    return;
-  }
-  const url = URL.createObjectURL(file);
-  preview.innerHTML = `<img src="${url}" style="width:100%;border-radius:16px;object-fit:cover;max-height:220px">`;
-}
-
 function openEditFeed(id) {
-  console.log("openEditFeed chamado com id:", id);
   const item = allFeedItems.find(f => f.id === id);
-  if (!item) {
-    console.error("Item não encontrado:", id);
-    return;
-  }
+  if (!item) return;
   editingFeedId = id;
   document.getElementById("fe-icon").value = item.icon || "";
   document.getElementById("fe-text").value = item.text || "";
   document.getElementById("fe-detail").value = item.detail || "";
-  document.getElementById("fe-image").value = "";
-  const preview = document.getElementById("fe-image-preview");
-  if (preview) {
-    if (item.imageURL) {
-      preview.innerHTML = `<img src="${item.imageURL}" style="width:100%;border-radius:16px;object-fit:cover;max-height:220px"><p style="color:#94a3b8;font-size:12px;margin-top:8px">Imagem atual. Envie um novo arquivo para substituir.</p>`;
-    } else {
-      preview.innerHTML = "";
-    }
-  }
-  const btn = document.getElementById("btn-save-feed");
-  if (btn) btn.textContent = "💾 Salvar";
   showScreen("teacher-feed-edit");
 }
 
 async function saveFeedItem() {
-  console.log("=== INÍCIO saveFeedItem ===");
-  
-  if (!firebaseOk) {
-    console.error("Firebase não ok");
-    showToast("❌ Firebase não configurado");
-    return;
-  }
-  
-  if (!db) {
-    console.error("DB não definido");
-    showToast("❌ Database não inicializado");
-    return;
-  }
-  
+  if (!editingFeedId || !firebaseOk) return;
   const icon = document.getElementById("fe-icon").value.trim();
   const text = document.getElementById("fe-text").value.trim();
   const detail = document.getElementById("fe-detail").value.trim();
-  const fileInput = document.getElementById("fe-image");
-  const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-  
-  console.log("[1] Valores capturados:", { icon, text, detail, file: file ? file.name : null });
-  
-  // Validar que há pelo menos ALGO (texto, detalhe ou imagem)
-  if (!text && !detail && !file) {
-    console.warn("[2] Validação falhou - nada preenchido");
-    showToast("❌ Preencha pelo menos um campo ou envie uma imagem");
-    return;
-  }
+  if (!text) { showToast("Informe o texto"); return; }
 
   const btn = document.getElementById("btn-save-feed");
-  if (!btn) {
-    console.error("[ERRO] Botão não encontrado");
-    showToast("❌ Erro - botão não encontrado");
-    return;
-  }
-  
-  const isNew = !editingFeedId;
-  btn.disabled = true;
-  btn.textContent = isNew ? "⏳ Publicando..." : "⏳ Salvando...";
-  console.log("[3] Botão desabilitado");
-  
+  btn.disabled = true; btn.textContent = "Salvando...";
   try {
-    // Gerar ID do documento
-    const docId = editingFeedId || db.collection("feed").doc().id;
-    console.log("[4] DocId: " + docId);
-    
-    // Preparar payload BÁSICO (sem imagem ainda)
-    const payload = {
-      type: "feed_post",
-      hidden: false
-    };
-    
-    if (icon) payload.icon = icon;
-    if (text) payload.text = text;
-    if (detail) payload.detail = detail;
-    
-    if (isNew) {
-      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-    }
-
-    console.log("[5] PAYLOAD (sem imagem ainda):", JSON.stringify(payload));
-
-    // Salvar POST PRIMEIRO no Firestore (isso é rápido)
-    const docRef = db.collection("feed").doc(docId);
-    
-    if (editingFeedId) {
-      console.log("[6A] Atualizando documento...");
-      await docRef.update(payload);
-      console.log("[6A-OK] Documento atualizado");
-      showToast("✅ Item atualizado!");
-    } else {
-      console.log("[6B] Criando novo documento...");
-      await docRef.set(payload);
-      console.log("[6B-OK] Documento criado com sucesso!");
-      showToast("✅ Post publicado!");
-    }
-
-    // Agora fazer upload da imagem EM BACKGROUND (não espera)
-    if (file) {
-      console.log("[7] Iniciando upload de imagem em BACKGROUND");
-      uploadFeedImageAsync(docId, file).catch(err => {
-        console.log("[WARN] Upload de imagem falhou (não crítico):", err.message);
-      });
-    }
-
-    // Notificar todos os alunos (não crítico)
-    try {
-      const notifText = text || detail?.substring(0, 50) || "Nova imagem no feed";
-      console.log("[8] Criando notificação...");
-      await db.collection("notifications").add({
-        type: "new_feed_post",
-        title: "NOVO POST NO FEED",
-        message: notifText,
-        icon: icon || "📌",
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        createdAt: new Date()
-      });
-      console.log("[8-OK] Notificação criada");
-    } catch(notifErr) {
-      console.log("[8-WARN] Notificação falhou (não crítico):", notifErr.message);
-    }
-
-    // Limpar e voltar
-    console.log("[9] Limpando formulário...");
+    await db.collection("feed").doc(editingFeedId).update({ icon, text, detail });
+    showToast("✅ Item atualizado!");
     editingFeedId = null;
-    document.getElementById("fe-image").value = "";
-    console.log("[10] Voltando para tela do feed...");
     showScreen("teacher-feed");
     loadFeedManager();
-    console.log("[11] FIM - Sucesso");
-  } catch(e) {
-    console.error("[ERRO PRINCIPAL]", e);
-    console.error("[ERRO STACK]", e.stack);
-    showToast(e.message || "❌ Erro ao publicar. Tente novamente.");
-  } finally {
-    console.log("[FINALLY] Resetando botão");
-    btn.disabled = false;
-    btn.textContent = isNew ? "➕ Publicar" : "💾 Salvar";
-    console.log("=== FIM saveFeedItem ===");
-  }
-}
-
-// Upload de imagem em background (async, não bloqueia)
-async function uploadFeedImageAsync(docId, file) {
-  console.log("[BG-1] Iniciando upload async de imagem: " + file.name);
-  
-  const validTypes = ["image/jpeg","image/png","image/webp","image/avif","image/gif"];
-  if (!validTypes.includes(file.type)) {
-    throw new Error("Tipo inválido: " + file.type);
-  }
-  
-  try {
-    const storageRef = firebase.storage().ref();
-    const ext = file.name.split('.').pop() || 'jpg';
-    const storagePath = `feed_images/${docId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
-    
-    console.log("[BG-2] Iniciando upload para: " + storagePath);
-    const snapshot = await storageRef.child(storagePath).put(file, { contentType: file.type });
-    const imageURL = await snapshot.ref.getDownloadURL();
-    
-    console.log("[BG-3] Imagem enviada! URL: " + imageURL);
-    console.log("[BG-4] Atualizando documento com imageURL...");
-    
-    // Atualizar o documento com a URL da imagem
-    const docRef = db.collection("feed").doc(docId);
-    await docRef.update({ imageURL: imageURL });
-    
-    console.log("[BG-5] Documento atualizado com sucesso!");
-  } catch(err) {
-    console.error("[BG-ERROR] Erro no upload async:", err.message);
-    throw err;
-  }
+  } catch(e) { showToast("Erro ao salvar"); }
+  btn.disabled = false; btn.textContent = "💾 Salvar";
 }
 
 async function toggleFeedVisibility(id, hide) {
