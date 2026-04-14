@@ -759,6 +759,11 @@ input,select{font-family:inherit;outline:none}
   <iframe id="loja-iframe" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
 </div>
 
+<!-- Image Lightbox -->
+<div id="img-lightbox" onclick="closeImgLightbox()" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.9);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px;cursor:pointer">
+  <img id="img-lightbox-src" style="max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain">
+</div>
+
 <!-- Daily Login Overlay -->
 <div id="daily-login-overlay">
   <div class="dl-card" style="position:relative">
@@ -1599,7 +1604,7 @@ function renderFeed(items) {
         + '</div>'
         + '<div id="' + uid + '-full" style="' + (isExpanded ? '' : 'display:none') + '">'
         + '<p style="color:#cbd5e1;font-size:13px;margin-left:32px">' + full + '</p>'
-        + (hasImage ? '<img src="' + item.imageData + '" style="width:calc(100% - 32px);border-radius:12px;margin-top:10px;margin-left:32px;max-height:400px;object-fit:cover" loading="lazy">' : '')
+        + (hasImage ? '<img onclick="openImgLightbox(this.src)" src="' + item.imageData + '" style="cursor:pointer;width:calc(100% - 32px);border-radius:12px;margin-top:10px;margin-left:32px;max-height:400px;object-fit:cover" loading="lazy">' : '')
         + '<button onclick="toggleFeedPost(\'' + item.id + '\',false)" style="margin-left:32px;margin-top:8px;background:none;border:none;color:#6366f1;font-weight:700;font-size:12px;cursor:pointer;padding:0">Mostrar menos ▴</button>'
         + '</div>'
         + '</div>';
@@ -1623,6 +1628,15 @@ function toggleFeedPost(id, expand) {
   var f = document.getElementById('fp-' + id + '-full');
   if (s) s.style.display = expand ? 'none' : '';
   if (f) f.style.display = expand ? '' : 'none';
+}
+
+function openImgLightbox(src) {
+  var el = document.getElementById('img-lightbox');
+  document.getElementById('img-lightbox-src').src = src;
+  el.style.display = 'flex';
+}
+function closeImgLightbox() {
+  document.getElementById('img-lightbox').style.display = 'none';
 }
 
 function renderStudentRides(rides) {
