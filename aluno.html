@@ -915,6 +915,7 @@ let currentUser = JSON.parse(localStorage.getItem("carolampra_user") || "null");
 let allRides = [];
 let allFeedItems = [];
 let currentRideId = null;
+let _expandedPosts = {};
 let lastAlertTs = null;
 let alertsReady = false;
 let autoRefreshInterval = null;
@@ -972,6 +973,7 @@ function switchTab(tab) {
 }
 
 function switchStudentTab(tab) {
+  _expandedPosts = {};
   const map = { home: "student-home", list: "student-list", presence: "student-presence", tournaments: "student-tournaments" };
   showScreen(map[tab] || "student-home");
   if (tab === "presence") initMyPresence();
@@ -1584,20 +1586,21 @@ function renderFeed(items) {
       const full = escapeHtml(item.text).replace(/\n/g, '<br>');
       const hasImage = !!item.imageData;
       const needsExpand = item.text.length > 80 || hasImage;
+      const isExpanded = !!_expandedPosts[item.id];
       return '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:16px;padding:16px;margin-bottom:10px">'
         + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
         + '<span style="font-size:22px">📝</span>'
         + '<span style="font-weight:800;font-size:14px;color:#fff;flex:1">Novo Post</span>'
         + '<span style="font-size:11px;color:#64748b">' + time + '</span>'
         + '</div>'
-        + '<div id="' + uid + '-short">'
+        + '<div id="' + uid + '-short" style="' + (isExpanded ? 'display:none' : '') + '">'
         + '<p style="color:#94a3b8;font-size:13px;margin-left:32px">' + preview + '</p>'
-        + (needsExpand ? '<button onclick="document.getElementById(\'' + uid + '-short\').style.display=\'none\';document.getElementById(\'' + uid + '-full\').style.display=\'block\'" style="margin-left:32px;margin-top:8px;background:none;border:none;color:#6366f1;font-weight:700;font-size:12px;cursor:pointer;padding:0">Mostrar mais ▾</button>' : '')
+        + (needsExpand ? '<button onclick="toggleFeedPost(\'' + item.id + '\',true)" style="margin-left:32px;margin-top:8px;background:none;border:none;color:#6366f1;font-weight:700;font-size:12px;cursor:pointer;padding:0">Mostrar mais ▾</button>' : '')
         + '</div>'
-        + '<div id="' + uid + '-full" style="display:none">'
+        + '<div id="' + uid + '-full" style="' + (isExpanded ? '' : 'display:none') + '">'
         + '<p style="color:#cbd5e1;font-size:13px;margin-left:32px">' + full + '</p>'
         + (hasImage ? '<img src="' + item.imageData + '" style="width:calc(100% - 32px);border-radius:12px;margin-top:10px;margin-left:32px;max-height:400px;object-fit:cover" loading="lazy">' : '')
-        + '<button onclick="document.getElementById(\'' + uid + '-full\').style.display=\'none\';document.getElementById(\'' + uid + '-short\').style.display=\'block\'" style="margin-left:32px;margin-top:8px;background:none;border:none;color:#6366f1;font-weight:700;font-size:12px;cursor:pointer;padding:0">Mostrar menos ▴</button>'
+        + '<button onclick="toggleFeedPost(\'' + item.id + '\',false)" style="margin-left:32px;margin-top:8px;background:none;border:none;color:#6366f1;font-weight:700;font-size:12px;cursor:pointer;padding:0">Mostrar menos ▴</button>'
         + '</div>'
         + '</div>';
     }
@@ -1611,6 +1614,15 @@ function renderFeed(items) {
       <p style="color:#64748b;font-size:11px;margin-top:8px;margin-left:32px">${time}</p>
     </div>`;
   }).join("");
+}
+
+function toggleFeedPost(id, expand) {
+  if (expand) _expandedPosts[id] = true;
+  else delete _expandedPosts[id];
+  var s = document.getElementById('fp-' + id + '-short');
+  var f = document.getElementById('fp-' + id + '-full');
+  if (s) s.style.display = expand ? 'none' : '';
+  if (f) f.style.display = expand ? '' : 'none';
 }
 
 function renderStudentRides(rides) {
