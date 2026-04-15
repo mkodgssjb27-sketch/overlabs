@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>OVER LABS — Aluno</title>
 <meta name="theme-color" content="#0a0a0f">
 <meta name="mobile-web-app-capable" content="yes">
@@ -56,7 +56,7 @@ input,select{font-family:inherit;outline:none}
 .s-ride-card.waiting{border-color:#f97316;border-width:2px}
 
 /* Bottom nav dark */
-.s-bottom-nav{background:rgba(15,15,20,.95);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);padding:8px 0 4px;display:flex;justify-content:space-around;flex-shrink:0;z-index:50}
+.s-bottom-nav{background:rgba(15,15,20,.95);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);padding:8px 0 calc(4px + env(safe-area-inset-bottom, 0px));display:flex;justify-content:space-around;flex-shrink:0;z-index:50}
 .nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;color:#64748b;min-width:56px;position:relative;background:none;border:none;padding:6px 4px;transition:.2s}
 .nav-btn.active{color:#f59e0b}
 .nav-btn span:first-child{font-size:20px}
