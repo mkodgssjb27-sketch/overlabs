@@ -361,15 +361,6 @@ function renderInventory() {
     html += `</div></div>`;
   }
   container.innerHTML = html;
-
-  // Event delegation para botões de venda
-  container.querySelectorAll('.sell-price-btn').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      var docId = this.getAttribute('data-docid');
-      if (docId) openSellModal(docId);
-    });
-  });
 }
 
 // ── Tabs ──
@@ -809,6 +800,17 @@ async function initLoja() {
   } catch(e) {}
 
   listenCuts();
+
+  // Event delegation global para botões de venda (funciona em mobile)
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.sell-price-btn');
+    if (btn) {
+      e.preventDefault();
+      e.stopPropagation();
+      var docId = btn.getAttribute('data-docid');
+      if (docId) openSellModal(docId);
+    }
+  });
 
   // Carregar itens e inventário em paralelo (não sequencial)
   await Promise.all([loadItems(), loadInventory()]);
