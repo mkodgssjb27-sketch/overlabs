@@ -15,6 +15,7 @@ let selectedItem = null;
 let chunkCache = {};       // { itemId: fullBase64Url }
 let itemsReady = false;    // flag: itens já chegaram do Firestore?
 let inventoryReady = false; // flag: inventário já chegou?
+let sellMode = false;       // modo venda ativo no inventário?
 
 // ── Init Firebase ──
 function initFirebase() {
@@ -312,23 +313,46 @@ function renderInventory() {
   rarDisplay += '<span class="ird-item ird-lendaria">S+ ' + rarityCounts.lendaria + '</span>';
   rarDisplay += '</div>';
 
-  let html = rarDisplay;
+  // Botão toggle de modo venda
+  let sellToggle = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">';
+  sellToggle += '<button onclick="toggleSellMode()" id="btn-sell-mode" style="flex:1;padding:10px 16px;border-radius:12px;font-weight:800;font-size:13px;border:none;cursor:pointer;transition:.2s;' + (sellMode ? 'background:rgba(34,197,94,.2);color:#22c55e;border:1px solid rgba(34,197,94,.4)' : 'background:rgba(255,255,255,.06);color:#64748b;border:1px solid rgba(255,255,255,.08)') + '">' + (sellMode ? '💱 Modo Venda ATIVO' : '💱 Vender Itens') + '</button>';
+  sellToggle += '</div>';
+
+  let html = sellToggle + rarDisplay;
   for (const [tipo, items] of Object.entries(groups)) {
     html += `<div class="inv-section">`;
     html += `<div class="inv-title">${tipoLabels[tipo] || tipo}</div>`;
     html += `<div class="inv-grid">`;
     items.forEach(item => {
       const rarClass = item.raridade ? ' inv-r-' + item.raridade : '';
-      // Verificar se item tem valor de revenda
       const shopItem = allItems.find(i => i.id === item.id);
       const sellPrice = shopItem && shopItem.valorVenda ? shopItem.valorVenda : 0;
-      html += `
-        <div class="inv-item ${item.equipado ? 'equipped' : ''}${rarClass}" onclick="toggleEquip('${item.id}', '${tipo}')">
+      const canSell = sellMode && sellPrice > 0;
+      const isEquipped = item.equipado;
+
+      if (sellMode) {
+        // Modo venda: mostrar preço e botão de venda
+        const sellDisabled = isEquipped || sellPrice <= 0;
+        const sellLabel = sellPrice <= 0 ? '🚫 Indisponível' : (isEquipped ? '⚠️ Equipado' : '💱 ' + sellPrice + ' CUTS');
+        const sellStyle = sellDisabled
+          ? 'background:rgba(100,116,139,.15);color:#475569;cursor:not-allowed;border:1px solid rgba(100,116,139,.2)'
+          : 'background:rgba(34,197,94,.15);color:#22c55e;cursor:pointer;border:1px solid rgba(34,197,94,.35)';
+        html += `
+        <div class="inv-item sell-mode${rarClass}" style="aspect-ratio:auto;padding:8px">
+          <img data-item-id="${item.id}" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}" style="max-height:55%">
+          <div class="inv-name">${escapeHtml(item.nome)}</div>
+          <button ${sellDisabled ? 'disabled' : ''} onclick="${sellDisabled ? '' : 'openSellModal(\'' + item.docId + '\')'}" style="margin-top:6px;padding:6px 8px;border-radius:10px;font-weight:800;font-size:11px;width:100%;${sellStyle}">${sellLabel}</button>
+        </div>
+        `;
+      } else {
+        // Modo normal: equipar
+        html += `
+        <div class="inv-item ${isEquipped ? 'equipped' : ''}${rarClass}" onclick="toggleEquip('${item.id}', '${tipo}')">
           <img data-item-id="${item.id}" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}">
           <div class="inv-name">${escapeHtml(item.nome)}</div>
-          ${sellPrice > 0 ? '<button onclick="event.stopPropagation();openSellModal(\'' + item.docId + '\')" style="margin-top:4px;padding:4px 10px;border-radius:8px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#22c55e;font-weight:700;font-size:10px;cursor:pointer;width:100%">💱 Vender ' + sellPrice + '</button>' : ''}
         </div>
-      `;
+        `;
+      }
     });
     html += `</div></div>`;
   }
@@ -356,6 +380,7 @@ function showView(view) {
     invView.style.display = "none";
     btnLoja.classList.add("active");
     btnInv.classList.remove("active");
+    sellMode = false; // resetar modo venda ao voltar pra loja
   } else {
     lojaView.style.display = "none";
     invView.style.display = "block";
@@ -662,6 +687,11 @@ function showToast(msg) {
 }
 
 // ── Venda (Câmbio) ──
+function toggleSellMode() {
+  sellMode = !sellMode;
+  renderInventory();
+}
+
 let pendingSellDocId = null;
 
 function openSellModal(invDocId) {
