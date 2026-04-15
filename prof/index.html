@@ -66,6 +66,8 @@ input,select,textarea{font-family:inherit;outline:none}
 .t-title{font-size:18px;font-weight:800;color:#fff}
 .t-sub{font-size:13px;color:#64748b;margin-top:2px}
 .t-content{padding:24px 28px;flex:1}
+#screen-teacher-log.active{height:100vh;height:100dvh}
+#screen-teacher-log .t-content{overflow-y:auto;overscroll-behavior-y:contain;min-height:0}
 
 /* Menu grid */
 .menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:32px}
@@ -228,7 +230,12 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="menu-card" onclick="showScreen('teacher-log');loadActivityLog()">
         <span class="mc-icon">📊</span>
         <div class="mc-title">Registro de Log</div>
-        <div class="mc-desc">Atividades e estatísticas</div>
+        <div class="mc-desc">Atividades dos alunos</div>
+      </div>
+      <div class="menu-card" onclick="showScreen('teacher-ranking');loadCurrentRanking()">
+        <span class="mc-icon">🏆</span>
+        <div class="mc-title">Estatísticas Ranking</div>
+        <div class="mc-desc">Pódio e reordenação</div>
       </div>
       <div class="menu-card" onclick="showScreen('teacher-daily-login');loadDailyLoginConfig()">
         <span class="mc-icon">📅</span>
@@ -682,9 +689,109 @@ input,select,textarea{font-family:inherit;outline:none}
     </div>
   </div>
   <div class="t-content" style="max-width:660px">
+    <div style="display:flex;gap:8px;margin-bottom:18px">
+      <button onclick="showScreen('teacher-feed-new')" style="flex:1;padding:14px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">➕ Novo Post</button>
+      <button onclick="showScreen('teacher-polls');loadPollsList()" style="flex:1;padding:14px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);border:none;color:#fff;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">📊 Enquetes</button>
+    </div>
     <div class="loading" id="feed-mgr-loading"><div class="spin"></div>Carregando...</div>
     <div class="empty" id="feed-mgr-empty" style="display:none"><div class="icon">📭</div><p>Nenhum item no feed</p></div>
     <div id="feed-mgr-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — NOVO POST DO FEED ═══════════════════════════════ -->
+<div class="screen" id="screen-teacher-feed-new">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-feed');loadFeedManager()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📝 Novo Post</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <div class="t-form">
+      <div style="margin-bottom:16px">
+        <label class="lbl">TÍTULO</label>
+        <input class="inp" id="fp-title" placeholder="Título do post (opcional)">
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">DESCRIÇÃO</label>
+        <textarea class="inp" id="fp-text" rows="4" placeholder="Escreva algo para seus alunos..." style="resize:vertical;min-height:80px"></textarea>
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">IMAGEM (opcional)</label>
+        <div style="display:flex;gap:8px">
+          <label style="flex:1;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.15);color:#94a3b8;font-weight:700;font-size:13px;text-align:center;cursor:pointer">
+            📷 Câmera
+            <input type="file" accept="image/*" capture="environment" onchange="previewPostImage(this)" style="display:none">
+          </label>
+          <label style="flex:1;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.15);color:#94a3b8;font-weight:700;font-size:13px;text-align:center;cursor:pointer">
+            🖼️ Galeria
+            <input type="file" accept="image/*" onchange="previewPostImage(this)" style="display:none">
+          </label>
+        </div>
+        <div id="fp-preview" style="display:none;margin-top:12px;position:relative">
+          <img id="fp-preview-img" style="width:100%;border-radius:12px;max-height:300px;object-fit:cover">
+          <button onclick="clearPostImage()" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:14px;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <button onclick="publishFeedPost()" class="btn-main" id="btn-publish-post">📤 Publicar Post</button>
+
+      <!-- Separador -->
+      <div style="display:flex;align-items:center;gap:12px;margin:24px 0 16px">
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.1)"></div>
+        <span style="color:#64748b;font-size:12px;font-weight:700">OU CRIAR ENQUETE</span>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.1)"></div>
+      </div>
+
+      <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:18px">
+        <div style="margin-bottom:14px">
+          <label class="lbl">📊 PERGUNTA DA ENQUETE</label>
+          <input class="inp" id="poll-question" placeholder="Qual é a sua pergunta?">
+        </div>
+        <div id="poll-options-list">
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+            <input class="inp poll-opt-input" placeholder="Alternativa 1" style="flex:1">
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+            <input class="inp poll-opt-input" placeholder="Alternativa 2" style="flex:1">
+          </div>
+        </div>
+        <button onclick="addPollOption()" style="width:100%;padding:10px;border-radius:10px;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.15);color:#94a3b8;font-weight:700;font-size:12px;cursor:pointer;margin-bottom:14px">+ Adicionar Alternativa</button>
+        <div style="margin-bottom:14px">
+          <label class="lbl">⏳ DURAÇÃO (dias)</label>
+          <input type="number" class="inp" id="poll-days" placeholder="7" min="1" max="365" value="7" style="text-align:center">
+        </div>
+        <button onclick="publishPoll()" class="btn-main" id="btn-publish-poll" style="background:linear-gradient(135deg,#f59e0b,#e85d04)">📊 Publicar Enquete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — LISTA DE ENQUETES ═══════════════════════════════ -->
+<div class="screen" id="screen-teacher-polls">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-feed');loadFeedManager()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📊 Enquetes</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:660px">
+    <div class="loading" id="polls-loading"><div class="spin"></div>Carregando...</div>
+    <div class="empty" id="polls-empty" style="display:none"><div class="icon">📊</div><p>Nenhuma enquete criada</p></div>
+    <div id="polls-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — RESULTADO DE ENQUETE ════════════════════════════ -->
+<div class="screen" id="screen-teacher-poll-detail">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-polls');loadPollsList()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📊 Resultado da Enquete</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:660px">
+    <div id="poll-detail-content"></div>
   </div>
 </div>
 
@@ -1025,9 +1132,35 @@ input,select,textarea{font-family:inherit;outline:none}
     <!-- Recompensa semanal -->
     <div class="section-title">🪙 Recompensa Semanal</div>
     <div class="t-form" style="margin-bottom:20px">
-      <div style="margin-bottom:14px">
-        <label class="lbl">MOEDAS (CUTS) POR SEMANA COMPLETA (7/7)</label>
-        <input type="number" class="inp" id="dl-reward-coins" placeholder="Ex: 10" min="0" value="0">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:14px">
+        <div>
+          <label class="lbl">DIA 1</label>
+          <input type="number" class="inp" id="dl-reward-day-1" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 2</label>
+          <input type="number" class="inp" id="dl-reward-day-2" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 3</label>
+          <input type="number" class="inp" id="dl-reward-day-3" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 4</label>
+          <input type="number" class="inp" id="dl-reward-day-4" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 5</label>
+          <input type="number" class="inp" id="dl-reward-day-5" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 6</label>
+          <input type="number" class="inp" id="dl-reward-day-6" placeholder="0" min="0" value="0">
+        </div>
+        <div>
+          <label class="lbl">DIA 7</label>
+          <input type="number" class="inp" id="dl-reward-day-7" placeholder="0" min="0" value="0">
+        </div>
       </div>
       <button onclick="saveDailyLoginConfig()" class="btn-main">💾 Salvar Configuração</button>
     </div>
@@ -1145,13 +1278,7 @@ input,select,textarea{font-family:inherit;outline:none}
     <!-- Pull to refresh -->
     <div id="log-ptr" style="text-align:center;max-height:0;overflow:hidden;padding:0;transition:max-height .3s,padding .3s;color:#64748b;font-size:13px;font-weight:700"><span style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.1);border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px"></span>Atualizando...</div>
 
-    <!-- Tabs: Log / Ranking -->
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button onclick="switchLogTab('log')" id="log-tab-log" style="flex:1;padding:12px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">📋 Log de Atividades</button>
-      <button onclick="switchLogTab('ranking')" id="log-tab-ranking" style="flex:1;padding:12px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🏆 Estatísticas Ranking</button>
-    </div>
-
-    <!-- Tab: Log de Atividades -->
+    <!-- Log de Atividades -->
     <div id="log-view-log">
       <!-- Filtros -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
@@ -1169,30 +1296,38 @@ input,select,textarea{font-family:inherit;outline:none}
         <button onclick="loadMoreLogs()" id="log-load-more" style="display:none;padding:10px 24px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-weight:700;font-size:13px;cursor:pointer">Carregar mais...</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- Tab: Estatísticas do Ranking -->
-    <div id="log-view-ranking" style="display:none">
-      <div class="t-form" style="margin-bottom:20px">
-        <div class="section-title">🏆 Ranking Atual</div>
-        <div id="ranking-stats-current"><div class="loading"><div class="spin"></div>Carregando...</div></div>
-      </div>
-      <div class="t-form" style="margin-bottom:20px">
-        <div class="section-title">📊 Tempo no Pódio</div>
-        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-          <div>
-            <label class="lbl">DE</label>
-            <input type="date" class="inp" id="ranking-date-from" style="width:auto;padding:8px 12px;font-size:13px">
-          </div>
-          <div>
-            <label class="lbl">ATÉ</label>
-            <input type="date" class="inp" id="ranking-date-to" style="width:auto;padding:8px 12px;font-size:13px">
-          </div>
-          <div style="display:flex;align-items:flex-end">
-            <button onclick="loadRankingStats()" style="padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Analisar</button>
-          </div>
+<!-- ══ PROFESSOR — ESTATÍSTICAS DO RANKING ══════════════════════════ -->
+<div class="screen" id="screen-teacher-ranking">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" style="font-size:16px">🏆 Estatísticas Ranking</div><div class="t-sub">Pódio e reordenação</div></div>
+    </div>
+  </div>
+  <div class="t-content">
+    <div class="t-form" style="margin-bottom:20px">
+      <div class="section-title">🏆 Ranking Atual</div>
+      <div id="ranking-stats-current"><div class="loading"><div class="spin"></div>Carregando...</div></div>
+    </div>
+    <div class="t-form" style="margin-bottom:20px">
+      <div class="section-title">📊 Tempo no Pódio</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <div>
+          <label class="lbl">DE</label>
+          <input type="date" class="inp" id="ranking-date-from" style="width:auto;padding:8px 12px;font-size:13px">
         </div>
-        <div id="ranking-stats-podium"><div style="color:#64748b;font-size:13px">Selecione um período e clique em "Analisar"</div></div>
+        <div>
+          <label class="lbl">ATÉ</label>
+          <input type="date" class="inp" id="ranking-date-to" style="width:auto;padding:8px 12px;font-size:13px">
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button onclick="loadRankingStats()" style="padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Analisar</button>
+        </div>
       </div>
+      <div id="ranking-stats-podium"><div style="color:#64748b;font-size:13px">Selecione um período e clique em "Analisar"</div></div>
     </div>
   </div>
 </div>
@@ -1344,14 +1479,33 @@ input,select,textarea{font-family:inherit;outline:none}
     <!-- Itens publicados -->
     <div class="t-form">
       <div class="section-title">📦 Itens na Loja</div>
-      <div id="editor-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
-        <button onclick="editorFilter('todos')" class="editor-filter-btn active" data-filter="todos" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">Todos</button>
-        <button onclick="editorFilter('avatar')" class="editor-filter-btn" data-filter="avatar" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🖼️ Avatar</button>
-        <button onclick="editorFilter('moldura')" class="editor-filter-btn" data-filter="moldura" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🖼️ Moldura</button>
-        <button onclick="editorFilter('banner')" class="editor-filter-btn" data-filter="banner" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🌄 Banner</button>
-        <button onclick="editorFilter('emblema')" class="editor-filter-btn" data-filter="emblema" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🏅 Emblema</button>
+
+      <!-- Tabs: Itens / Câmbio -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button onclick="editorSwitchView('itens')" id="editor-view-itens-btn" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">📦 Itens</button>
+        <button onclick="editorSwitchView('cambio')" id="editor-view-cambio-btn" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">💱 Câmbio</button>
       </div>
-      <div id="editor-items-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
+
+      <!-- View: Itens -->
+      <div id="editor-view-itens">
+        <div id="editor-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+          <button onclick="editorFilter('todos')" class="editor-filter-btn active" data-filter="todos" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">Todos</button>
+          <button onclick="editorFilter('avatar')" class="editor-filter-btn" data-filter="avatar" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🖼️ Avatar</button>
+          <button onclick="editorFilter('moldura')" class="editor-filter-btn" data-filter="moldura" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🖼️ Moldura</button>
+          <button onclick="editorFilter('banner')" class="editor-filter-btn" data-filter="banner" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🌄 Banner</button>
+          <button onclick="editorFilter('emblema')" class="editor-filter-btn" data-filter="emblema" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🏅 Emblema</button>
+        </div>
+        <div id="editor-items-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
+      </div>
+
+      <!-- View: Câmbio -->
+      <div id="editor-view-cambio" style="display:none">
+        <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:12px;margin-bottom:14px">
+          <div style="font-size:12px;color:#f59e0b;font-weight:700">💱 Câmbio — Valor de Revenda</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:4px">Defina quanto o aluno recebe ao vender cada item do inventário de volta por CUTS. Deixe vazio ou 0 para bloquear a venda.</div>
+        </div>
+        <div id="editor-cambio-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
+      </div>
     </div>
 
   </div>
@@ -2725,6 +2879,8 @@ let unsubFeedMgr = null;
 let allFeedItems = [];
 let editingFeedId = null;
 
+var _feedUserMap = {};
+
 function loadFeedManager() {
   if (!firebaseOk) return;
   const list = document.getElementById("feed-mgr-list");
@@ -2733,6 +2889,14 @@ function loadFeedManager() {
   if (loading) loading.style.display = "flex";
   if (list) list.innerHTML = "";
 
+  // Carregar mapa de usuários para resolver nomes
+  db.collection('users').get().then(function(snap) {
+    snap.forEach(function(doc) {
+      var d = doc.data();
+      _feedUserMap[doc.id] = d.firstName || d.username || doc.id;
+    });
+  });
+
   if (unsubFeedMgr) unsubFeedMgr();
   unsubFeedMgr = db.collection("feed")
     .orderBy("createdAt", "desc")
@@ -2740,7 +2904,25 @@ function loadFeedManager() {
       if (loading) loading.style.display = "none";
       allFeedItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       if (empty) empty.style.display = allFeedItems.length === 0 ? "block" : "none";
-      renderFeedManager(allFeedItems);
+
+      // Auto-excluir itens com mais de 48h (exceto enquetes que usam expiresAt)
+      var now = Date.now();
+      var h48 = 48 * 60 * 60 * 1000;
+      allFeedItems.forEach(function(item) {
+        if (item.type === 'poll') {
+          if (item.expiresAt && item.expiresAt.toMillis && item.expiresAt.toMillis() < now) {
+            db.collection('feed').doc(item.id).delete().catch(function() {});
+          }
+          return;
+        }
+        if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h48) {
+          db.collection('feed').doc(item.id).delete().catch(function() {});
+        }
+      });
+
+      renderFeedManager(allFeedItems.filter(function(item) {
+        return !(item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h48);
+      }));
     });
 }
 
@@ -2750,14 +2932,38 @@ function renderFeedManager(items) {
   list.innerHTML = items.map(item => {
     const time = item.createdAt ? fmtTs(item.createdAt) : "agora";
     const hidden = item.hidden === true;
+    const target = item.targetUserId ? (_feedUserMap[item.targetUserId] || 'Aluno') : 'Todos';
+    const isPoll = item.type === 'poll';
+    const totalVotes = isPoll && item.votes ? Object.keys(item.votes).length : 0;
+
+    if (isPoll) {
+      return `
+      <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:16px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <span style="font-size:20px">📊</span>
+          <span style="font-weight:800;font-size:14px;color:#fff;flex:1">${escapeHtml(item.text || "")}</span>
+        </div>
+        <div style="margin-left:32px;margin-bottom:8px;display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:#94a3b8">🗳️ ${totalVotes} votos</span>
+          <span style="font-size:11px;color:#64748b">${time}</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="showScreen('teacher-polls');loadPollsList()" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">📊 Ver Resultados</button>
+          <button onclick="deleteFeedItem('${item.id}')" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171">🗑 Excluir</button>
+        </div>
+      </div>`;
+    }
+
     return `
       <div style="background:rgba(255,255,255,.04);border:1px solid ${hidden?'rgba(239,68,68,.2)':'rgba(255,255,255,.08)'};border-radius:16px;padding:16px;margin-bottom:10px;${hidden?'opacity:.5':''}">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
           <span style="font-size:20px">${item.icon || "📌"}</span>
           <span style="font-weight:800;font-size:14px;color:#fff;flex:1">${escapeHtml(item.text || "")}</span>
           <span style="font-size:11px;color:#64748b">${hidden?'OCULTO':''}</span>
         </div>
+        <div style="margin-left:32px;margin-bottom:6px"><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;${item.targetUserId ? 'background:rgba(139,92,246,.15);color:#a78bfa' : 'background:rgba(56,189,248,.12);color:#38bdf8'}">Para: ${escapeHtml(target)}</span></div>
         ${item.detail ? `<p style="color:#94a3b8;font-size:13px;margin-left:32px;margin-bottom:8px">${escapeHtml(item.detail)}</p>` : ""}
+        ${item.imageData ? `<img src="${item.imageData}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-left:32px;margin-bottom:8px">` : ""}
         <p style="color:#64748b;font-size:11px;margin-left:32px;margin-bottom:10px">${time}</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button onclick="openEditFeed('${item.id}')" style="flex:1;padding:8px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">✏️ Editar</button>
@@ -2810,6 +3016,252 @@ function deleteFeedItem(id) {
       await db.collection("feed").doc(id).delete();
       showToast("Item excluído");
     } catch(e) { showToast("Erro ao excluir"); }
+  });
+}
+
+// ── Novo Post (Feed) ──
+var _fpImageData = null;
+
+function previewPostImage(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var MAX = 800;
+      var w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      _fpImageData = canvas.toDataURL('image/jpeg', 0.7);
+      document.getElementById('fp-preview-img').src = _fpImageData;
+      document.getElementById('fp-preview').style.display = 'block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPostImage() {
+  _fpImageData = null;
+  document.getElementById('fp-preview').style.display = 'none';
+  document.getElementById('fp-preview-img').src = '';
+}
+
+async function publishFeedPost() {
+  if (!firebaseOk) return;
+  var text = document.getElementById('fp-text').value.trim();
+  var title = document.getElementById('fp-title').value.trim();
+  if (!text) { showToast('Escreva algo para publicar'); return; }
+
+  var btn = document.getElementById('btn-publish-post');
+  btn.disabled = true; btn.textContent = 'Publicando...';
+
+  try {
+    var postData = {
+      type: 'feed_post',
+      icon: '📝',
+      text: text,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (title) postData.title = title;
+    if (_fpImageData) postData.imageData = _fpImageData;
+
+    await db.collection('feed').add(postData);
+    showToast('✅ Post publicado!');
+    document.getElementById('fp-text').value = '';
+    document.getElementById('fp-title').value = '';
+    clearPostImage();
+    showScreen('teacher-feed');
+    loadFeedManager();
+  } catch(e) {
+    console.error('[FeedPost] Erro:', e);
+    showToast('❌ Erro ao publicar');
+  }
+  btn.disabled = false; btn.textContent = '📤 Publicar Post';
+}
+
+// ── Enquetes ──
+function addPollOption() {
+  var list = document.getElementById('poll-options-list');
+  var count = list.querySelectorAll('.poll-opt-input').length + 1;
+  var div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center';
+  div.innerHTML = '<input class="inp poll-opt-input" placeholder="Alternativa ' + count + '" style="flex:1">'
+    + '<button onclick="this.parentElement.remove()" style="width:32px;height:32px;border-radius:50%;background:rgba(239,68,68,.12);border:none;color:#f87171;font-size:14px;cursor:pointer;flex-shrink:0">✕</button>';
+  list.appendChild(div);
+}
+
+async function publishPoll() {
+  if (!firebaseOk) return;
+  var question = document.getElementById('poll-question').value.trim();
+  if (!question) { showToast('Escreva a pergunta da enquete'); return; }
+
+  var inputs = document.querySelectorAll('.poll-opt-input');
+  var options = [];
+  inputs.forEach(function(inp) {
+    var v = inp.value.trim();
+    if (v) options.push(v);
+  });
+  if (options.length < 2) { showToast('Adicione pelo menos 2 alternativas'); return; }
+
+  var days = parseInt(document.getElementById('poll-days').value) || 7;
+  if (days < 1) days = 1;
+
+  var btn = document.getElementById('btn-publish-poll');
+  btn.disabled = true; btn.textContent = 'Publicando...';
+
+  try {
+    var expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + days);
+
+    await db.collection('feed').add({
+      type: 'poll',
+      icon: '📊',
+      text: question,
+      options: options,
+      votes: {},
+      durationDays: days,
+      expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('✅ Enquete publicada!');
+    document.getElementById('poll-question').value = '';
+    document.querySelectorAll('.poll-opt-input').forEach(function(inp) { inp.value = ''; });
+    // Reset to 2 options
+    document.getElementById('poll-options-list').innerHTML = '<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center"><input class="inp poll-opt-input" placeholder="Alternativa 1" style="flex:1"></div><div style="display:flex;gap:8px;margin-bottom:8px;align-items:center"><input class="inp poll-opt-input" placeholder="Alternativa 2" style="flex:1"></div>';
+    document.getElementById('poll-days').value = '7';
+    showScreen('teacher-feed');
+    loadFeedManager();
+  } catch(e) {
+    console.error('[Poll] Erro:', e);
+    showToast('❌ Erro ao publicar enquete');
+  }
+  btn.disabled = false; btn.textContent = '📊 Publicar Enquete';
+}
+
+async function loadPollsList() {
+  if (!firebaseOk) return;
+  var loading = document.getElementById('polls-loading');
+  var empty = document.getElementById('polls-empty');
+  var list = document.getElementById('polls-list');
+  if (loading) loading.style.display = 'flex';
+  if (list) list.innerHTML = '';
+
+  try {
+    var snap = await db.collection('feed').where('type', '==', 'poll').get();
+    if (loading) loading.style.display = 'none';
+    var polls = snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+    // Ordenar por data de criação (mais recente primeiro)
+    polls.sort(function(a, b) {
+      var ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      var tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
+    if (polls.length === 0) { if (empty) empty.style.display = 'block'; return; }
+    if (empty) empty.style.display = 'none';
+
+    var html = '';
+    polls.forEach(function(p) {
+      var totalVotes = 0;
+      if (p.votes) Object.keys(p.votes).forEach(function(k) { totalVotes++; });
+      var time = p.createdAt ? fmtTs(p.createdAt) : 'agora';
+      var expired = p.expiresAt && p.expiresAt.toMillis && p.expiresAt.toMillis() < Date.now();
+      html += '<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:16px;margin-bottom:10px;cursor:pointer;' + (expired ? 'opacity:.6' : '') + '" onclick="openPollDetail(\'' + p.id + '\')">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+        + '<span style="font-size:20px">📊</span>'
+        + '<span style="font-weight:800;font-size:14px;color:#fff;flex:1">' + escapeHtml(p.text) + '</span>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:12px;margin-left:32px">'
+        + '<span style="font-size:12px;color:#94a3b8">🗳️ ' + totalVotes + ' votos</span>'
+        + '<span style="font-size:12px;color:#64748b">' + time + '</span>'
+        + (expired ? '<span style="font-size:11px;font-weight:700;color:#f87171">EXPIRADA</span>' : '<span style="font-size:11px;font-weight:700;color:#22c55e">ATIVA</span>')
+        + '</div></div>';
+    });
+    list.innerHTML = html;
+  } catch(e) {
+    console.error('[Polls] Erro:', e);
+    if (loading) loading.style.display = 'none';
+    list.innerHTML = '<div class="empty"><div class="icon">❌</div><p>Erro ao carregar</p></div>';
+  }
+}
+
+async function openPollDetail(pollId) {
+  if (!firebaseOk) return;
+  var content = document.getElementById('poll-detail-content');
+  content.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
+  showScreen('teacher-poll-detail');
+
+  try {
+    var doc = await db.collection('feed').doc(pollId).get();
+    if (!doc.exists) { content.innerHTML = '<p style="color:#f87171">Enquete não encontrada</p>'; return; }
+    var p = doc.data();
+    var votes = p.votes || {};
+
+    // Get user names
+    var userIds = [];
+    Object.keys(votes).forEach(function(uid) { if (userIds.indexOf(uid) === -1) userIds.push(uid); });
+
+    var nameMap = {};
+    if (userIds.length > 0) {
+      var usersSnap = await db.collection('users').get();
+      usersSnap.forEach(function(d) {
+        var data = d.data();
+        nameMap[d.id] = data.firstName || data.username || d.id;
+      });
+    }
+
+    var totalVotes = Object.keys(votes).length;
+    var expired = p.expiresAt && p.expiresAt.toMillis && p.expiresAt.toMillis() < Date.now();
+
+    var html = '<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:20px;margin-bottom:16px">'
+      + '<div style="font-weight:900;font-size:16px;color:#fff;margin-bottom:4px">' + escapeHtml(p.text) + '</div>'
+      + '<div style="font-size:12px;color:#94a3b8;margin-bottom:16px">🗳️ ' + totalVotes + ' votos · ' + (expired ? '<span style="color:#f87171">Expirada</span>' : '<span style="color:#22c55e">Ativa (' + (p.durationDays || '?') + ' dias)</span>') + '</div>';
+
+    (p.options || []).forEach(function(opt, idx) {
+      var optVoters = [];
+      Object.keys(votes).forEach(function(uid) {
+        if (votes[uid] === idx) optVoters.push(nameMap[uid] || uid);
+      });
+      var pct = totalVotes > 0 ? Math.round((optVoters.length / totalVotes) * 100) : 0;
+
+      html += '<div style="margin-bottom:14px">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:700;font-size:13px;color:#fff">' + escapeHtml(opt) + '</span><span style="font-size:12px;font-weight:800;color:#f59e0b">' + optVoters.length + ' (' + pct + '%)</span></div>'
+        + '<div style="height:8px;background:rgba(255,255,255,.06);border-radius:8px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#f59e0b,#e85d04);border-radius:8px;transition:width .3s"></div></div>';
+
+      if (optVoters.length > 0) {
+        html += '<div style="margin-top:4px;margin-left:8px">';
+        optVoters.forEach(function(name) {
+          html += '<span style="display:inline-block;font-size:11px;color:#94a3b8;background:rgba(255,255,255,.06);padding:2px 8px;border-radius:8px;margin:2px 4px 2px 0">' + escapeHtml(name) + '</span>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+
+    html += '</div>'
+      + '<button onclick="deletePollItem(\'' + pollId + '\')" style="width:100%;padding:12px;border-radius:12px;background:rgba(239,68,68,.12);border:none;color:#f87171;font-weight:700;font-size:13px;cursor:pointer">🗑 Excluir Enquete</button>';
+
+    content.innerHTML = html;
+  } catch(e) {
+    console.error('[PollDetail] Erro:', e);
+    content.innerHTML = '<p style="color:#f87171">Erro ao carregar enquete</p>';
+  }
+}
+
+function deletePollItem(id) {
+  showConfirmModal("Excluir enquete?", "Esta ação não pode ser desfeita.", async function() {
+    try {
+      await db.collection('feed').doc(id).delete();
+      showToast('Enquete excluída');
+      showScreen('teacher-polls');
+      loadPollsList();
+    } catch(e) { showToast('Erro ao excluir'); }
   });
 }
 
@@ -3621,22 +4073,11 @@ let logAllEntries = [];
 let logLastDoc = null;
 let logCurrentFilter = 'todos';
 const LOG_PAGE_SIZE = 50;
+let _unsubLog = null;
+let _logRealtimeEntries = [];
 
 function switchLogTab(tab) {
-  const tabLog = document.getElementById('log-tab-log');
-  const tabRanking = document.getElementById('log-tab-ranking');
-  const viewLog = document.getElementById('log-view-log');
-  const viewRanking = document.getElementById('log-view-ranking');
-  if (tab === 'log') {
-    tabLog.style.background = 'rgba(245,158,11,.15)'; tabLog.style.color = '#f59e0b';
-    tabRanking.style.background = 'rgba(255,255,255,.06)'; tabRanking.style.color = '#94a3b8';
-    viewLog.style.display = 'block'; viewRanking.style.display = 'none';
-  } else {
-    tabRanking.style.background = 'rgba(245,158,11,.15)'; tabRanking.style.color = '#f59e0b';
-    tabLog.style.background = 'rgba(255,255,255,.06)'; tabLog.style.color = '#94a3b8';
-    viewLog.style.display = 'none'; viewRanking.style.display = 'block';
-    loadCurrentRanking();
-  }
+  // legacy - ranking agora tem tela própria
 }
 
 function logFilterAction(filter) {
@@ -3647,42 +4088,103 @@ function logFilterAction(filter) {
     btn.style.background = active ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.06)';
     btn.style.color = active ? '#f59e0b' : '#94a3b8';
   });
+  // Ao trocar filtro com real-time, apenas re-renderizar
+  if (_unsubLog) {
+    renderLogEntries();
+    // Se poucos resultados visíveis e tem entradas paginadas antigas pendentes, carregar mais
+    if (logCurrentFilter !== 'todos') {
+      var visibleCount = getFilteredLogCount();
+      if (visibleCount < 15 && logLastDoc) {
+        loadMoreOlderLogs();
+      }
+    }
+    return;
+  }
   logAllEntries = [];
   logLastDoc = null;
   loadActivityLog();
 }
 
-async function loadActivityLog() {
+function loadActivityLog() {
   if (!firebaseOk) return;
   const container = document.getElementById('log-list');
-  if (!logLastDoc) {
-    container.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
-  }
+  container.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
 
+  // Cancelar listener anterior
+  if (_unsubLog) { _unsubLog(); _unsubLog = null; }
+
+  logAllEntries = [];
+  logLastDoc = null;
+  _logRealtimeEntries = [];
+
+  // Listener em tempo real para as últimas LOG_PAGE_SIZE entradas
+  _unsubLog = db.collection('activity_log')
+    .orderBy('timestamp', 'desc')
+    .limit(LOG_PAGE_SIZE)
+    .onSnapshot(function(snap) {
+      _logRealtimeEntries = snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+      logLastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+      // Mesclar: real-time (mais recentes) + paginados antigos (sem duplicar)
+      var realtimeIds = new Set(_logRealtimeEntries.map(function(e) { return e.id; }));
+      var olderOnly = logAllEntries.filter(function(e) { return !realtimeIds.has(e.id); });
+      logAllEntries = _logRealtimeEntries.concat(olderOnly);
+      renderLogEntries();
+
+      var hasMore = snap.docs.length >= LOG_PAGE_SIZE;
+      // Auto-carregar mais se filtro ativo e poucos resultados
+      if (logCurrentFilter !== 'todos' && hasMore) {
+        var visibleCount = getFilteredLogCount();
+        if (visibleCount < 15) { loadMoreOlderLogs(); return; }
+      }
+      document.getElementById('log-load-more').style.display = hasMore ? 'inline-block' : 'none';
+    }, function(e) {
+      console.error('[Log] Erro:', e);
+      container.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar log</p></div>';
+    });
+}
+
+async function loadMoreOlderLogs() {
+  if (!firebaseOk || !logLastDoc) return;
   try {
-    let query = db.collection('activity_log').orderBy('timestamp', 'desc').limit(LOG_PAGE_SIZE);
-    if (logLastDoc) query = query.startAfter(logLastDoc);
-    const snap = await query.get();
-    if (snap.empty && logAllEntries.length === 0) {
-      container.innerHTML = '<div class="empty"><div class="icon">📋</div><p>Nenhuma atividade registrada</p><small>As atividades dos alunos aparecerão aqui</small></div>';
-      document.getElementById('log-load-more').style.display = 'none';
-      return;
-    }
+    var query = db.collection('activity_log').orderBy('timestamp', 'desc').limit(LOG_PAGE_SIZE).startAfter(logLastDoc);
+    var snap = await query.get();
+    if (snap.empty) { document.getElementById('log-load-more').style.display = 'none'; return; }
 
-    const newEntries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    logAllEntries = logAllEntries.concat(newEntries);
+    var newEntries = snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
     logLastDoc = snap.docs[snap.docs.length - 1] || null;
 
+    // Adicionar sem duplicar
+    var existingIds = new Set(logAllEntries.map(function(e) { return e.id; }));
+    newEntries.forEach(function(e) { if (!existingIds.has(e.id)) logAllEntries.push(e); });
+
     renderLogEntries();
-    document.getElementById('log-load-more').style.display = snap.docs.length >= LOG_PAGE_SIZE ? 'inline-block' : 'none';
+
+    var hasMore = snap.docs.length >= LOG_PAGE_SIZE;
+    if (logCurrentFilter !== 'todos' && hasMore) {
+      var visibleCount = getFilteredLogCount();
+      if (visibleCount < 15) { loadMoreOlderLogs(); return; }
+    }
+    document.getElementById('log-load-more').style.display = hasMore ? 'inline-block' : 'none';
   } catch(e) {
-    console.error('[Log] Erro:', e);
-    container.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar log</p></div>';
+    console.error('[Log] Erro ao carregar mais:', e);
   }
 }
 
+function getFilteredLogCount() {
+  var testeUserIds = new Set();
+  allStudents.forEach(function(s) { if (s.username === 'teste') testeUserIds.add(s.id); });
+  var filtered = logAllEntries.filter(function(e) { return !e.userId || !testeUserIds.has(e.userId); });
+  if (logCurrentFilter === 'todos') return filtered.length;
+  if (logCurrentFilter === 'navegacao') return filtered.filter(function(e) { return e.action === 'navegacao'; }).length;
+  if (logCurrentFilter === 'perfil') return filtered.filter(function(e) { return e.action && e.action.startsWith('perfil'); }).length;
+  if (logCurrentFilter === 'carona') return filtered.filter(function(e) { return e.action && e.action.startsWith('carona'); }).length;
+  if (logCurrentFilter === 'presente') return filtered.filter(function(e) { return e.action && e.action.includes('presente'); }).length;
+  if (logCurrentFilter === 'novo_usuario') return filtered.filter(function(e) { return e.action === 'novo_usuario'; }).length;
+  return filtered.filter(function(e) { return e.action === logCurrentFilter; }).length;
+}
+
 function loadMoreLogs() {
-  loadActivityLog();
+  loadMoreOlderLogs();
 }
 
 function renderLogEntries() {
@@ -3792,6 +4294,7 @@ function showGameLogDetail(el) {
 
 // ── ESTATÍSTICAS DO RANKING ──
 let rankingUsers = []; // estado atual do ranking para reordenação
+let rankingHiddenSet = new Set(); // IDs ocultos do pódio
 
 async function loadCurrentRanking() {
   if (!firebaseOk) return;
@@ -3799,6 +4302,12 @@ async function loadCurrentRanking() {
   container.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
 
   try {
+    // Carregar lista de ocultos
+    try {
+      const hidDoc = await db.collection('ranking_config').doc('hidden_users').get();
+      rankingHiddenSet = new Set(hidDoc.exists ? (hidDoc.data().ids || []) : []);
+    } catch(e) { rankingHiddenSet = new Set(); }
+
     const snap = await db.collection('users').get();
     const users = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(u => u.username && u.username !== 'teste');
@@ -3857,7 +4366,8 @@ async function loadCurrentRanking() {
 
 async function saveRankingSnapshot(users) {
   try {
-    const top = users.slice(0, 10).map((u, i) => ({
+    var visible = users.filter(function(u) { return !rankingHiddenSet.has(u.id); });
+    const top = visible.slice(0, 10).map((u, i) => ({
       userId: u.id,
       firstName: u.firstName || '',
       cuts: u.cuts || 0,
@@ -3879,32 +4389,56 @@ function renderRankingList() {
     '<span style="font-size:12px;color:#64748b;font-weight:700">Use as setas para reordenar jogadores empatados</span>' +
     '<button onclick="resetRankingOrder()" style="padding:6px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171">🔄 Resetar</button>' +
   '</div>';
-  users.forEach((u, i) => {
+  // Separar visíveis e ocultos
+  var visibleUsers = users.filter(function(u) { return !rankingHiddenSet.has(u.id); });
+  var hiddenUsers = users.filter(function(u) { return rankingHiddenSet.has(u.id); });
+  visibleUsers.forEach((u, i) => {
     const pos = i + 1;
     const medal = medals[i] || '';
     const c = colors[i] || '#64748b';
     const isPodium = i < 3;
     const photo = u.photoURL ? '<img src="' + escapeHtml(u.photoURL) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : '<span style="font-size:14px;font-weight:800;color:#fff">' + ((u.firstName || '?')[0]) + '</span>';
     const upBtn = i > 0 ? '<button onclick="rankingMove(' + i + ',-1)" style="background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-size:12px;padding:4px 7px;border-radius:6px;cursor:pointer;font-weight:900;line-height:1" title="Subir">▲</button>' : '<div style="width:27px"></div>';
-    const downBtn = i < users.length - 1 ? '<button onclick="rankingMove(' + i + ',1)" style="background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-size:12px;padding:4px 7px;border-radius:6px;cursor:pointer;font-weight:900;line-height:1" title="Descer">▼</button>' : '<div style="width:27px"></div>';
+    const downBtn = i < visibleUsers.length - 1 ? '<button onclick="rankingMove(' + i + ',1)" style="background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-size:12px;padding:4px 7px;border-radius:6px;cursor:pointer;font-weight:900;line-height:1" title="Descer">▼</button>' : '<div style="width:27px"></div>';
+    const hideBtn = '<button onclick="toggleRankingHide(\'' + u.id + '\')" style="background:rgba(239,68,68,.1);border:none;color:#f87171;font-size:11px;padding:4px 7px;border-radius:6px;cursor:pointer;font-weight:700;line-height:1;margin-left:4px" title="Ocultar do pódio">👁‍🗨</button>';
     html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:4px;border-radius:12px;background:' + (isPodium ? 'rgba(245,158,11,.06)' : 'rgba(255,255,255,.02)') + ';border:1px solid ' + (isPodium ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.04)') + '">' +
       '<div style="display:flex;flex-direction:column;gap:2px">' + upBtn + downBtn + '</div>' +
       '<span style="font-weight:900;font-size:14px;color:' + c + ';min-width:28px;text-align:center">' + (medal || pos + 'º') + '</span>' +
       '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">' + photo + '</div>' +
       '<div style="flex:1;font-weight:700;font-size:13px;color:#e2e8f0">' + escapeHtml(u.firstName || '—') + '</div>' +
       '<span style="font-weight:900;font-size:14px;color:#f59e0b">🪙 ' + (u.cuts || 0) + '</span>' +
+      hideBtn +
     '</div>';
   });
+  // Seção de ocultos
+  if (hiddenUsers.length > 0) {
+    html += '<div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">' +
+      '<div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">👁‍🗨 Ocultos do Ranking (' + hiddenUsers.length + ')</div>';
+    hiddenUsers.forEach(function(u) {
+      const photo = u.photoURL ? '<img src="' + escapeHtml(u.photoURL) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : '<span style="font-size:14px;font-weight:800;color:#fff">' + ((u.firstName || '?')[0]) + '</span>';
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:4px;border-radius:12px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);opacity:.6">' +
+        '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">' + photo + '</div>' +
+        '<div style="flex:1;font-weight:700;font-size:13px;color:#94a3b8">' + escapeHtml(u.firstName || '—') + '</div>' +
+        '<span style="font-weight:900;font-size:14px;color:#64748b">🪙 ' + (u.cuts || 0) + '</span>' +
+        '<button onclick="toggleRankingHide(\'' + u.id + '\')" style="background:rgba(34,197,94,.12);border:none;color:#22c55e;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:700;line-height:1" title="Mostrar no pódio">Mostrar</button>' +
+      '</div>';
+    });
+    html += '</div>';
+  }
   container.innerHTML = html;
 }
 
-async function rankingMove(index, direction) {
-  const newIdx = index + direction;
-  if (newIdx < 0 || newIdx >= rankingUsers.length) return;
-  // Trocar posições
-  const temp = rankingUsers[index];
-  rankingUsers[index] = rankingUsers[newIdx];
-  rankingUsers[newIdx] = temp;
+async function rankingMove(visibleIndex, direction) {
+  var visibleUsers = rankingUsers.filter(function(u) { return !rankingHiddenSet.has(u.id); });
+  var newVisIdx = visibleIndex + direction;
+  if (newVisIdx < 0 || newVisIdx >= visibleUsers.length) return;
+  // Encontrar índices reais na lista completa
+  var realIdx = rankingUsers.indexOf(visibleUsers[visibleIndex]);
+  var realNewIdx = rankingUsers.indexOf(visibleUsers[newVisIdx]);
+  if (realIdx < 0 || realNewIdx < 0) return;
+  var temp = rankingUsers[realIdx];
+  rankingUsers[realIdx] = rankingUsers[realNewIdx];
+  rankingUsers[realNewIdx] = temp;
   renderRankingList();
   // Salvar ordem no Firestore
   await saveRankingOrder();
@@ -3934,6 +4468,25 @@ async function resetRankingOrder() {
   } catch(e) {
     showToast('Erro ao resetar');
     console.error(e);
+  }
+}
+
+async function toggleRankingHide(uid) {
+  if (!firebaseOk) return;
+  if (rankingHiddenSet.has(uid)) {
+    rankingHiddenSet.delete(uid);
+  } else {
+    rankingHiddenSet.add(uid);
+  }
+  renderRankingList();
+  try {
+    await db.collection('ranking_config').doc('hidden_users').set({
+      ids: Array.from(rankingHiddenSet),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) {
+    console.error('[Ranking] Erro ao salvar ocultos:', e);
+    showToast('Erro ao salvar');
   }
 }
 
@@ -4585,34 +5138,121 @@ async function setEditorItemRarity(itemId, rarity) {
   }
 }
 
+// ── Câmbio — Valor de Revenda ──
+function editorSwitchView(view) {
+  var itensView = document.getElementById('editor-view-itens');
+  var cambioView = document.getElementById('editor-view-cambio');
+  var btnItens = document.getElementById('editor-view-itens-btn');
+  var btnCambio = document.getElementById('editor-view-cambio-btn');
+  if (view === 'itens') {
+    itensView.style.display = 'block'; cambioView.style.display = 'none';
+    btnItens.style.background = 'rgba(245,158,11,.15)'; btnItens.style.color = '#f59e0b';
+    btnCambio.style.background = 'rgba(255,255,255,.06)'; btnCambio.style.color = '#94a3b8';
+  } else {
+    itensView.style.display = 'none'; cambioView.style.display = 'block';
+    btnCambio.style.background = 'rgba(245,158,11,.15)'; btnCambio.style.color = '#f59e0b';
+    btnItens.style.background = 'rgba(255,255,255,.06)'; btnItens.style.color = '#94a3b8';
+    renderCambioList();
+  }
+}
+
+function renderCambioList() {
+  var container = document.getElementById('editor-cambio-list');
+  var items = editorPublishedItems;
+  if (!items.length) {
+    container.innerHTML = '<div class="empty"><div class="icon">📦</div><p>Nenhum item publicado</p></div>';
+    return;
+  }
+
+  var tipoLabels = { avatar: '🖼️', moldura: '🖼️', banner: '🌄', emblema: '🏅' };
+  var rarColors = { comum: '#9ca3af', raro: '#3b82f6', super_raro: '#a855f7', lendaria: '#f59e0b' };
+
+  container.innerHTML = items.map(function(item) {
+    var safeNome = item.nome ? item.nome.replace(/</g,'&lt;').replace(/"/g,'&quot;') : '';
+    var safeUrl = item.url ? item.url.replace(/"/g,'&quot;') : '';
+    var tipoIcon = tipoLabels[item.tipo] || '📦';
+    var rarColor = rarColors[item.raridade] || '#64748b';
+    var valorVenda = item.valorVenda || 0;
+
+    return '<div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px;margin-bottom:8px">'
+      + '<img id="cambio-thumb-' + item.id + '" src="' + safeUrl + '" style="width:48px;height:48px;border-radius:10px;object-fit:contain;background:rgba(255,255,255,.02);flex-shrink:0">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-weight:700;font-size:13px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + tipoIcon + ' ' + safeNome + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-top:4px">'
+      + '<span style="font-size:11px;color:#64748b">Compra: 🪙 ' + (item.preco || 0) + '</span>'
+      + '<span style="width:4px;height:4px;border-radius:50%;background:' + rarColor + ';flex-shrink:0"></span>'
+      + '<span style="font-size:11px;color:' + rarColor + '">' + (item.raridade || 'sem raridade') + '</span>'
+      + '</div></div>'
+      + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
+      + '<span style="font-size:12px;color:#22c55e">💱</span>'
+      + '<input id="cambio-val-' + item.id + '" type="number" value="' + valorVenda + '" min="0" placeholder="0" style="width:70px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#22c55e;font-size:13px;font-weight:900;text-align:center;font-family:inherit">'
+      + '<button onclick="saveCambioValue(\'' + item.id + '\')" style="padding:6px 10px;border-radius:8px;border:none;background:rgba(34,197,94,.15);color:#22c55e;font-weight:700;font-size:11px;cursor:pointer">💾</button>'
+      + '</div></div>';
+  }).join('');
+
+  // Carregar previews de chunks
+  editorPublishedItems.filter(function(i) { return i.chunked; }).forEach(function(item) {
+    var thumbEl = document.getElementById('cambio-thumb-' + item.id);
+    if (thumbEl) {
+      var fullThumb = document.getElementById('editor-thumb-' + item.id);
+      if (fullThumb && fullThumb.src !== item.url) thumbEl.src = fullThumb.src;
+    }
+  });
+}
+
+async function saveCambioValue(itemId) {
+  var input = document.getElementById('cambio-val-' + itemId);
+  var val = parseInt(input.value) || 0;
+  if (val < 0) val = 0;
+  try {
+    await db.collection('cuts_items').doc(itemId).update({ valorVenda: val });
+    var item = editorPublishedItems.find(function(i) { return i.id === itemId; });
+    if (item) item.valorVenda = val;
+    showToast(val > 0 ? '💱 Valor de revenda: ' + val + ' CUTS' : '🚫 Venda bloqueada para este item');
+  } catch(e) {
+    console.error('[Cambio] Erro:', e);
+    showToast('❌ Erro ao salvar valor');
+  }
+}
+
 // ── Login Diário (Professor) ──
 
 // ── Pull to refresh no Log ──
 (function() {
-  var startY = 0, pulling = false;
+  var startY = 0, pulling = false, activated = false;
   document.addEventListener('DOMContentLoaded', function() {
     var container = document.querySelector('#screen-teacher-log .t-content');
     var indicator = document.getElementById('log-ptr');
     if (!container || !indicator) return;
     container.addEventListener('touchstart', function(e) {
+      activated = false;
       if (container.scrollTop <= 0) { startY = e.touches[0].clientY; pulling = true; }
+      else { pulling = false; }
     }, { passive: true });
     container.addEventListener('touchmove', function(e) {
       if (!pulling) return;
-      if (e.touches[0].clientY - startY > 60 && container.scrollTop <= 0) {
+      if (container.scrollTop > 0) { pulling = false; indicator.style.maxHeight = '0'; indicator.style.padding = '0'; return; }
+      var diff = e.touches[0].clientY - startY;
+      if (diff < 0) { pulling = false; return; }
+      if (diff > 80) {
         indicator.style.maxHeight = '50px';
         indicator.style.padding = '12px 0';
+        activated = true;
       }
     }, { passive: true });
     container.addEventListener('touchend', function() {
-      if (!pulling) return;
-      pulling = false;
-      if (parseInt(indicator.style.maxHeight) > 0) {
-        logAllEntries = [];
-        logLastDoc = null;
-        loadActivityLog();
-        setTimeout(function() { indicator.style.maxHeight = '0'; indicator.style.padding = '0'; }, 1200);
+      if (!pulling || !activated) {
+        pulling = false;
+        indicator.style.maxHeight = '0'; indicator.style.padding = '0';
+        return;
       }
+      pulling = false;
+      activated = false;
+      logAllEntries = [];
+      logLastDoc = null;
+      _logRealtimeEntries = [];
+      loadActivityLog();
+      setTimeout(function() { indicator.style.maxHeight = '0'; indicator.style.padding = '0'; }, 1200);
     });
   });
 })();
@@ -4670,9 +5310,15 @@ async function loadDailyLoginConfig() {
   if (!requireFirebase()) return;
   try {
     var doc = await db.collection('settings').doc('dailyLogin').get();
-    var data = doc.exists ? doc.data() : { enabled: false, weeklyRewardCoins: 0 };
+    var data = doc.exists ? doc.data() : { enabled: false, rewardCoinsByDay: {} };
+    var rewardCoinsByDay = data.rewardCoinsByDay || {};
     document.getElementById('dl-enabled').checked = !!data.enabled;
-    document.getElementById('dl-reward-coins').value = data.weeklyRewardCoins || 0;
+    for (var day = 1; day <= 7; day++) {
+      var fallback = 0;
+      if (day === 4 && data.weeklyRewardCoins4 != null) fallback = data.weeklyRewardCoins4;
+      if (day === 7 && data.weeklyRewardCoins != null) fallback = data.weeklyRewardCoins;
+      document.getElementById('dl-reward-day-' + day).value = rewardCoinsByDay[day] != null ? rewardCoinsByDay[day] : fallback;
+    }
     loadDailyLoginStudents();
   } catch(e) {
     console.error('[DailyLogin] Erro ao carregar config:', e);
@@ -4694,12 +5340,17 @@ async function toggleDailyLogin() {
 
 async function saveDailyLoginConfig() {
   if (!requireFirebase()) return;
-  var coins = parseInt(document.getElementById('dl-reward-coins').value) || 0;
   var enabled = document.getElementById('dl-enabled').checked;
+  var rewardCoinsByDay = {};
+  for (var day = 1; day <= 7; day++) {
+    rewardCoinsByDay[day] = parseInt(document.getElementById('dl-reward-day-' + day).value) || 0;
+  }
   try {
     await db.collection('settings').doc('dailyLogin').set({
       enabled: enabled,
-      weeklyRewardCoins: coins
+      rewardCoinsByDay: rewardCoinsByDay,
+      weeklyRewardCoins4: rewardCoinsByDay[4] || 0,
+      weeklyRewardCoins: rewardCoinsByDay[7] || 0
     });
     showToast('✅ Configuração salva!');
   } catch(e) {
@@ -4708,6 +5359,8 @@ async function saveDailyLoginConfig() {
   }
 }
 
+var _dlWeekKeys = [];
+
 async function loadDailyLoginStudents() {
   if (!requireFirebase()) return;
   var listEl = document.getElementById('dl-students-list');
@@ -4715,12 +5368,12 @@ async function loadDailyLoginStudents() {
   try {
     var currentCycle = getDailyCycleKeyProf();
     var weekKeys = getWeekCycleKeysProf(currentCycle);
+    _dlWeekKeys = weekKeys;
 
     var usersSnap = await db.collection('users').get();
     var students = [];
     usersSnap.forEach(function(doc) {
       var d = doc.data();
-      if (d.username === 'teste') return;
       students.push({ id: doc.id, firstName: d.firstName || '', username: d.username || '' });
     });
 
@@ -4753,7 +5406,7 @@ async function loadDailyLoginStudents() {
       var dotsHtml = '';
       for (var i = 0; i < 7; i++) {
         var done = checks.indexOf(weekKeys[i]) !== -1;
-        dotsHtml += '<div style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;'
+        dotsHtml += '<div onclick="manualDailyLogin(\'' + s.id + '\',' + i + ')" style="cursor:pointer;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;'
           + (done ? 'background:rgba(34,197,94,.15);border:2px solid #22c55e;color:#22c55e' : 'background:rgba(255,255,255,.03);border:2px solid rgba(255,255,255,.1);color:#475569')
           + '">' + (done ? '✓' : dayLabels[i]) + '</div>';
       }
@@ -4773,6 +5426,46 @@ async function loadDailyLoginStudents() {
   } catch(e) {
     console.error('[DailyLogin] Erro ao carregar alunos:', e);
     listEl.innerHTML = '<div class="empty"><div class="icon">❌</div><p>Erro ao carregar</p></div>';
+  }
+}
+
+async function manualDailyLogin(studentId, dayIndex) {
+  if (!requireFirebase()) return;
+  var cycleKey = _dlWeekKeys[dayIndex];
+  if (!cycleKey) return;
+
+  var existing = await db.collection('dailyLogins')
+    .where('userId', '==', studentId)
+    .where('cycleKey', '==', cycleKey)
+    .limit(1).get();
+
+  if (!existing.empty) {
+    // Already confirmed — remove it (toggle off)
+    try {
+      var batch = db.batch();
+      existing.forEach(function(doc) { batch.delete(doc.ref); });
+      await batch.commit();
+      showToast('🗑️ Login desmarcado!');
+      loadDailyLoginStudents();
+    } catch(e) {
+      console.error('[DailyLogin] Erro ao desmarcar:', e);
+      showToast('❌ Erro ao desmarcar');
+    }
+    return;
+  }
+
+  try {
+    await db.collection('dailyLogins').add({
+      userId: studentId,
+      cycleKey: cycleKey,
+      checkedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      manualByTeacher: true
+    });
+    showToast('✅ Login confirmado manualmente!');
+    loadDailyLoginStudents();
+  } catch(e) {
+    console.error('[DailyLogin] Erro ao confirmar manualmente:', e);
+    showToast('❌ Erro ao confirmar');
   }
 }
 

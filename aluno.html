@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>OVER LABS — Aluno</title>
 <meta name="theme-color" content="#0a0a0f">
 <meta name="mobile-web-app-capable" content="yes">
@@ -41,7 +41,7 @@ input,select{font-family:inherit;outline:none}
 .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;flex-shrink:0}
 
 /* Layout fullscreen (sem phone frame) */
-.app-wrap{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#0a0a0f;overflow:hidden}
+.app-wrap{display:flex;flex-direction:column;height:100vh;height:var(--app-h,100dvh);background:#0a0a0f;overflow:hidden}
 
 /* Top bar */
 .s-header{background:rgba(15,15,20,.95);backdrop-filter:blur(20px);padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;z-index:50}
@@ -56,7 +56,7 @@ input,select{font-family:inherit;outline:none}
 .s-ride-card.waiting{border-color:#f97316;border-width:2px}
 
 /* Bottom nav dark */
-.s-bottom-nav{background:rgba(15,15,20,.95);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);padding:8px 0 4px;display:flex;justify-content:space-around;flex-shrink:0;z-index:50}
+.s-bottom-nav{background:rgba(15,15,20,.95);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);padding:8px 0 calc(4px + env(safe-area-inset-bottom, 0px));display:flex;justify-content:space-around;flex-shrink:0;z-index:50}
 .nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;color:#64748b;min-width:56px;position:relative;background:none;border:none;padding:6px 4px;transition:.2s}
 .nav-btn.active{color:#f59e0b}
 .nav-btn span:first-child{font-size:20px}
@@ -759,6 +759,12 @@ input,select{font-family:inherit;outline:none}
   <iframe id="loja-iframe" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
 </div>
 
+<!-- Image Lightbox -->
+<div id="img-lightbox" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.92);align-items:center;justify-content:center;touch-action:none;overflow:hidden">
+  <button onclick="closeImgLightbox()" style="position:absolute;top:12px;right:12px;z-index:9510;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;cursor:pointer">✕</button>
+  <img id="img-lightbox-src" style="max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain;transform-origin:0 0;transition:none">
+</div>
+
 <!-- Daily Login Overlay -->
 <div id="daily-login-overlay">
   <div class="dl-card" style="position:relative">
@@ -915,6 +921,7 @@ let currentUser = JSON.parse(localStorage.getItem("carolampra_user") || "null");
 let allRides = [];
 let allFeedItems = [];
 let currentRideId = null;
+let _expandedPosts = {};
 let lastAlertTs = null;
 let alertsReady = false;
 let autoRefreshInterval = null;
@@ -958,6 +965,12 @@ function showScreen(name, skipHistory) {
 
 // Botão voltar do Android (hardware/software)
 window.addEventListener("popstate", function(e) {
+  // Fechar lightbox de imagem se estiver aberto
+  var lb = document.getElementById('img-lightbox');
+  if (lb && lb.style.display === 'flex') {
+    lb.style.display = 'none';
+    return;
+  }
   if (screenHistory.length > 0) {
     const prev = screenHistory.pop();
     showScreen(prev, true);
@@ -972,6 +985,7 @@ function switchTab(tab) {
 }
 
 function switchStudentTab(tab) {
+  _expandedPosts = {};
   const map = { home: "student-home", list: "student-list", presence: "student-presence", tournaments: "student-tournaments" };
   showScreen(map[tab] || "student-home");
   if (tab === "presence") initMyPresence();
@@ -1256,6 +1270,17 @@ async function checkDailyLogin() {
     var configDoc = await db.collection('settings').doc('dailyLogin').get();
     if (!configDoc.exists) return;
     _dlConfig = configDoc.data();
+    if (!_dlConfig.rewardCoinsByDay) {
+      _dlConfig.rewardCoinsByDay = {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: _dlConfig.weeklyRewardCoins4 || 0,
+        5: 0,
+        6: 0,
+        7: _dlConfig.weeklyRewardCoins || 0
+      };
+    }
     if (!_dlConfig.enabled) return;
 
     var currentCycle = getDailyCycleKey();
@@ -1315,11 +1340,27 @@ function renderDailyLogin(currentCycle) {
     progressEl.textContent = checkedCount + '/7 — Confirme seu login!';
   }
 
-  if (checkedCount >= 7 && _dlConfig) {
-    var coins = _dlConfig.weeklyRewardCoins || 0;
+  if (_dlConfig && _dlConfig.rewardCoinsByDay) {
+    var coins = _dlConfig.rewardCoinsByDay[checkedCount] || 0;
     if (coins > 0) {
       rewardEl.style.display = 'block';
-      rewardEl.textContent = '🎉 Semana completa! Você ganhou 🪙 ' + coins + ' CUTS!';
+      rewardEl.textContent = '🎉 Recompensa configurada para ' + checkedCount + '/7: 🪙 ' + coins + ' CUTS!';
+    } else if (!alreadyChecked) {
+      var nextRewardDay = 0;
+      for (var rewardDay = checkedCount + 1; rewardDay <= 7; rewardDay++) {
+        if ((_dlConfig.rewardCoinsByDay[rewardDay] || 0) > 0) {
+          nextRewardDay = rewardDay;
+          break;
+        }
+      }
+      if (nextRewardDay > 0) {
+        rewardEl.style.display = 'block';
+        rewardEl.textContent = '🪙 Próxima recompensa em ' + nextRewardDay + '/7: ' + (_dlConfig.rewardCoinsByDay[nextRewardDay] || 0) + ' CUTS';
+      } else {
+        rewardEl.style.display = 'none';
+      }
+    } else {
+      rewardEl.style.display = 'none';
     }
   } else {
     rewardEl.style.display = 'none';
@@ -1341,32 +1382,41 @@ async function confirmDailyLogin() {
     _dlCheckedKeys.push(currentCycle);
     logActivity('daily_login', 'Check-in diário: ' + currentCycle, { cycleKey: currentCycle });
 
-    // Check if all 7 complete — award coins
-    if (_dlCheckedKeys.length >= 7 && _dlConfig && _dlConfig.weeklyRewardCoins > 0) {
+    // Award coins for the configured day count
+    if (_dlConfig && _dlConfig.rewardCoinsByDay) {
+      var checkedCount = _dlCheckedKeys.length;
+      var rewardCoins = _dlConfig.rewardCoinsByDay[checkedCount] || 0;
       var weekKey = _dlCycleKeys[0];
       var rewardSnap = await db.collection('dailyLoginRewards')
         .where('userId', '==', currentUser.id)
         .where('weekKey', '==', weekKey)
         .get();
 
-      if (rewardSnap.empty) {
-        var coins = _dlConfig.weeklyRewardCoins;
+      var alreadyAwardedForDay = false;
+      rewardSnap.forEach(function(doc) {
+        var data = doc.data();
+        if (data.rewardDay === checkedCount) alreadyAwardedForDay = true;
+        if (!data.rewardDay && checkedCount === 7) alreadyAwardedForDay = true;
+      });
+
+      if (rewardCoins > 0 && !alreadyAwardedForDay) {
         await db.collection('users').doc(currentUser.id).update({
-          cuts: firebase.firestore.FieldValue.increment(coins),
+          cuts: firebase.firestore.FieldValue.increment(rewardCoins),
           cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         await db.collection('dailyLoginRewards').add({
           userId: currentUser.id,
           weekKey: weekKey,
-          coins: coins,
+          rewardDay: checkedCount,
+          coins: rewardCoins,
           awardedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         await db.collection('notifications').doc(currentUser.id).collection('items').add({
-          msg: '🎉 Parabéns! Você completou 7/7 logins diários e ganhou 🪙 ' + coins + ' CUTS!',
+          msg: '🎉 Parabéns! Você ganhou 🪙 ' + rewardCoins + ' CUTS ao completar ' + checkedCount + '/7 logins diários!',
           read: false,
           at: firebase.firestore.FieldValue.serverTimestamp()
         });
-        showToast('🎉 Semana completa! +' + coins + ' CUTS!');
+        showToast('🎉 Recompensa de ' + checkedCount + '/7: +' + rewardCoins + ' CUTS!');
       }
     }
 
@@ -1511,7 +1561,11 @@ function renderFilteredFeed() {
     if (item.type === 'personal_msg' || item.type === 'waitlist_promotion') {
       return item.targetUserId === currentUser.id;
     }
-    if (item.type !== "ride_created" && item.type !== "alert") return false;
+    if (item.type === 'poll') {
+      if (item.expiresAt && item.expiresAt.toMillis && item.expiresAt.toMillis() < now) return false;
+      return true;
+    }
+    if (item.type !== "ride_created" && item.type !== "alert" && item.type !== "feed_post") return false;
     if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h24) return false;
     return true;
   });
@@ -1536,10 +1590,74 @@ function renderFeed(items) {
       ride_created: { bg: "rgba(34,197,94,.08)", border: "rgba(34,197,94,.2)" },
       alert:        { bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.2)" },
       personal_msg: { bg: "rgba(139,92,246,.08)", border: "rgba(139,92,246,.2)" },
-      waitlist_promotion: { bg: "rgba(34,197,94,.08)", border: "rgba(34,197,94,.2)" }
+      waitlist_promotion: { bg: "rgba(34,197,94,.08)", border: "rgba(34,197,94,.2)" },
+      feed_post:    { bg: "rgba(99,102,241,.08)", border: "rgba(99,102,241,.2)" },
+      poll:         { bg: "rgba(245,158,11,.06)", border: "rgba(245,158,11,.25)" }
     };
     const c = colors[item.type] || colors.alert;
     const time = item.createdAt ? fmtTs(item.createdAt) : "agora";
+
+    if (item.type === 'poll') {
+      var votes = item.votes || {};
+      var myVote = currentUser && currentUser.id ? votes[currentUser.id] : undefined;
+      var hasVoted = myVote !== undefined;
+      var totalVotes = Object.keys(votes).length;
+      var opts = item.options || [];
+      var pollHtml = '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:16px;padding:16px;margin-bottom:10px">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
+        + '<span style="font-size:22px">📊</span>'
+        + '<span style="font-weight:800;font-size:14px;color:#fff;flex:1">' + escapeHtml(item.text) + '</span>'
+        + '<span style="font-size:11px;color:#64748b">' + time + '</span></div>';
+
+      opts.forEach(function(opt, idx) {
+        if (hasVoted) {
+          var count = 0;
+          Object.keys(votes).forEach(function(k) { if (votes[k] === idx) count++; });
+          var pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+          var isMyChoice = myVote === idx;
+          pollHtml += '<div style="margin-bottom:8px">'
+            + '<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:13px;font-weight:' + (isMyChoice ? '800' : '600') + ';color:' + (isMyChoice ? '#f59e0b' : '#cbd5e1') + '">' + (isMyChoice ? '✓ ' : '') + escapeHtml(opt) + '</span><span style="font-size:12px;font-weight:700;color:#94a3b8">' + pct + '%</span></div>'
+            + '<div style="height:6px;background:rgba(255,255,255,.06);border-radius:6px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + (isMyChoice ? 'linear-gradient(90deg,#f59e0b,#e85d04)' : 'rgba(148,163,184,.3)') + ';border-radius:6px;transition:width .3s"></div></div>'
+            + '</div>';
+        } else {
+          pollHtml += '<button onclick="votePoll(\'' + item.id + '\',' + idx + ')" style="display:block;width:100%;text-align:left;margin-bottom:8px;padding:12px 16px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">' + escapeHtml(opt) + '</button>';
+        }
+      });
+
+      if (hasVoted) {
+        pollHtml += '<div style="margin-top:6px;font-size:11px;color:#64748b">🗳️ ' + totalVotes + ' voto' + (totalVotes !== 1 ? 's' : '') + ' · Você já votou</div>';
+      } else {
+        pollHtml += '<div style="margin-top:6px;font-size:11px;color:#94a3b8">Toque para votar</div>';
+      }
+      pollHtml += '</div>';
+      return pollHtml;
+    }
+
+    if (item.type === 'feed_post') {
+      const uid = 'fp-' + item.id;
+      const postTitle = item.title ? escapeHtml(item.title) : 'Novo Post';
+      const preview = item.text.length > 80 ? escapeHtml(item.text.substring(0, 80)) + '...' : escapeHtml(item.text);
+      const full = escapeHtml(item.text).replace(/\n/g, '<br>');
+      const hasImage = !!item.imageData;
+      const needsExpand = item.text.length > 80 || hasImage;
+      const isExpanded = !!_expandedPosts[item.id];
+      return '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:16px;padding:16px;margin-bottom:10px">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+        + '<span style="font-size:22px">📝</span>'
+        + '<span style="font-weight:800;font-size:14px;color:#fff;flex:1">' + postTitle + '</span>'
+        + '<span style="font-size:11px;color:#64748b">' + time + '</span>'
+        + '</div>'
+        + '<div id="' + uid + '-short" style="' + (isExpanded ? 'display:none' : '') + '">'
+        + '<p style="color:#94a3b8;font-size:13px;margin-left:32px">' + preview + '</p>'
+        + (needsExpand ? '<button onclick="toggleFeedPost(\'' + item.id + '\',true)" style="margin-left:32px;margin-top:8px;background:none;border:none;color:#6366f1;font-weight:700;font-size:12px;cursor:pointer;padding:0">Mostrar mais ▾</button>' : '')
+        + '</div>'
+        + '<div id="' + uid + '-full" style="' + (isExpanded ? '' : 'display:none') + '">'
+        + '<p style="color:#cbd5e1;font-size:13px;margin-left:32px">' + full + '</p>'
+        + (hasImage ? '<img onclick="openImgLightbox(this.src)" src="' + item.imageData + '" style="cursor:pointer;width:calc(100% - 32px);border-radius:12px;margin-top:10px;margin-left:32px;max-height:400px;object-fit:cover" loading="lazy">' : '')
+        + '<button onclick="toggleFeedPost(\'' + item.id + '\',false)" style="margin-left:32px;margin-top:8px;background:none;border:none;color:#6366f1;font-weight:700;font-size:12px;cursor:pointer;padding:0">Mostrar menos ▴</button>'
+        + '</div>'
+        + '</div>';
+    }
 
     return `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:16px;padding:16px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
@@ -1551,6 +1669,112 @@ function renderFeed(items) {
     </div>`;
   }).join("");
 }
+
+function toggleFeedPost(id, expand) {
+  if (expand) _expandedPosts[id] = true;
+  else delete _expandedPosts[id];
+  var s = document.getElementById('fp-' + id + '-short');
+  var f = document.getElementById('fp-' + id + '-full');
+  if (s) s.style.display = expand ? 'none' : '';
+  if (f) f.style.display = expand ? '' : 'none';
+}
+
+async function votePoll(pollId, optionIdx) {
+  if (!currentUser || !currentUser.id) { showToast('Faça login para votar'); return; }
+  try {
+    var ref = db.collection('feed').doc(pollId);
+    await ref.update({
+      ['votes.' + currentUser.id]: optionIdx
+    });
+    showToast('✅ Voto registrado!');
+  } catch(e) {
+    console.error('[VotePoll] Erro:', e);
+    showToast('❌ Erro ao votar');
+  }
+}
+
+var _lbScale = 1, _lbX = 0, _lbY = 0, _lbStartDist = 0, _lbStartScale = 1, _lbStartX = 0, _lbStartY = 0, _lbMidX = 0, _lbMidY = 0;
+
+function openImgLightbox(src) {
+  var el = document.getElementById('img-lightbox');
+  var img = document.getElementById('img-lightbox-src');
+  img.src = src;
+  _lbScale = 1; _lbX = 0; _lbY = 0;
+  img.style.transform = 'translate(0px,0px) scale(1)';
+  el.style.display = 'flex';
+  history.pushState({ lightbox: true }, '');
+}
+function closeImgLightbox() {
+  var el = document.getElementById('img-lightbox');
+  if (el.style.display === 'flex') {
+    el.style.display = 'none';
+    _lbScale = 1; _lbX = 0; _lbY = 0;
+    history.back();
+  }
+}
+(function() {
+  var lb = document.getElementById('img-lightbox');
+  var img = document.getElementById('img-lightbox-src');
+  if (!lb || !img) return;
+
+  function dist(t) { var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY; return Math.sqrt(dx*dx + dy*dy); }
+  function mid(t) { return { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 }; }
+  function applyTransform() { img.style.transform = 'translate(' + _lbX + 'px,' + _lbY + 'px) scale(' + _lbScale + ')'; }
+
+  lb.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      _lbStartDist = dist(e.touches);
+      _lbStartScale = _lbScale;
+      var m = mid(e.touches);
+      _lbMidX = m.x; _lbMidY = m.y;
+      _lbStartX = _lbX; _lbStartY = _lbY;
+    } else if (e.touches.length === 1 && _lbScale > 1) {
+      _lbStartX = _lbX; _lbStartY = _lbY;
+      _lbMidX = e.touches[0].clientX; _lbMidY = e.touches[0].clientY;
+    }
+  }, { passive: false });
+
+  lb.addEventListener('touchmove', function(e) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      var d = dist(e.touches);
+      _lbScale = Math.max(1, Math.min(5, _lbStartScale * (d / _lbStartDist)));
+      var m = mid(e.touches);
+      _lbX = _lbStartX + (m.x - _lbMidX);
+      _lbY = _lbStartY + (m.y - _lbMidY);
+      applyTransform();
+    } else if (e.touches.length === 1 && _lbScale > 1) {
+      e.preventDefault();
+      _lbX = _lbStartX + (e.touches[0].clientX - _lbMidX);
+      _lbY = _lbStartY + (e.touches[0].clientY - _lbMidY);
+      applyTransform();
+    }
+  }, { passive: false });
+
+  lb.addEventListener('touchend', function(e) {
+    if (e.touches.length === 0 && _lbScale <= 1.05) {
+      _lbScale = 1; _lbX = 0; _lbY = 0;
+      applyTransform();
+    }
+    if (e.touches.length === 1) {
+      _lbStartX = _lbX; _lbStartY = _lbY;
+      _lbMidX = e.touches[0].clientX; _lbMidY = e.touches[0].clientY;
+    }
+  });
+
+  // Tap para fechar só se não estava fazendo zoom
+  var _tapStart = 0;
+  lb.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 1 && _lbScale <= 1.05) _tapStart = Date.now();
+    else _tapStart = 0;
+  });
+  lb.addEventListener('touchend', function(e) {
+    if (e.touches.length === 0 && _tapStart && Date.now() - _tapStart < 250 && _lbScale <= 1.05) {
+      if (e.target === lb) closeImgLightbox();
+    }
+  });
+})();
 
 function renderStudentRides(rides) {
   document.getElementById("s-loading").style.display = "none";
@@ -2400,11 +2624,20 @@ function loadRanking() {
         return _rankingOrderCache;
       }).catch(function() { _rankingOrderCache = []; return []; });
 
+  // Buscar lista de ocultos
+  var hiddenPromise = db.collection('ranking_config').doc('hidden_users').get().then(function(doc) {
+    return doc.exists ? (doc.data().ids || []) : [];
+  }).catch(function() { return []; });
+
   unsubRanking = db.collection("users").onSnapshot(snap => {
-    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    const allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(u => u.username && u.username !== "teste");
 
-    orderPromise.then(function(savedOrder) {
+    Promise.all([orderPromise, hiddenPromise]).then(function(results) {
+      var savedOrder = results[0];
+      var hiddenIds = results[1];
+      var hiddenSet = new Set(hiddenIds);
+      var users = allUsers.filter(function(u) { return !hiddenSet.has(u.id); });
       // Ordenar com CUTS + ordem manual em empate
       if (savedOrder.length > 0) {
         var orderMap = {};
@@ -3473,6 +3706,17 @@ async function submitInscricao() {
 
 // Registrar Service Worker com auto-update
 if ("serviceWorker" in navigator) {
+  // Fix Android nav bar: usar innerHeight real
+  function fixAppHeight() {
+    document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px');
+  }
+  fixAppHeight();
+  window.addEventListener('resize', fixAppHeight);
+  window.addEventListener('orientationchange', function() { setTimeout(fixAppHeight, 150); });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', fixAppHeight);
+  }
+
   const hadController = !!navigator.serviceWorker.controller;
 
   navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
