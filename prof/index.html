@@ -5130,25 +5130,25 @@ async function saveCambioValue(itemId) {
 
 // ── Pull to refresh no Log ──
 (function() {
-  var startY = 0, pulling = false, activated = false, startScrollTop = 0;
+  var startY = 0, pulling = false, activated = false, startScroll = 0;
+  function getScroll() {
+    return window.scrollY || document.documentElement.scrollTop || 0;
+  }
   document.addEventListener('DOMContentLoaded', function() {
     var container = document.querySelector('#screen-teacher-log .t-content');
     var indicator = document.getElementById('log-ptr');
     if (!container || !indicator) return;
     container.addEventListener('touchstart', function(e) {
       activated = false;
-      startScrollTop = container.scrollTop;
-      if (startScrollTop <= 2) { startY = e.touches[0].clientY; pulling = true; }
+      startScroll = getScroll();
+      if (startScroll <= 1) { startY = e.touches[0].clientY; pulling = true; }
       else { pulling = false; }
     }, { passive: true });
     container.addEventListener('touchmove', function(e) {
       if (!pulling) return;
-      // Cancelar se a lista não está no topo
-      if (container.scrollTop > 2) { pulling = false; return; }
-      // Cancelar se o toque começou com a lista não no topo
-      if (startScrollTop > 2) { pulling = false; return; }
+      if (getScroll() > 1) { pulling = false; return; }
+      if (startScroll > 1) { pulling = false; return; }
       var diff = e.touches[0].clientY - startY;
-      // Só ativa puxando para baixo com pelo menos 80px
       if (diff > 80) {
         indicator.style.maxHeight = '50px';
         indicator.style.padding = '12px 0';
