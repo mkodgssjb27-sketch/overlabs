@@ -331,11 +331,18 @@ function renderInventory() {
       const isEquipped = item.equipado;
 
       if (sellMode) {
-        // Modo venda: clicar no item abre confirmação de venda
+        // Modo venda: clicar no preço abre confirmação de venda
         const sellDisabled = isEquipped || sellPrice <= 0;
-        const priceTag = sellPrice > 0 ? '<div style="margin-top:6px;padding:4px 8px;border-radius:8px;font-weight:900;font-size:11px;' + (isEquipped ? 'background:rgba(245,158,11,.12);color:#f59e0b' : 'background:rgba(34,197,94,.15);color:#22c55e') + '">' + (isEquipped ? '⚠️ Equipado' : '💱 ' + sellPrice + ' CUTS') + '</div>' : '<div style="margin-top:6px;padding:4px 8px;border-radius:8px;font-weight:900;font-size:11px;background:rgba(100,116,139,.12);color:#475569">🚫 Sem valor</div>';
+        let priceTag;
+        if (sellPrice <= 0) {
+          priceTag = '<div style="margin-top:6px;padding:4px 8px;border-radius:8px;font-weight:900;font-size:11px;background:rgba(100,116,139,.12);color:#475569">🚫 Sem valor</div>';
+        } else if (isEquipped) {
+          priceTag = '<div style="margin-top:6px;padding:4px 8px;border-radius:8px;font-weight:900;font-size:11px;background:rgba(245,158,11,.12);color:#f59e0b">⚠️ Equipado</div>';
+        } else {
+          priceTag = '<div onclick="openSellModal(\x27' + item.docId + '\x27)" style="margin-top:6px;padding:6px 10px;border-radius:10px;font-weight:900;font-size:12px;background:rgba(34,197,94,.18);color:#22c55e;border:1.5px solid rgba(34,197,94,.4);cursor:pointer;-webkit-tap-highlight-color:rgba(34,197,94,.2)">💱 ' + sellPrice + ' CUTS</div>';
+        }
         html += `
-        <div class="inv-item sell-mode${rarClass}" style="aspect-ratio:auto;padding:8px;${sellDisabled ? 'opacity:.5;cursor:not-allowed' : 'cursor:pointer'}" ${sellDisabled ? '' : 'onclick="openSellModal(\'' + item.docId + '\')"'}>
+        <div class="inv-item sell-mode${rarClass}" style="aspect-ratio:auto;padding:8px;${sellDisabled ? 'opacity:.5' : ''}">
           <img data-item-id="${item.id}" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}" style="max-height:55%">
           <div class="inv-name">${escapeHtml(item.nome)}</div>
           ${priceTag}
