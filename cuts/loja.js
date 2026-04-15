@@ -331,17 +331,14 @@ function renderInventory() {
       const isEquipped = item.equipado;
 
       if (sellMode) {
-        // Modo venda: mostrar preço e botão de venda
+        // Modo venda: clicar no item abre confirmação de venda
         const sellDisabled = isEquipped || sellPrice <= 0;
-        const sellLabel = sellPrice <= 0 ? '🚫 Indisponível' : (isEquipped ? '⚠️ Equipado' : '💱 ' + sellPrice + ' CUTS');
-        const sellStyle = sellDisabled
-          ? 'background:rgba(100,116,139,.15);color:#475569;cursor:not-allowed;border:1px solid rgba(100,116,139,.2)'
-          : 'background:rgba(34,197,94,.15);color:#22c55e;cursor:pointer;border:1px solid rgba(34,197,94,.35)';
+        const priceTag = sellPrice > 0 ? '<div style="margin-top:6px;padding:4px 8px;border-radius:8px;font-weight:900;font-size:11px;' + (isEquipped ? 'background:rgba(245,158,11,.12);color:#f59e0b' : 'background:rgba(34,197,94,.15);color:#22c55e') + '">' + (isEquipped ? '⚠️ Equipado' : '💱 ' + sellPrice + ' CUTS') + '</div>' : '<div style="margin-top:6px;padding:4px 8px;border-radius:8px;font-weight:900;font-size:11px;background:rgba(100,116,139,.12);color:#475569">🚫 Sem valor</div>';
         html += `
-        <div class="inv-item sell-mode${rarClass}" style="aspect-ratio:auto;padding:8px">
+        <div class="inv-item sell-mode${rarClass}" style="aspect-ratio:auto;padding:8px;${sellDisabled ? 'opacity:.5;cursor:not-allowed' : 'cursor:pointer'}" ${sellDisabled ? '' : 'onclick="openSellModal(\'' + item.docId + '\')"'}>
           <img data-item-id="${item.id}" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}" style="max-height:55%">
           <div class="inv-name">${escapeHtml(item.nome)}</div>
-          <button ${sellDisabled ? 'disabled' : ''} onclick="${sellDisabled ? '' : 'openSellModal(\'' + item.docId + '\')'}" style="margin-top:6px;padding:6px 8px;border-radius:10px;font-weight:800;font-size:11px;width:100%;${sellStyle}">${sellLabel}</button>
+          ${priceTag}
         </div>
         `;
       } else {
@@ -767,7 +764,7 @@ async function confirmSell() {
     console.error("[Loja] Erro ao vender:", e);
     showToast("❌ Erro ao vender item");
     btn.disabled = false;
-    btn.textContent = "💱 Confirmar Venda";
+    btn.textContent = "Sim, Vender!";
   }
 }
 

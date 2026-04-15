@@ -77,17 +77,24 @@
 <!-- ── Modal de Venda ── -->
 <div class="modal-overlay" id="sell-modal">
   <div class="modal-box">
+    <div style="font-size:13px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">💱 Confirmar Venda</div>
     <img class="modal-img" id="sell-modal-img" src="" alt="Item">
     <div class="modal-name" id="sell-modal-name">—</div>
     <div class="modal-type" id="sell-modal-type">—</div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0">
-      <span style="font-size:22px">💱</span>
-      <span style="font-size:24px;font-weight:900;color:#22c55e" id="sell-modal-price">0</span>
-      <span style="font-size:14px;color:#94a3b8">CUTS</span>
+    <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:14px;padding:14px;margin:14px 0">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:4px">Você receberá</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+        <span style="font-size:24px">🪙</span>
+        <span style="font-size:28px;font-weight:900;color:#22c55e" id="sell-modal-price">0</span>
+        <span style="font-size:16px;color:#22c55e;font-weight:700">CUTS</span>
+      </div>
     </div>
-    <div id="sell-modal-balance" style="font-size:13px;color:#94a3b8;margin-bottom:16px">—</div>
-    <button id="btn-confirm-sell" onclick="confirmSell()" style="width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:900;font-size:15px;border:none;cursor:pointer;margin-bottom:8px">💱 Confirmar Venda</button>
-    <button class="btn-cancel" onclick="closeSellModal()">Cancelar</button>
+    <div id="sell-modal-balance" style="font-size:12px;color:#64748b;margin-bottom:16px">—</div>
+    <div style="font-size:13px;color:#f87171;font-weight:700;margin-bottom:16px">⚠️ O item será removido do inventário!</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-cancel" onclick="closeSellModal()" style="flex:1;padding:14px;border-radius:14px;background:rgba(255,255,255,.06);color:#94a3b8;font-weight:800;font-size:14px;border:none;cursor:pointer">Não</button>
+      <button id="btn-confirm-sell" onclick="confirmSell()" style="flex:1;padding:14px;border-radius:14px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:900;font-size:14px;border:none;cursor:pointer">Sim, Vender!</button>
+    </div>
   </div>
 </div>
 
