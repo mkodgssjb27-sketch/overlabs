@@ -339,7 +339,7 @@ function renderInventory() {
         } else if (isEquipped) {
           priceTag = '<div style="margin-top:6px;padding:4px 8px;border-radius:8px;font-weight:900;font-size:11px;background:rgba(245,158,11,.12);color:#f59e0b">⚠️ Equipado</div>';
         } else {
-          priceTag = '<div onclick="openSellModal(\x27' + item.docId + '\x27)" style="margin-top:6px;padding:6px 10px;border-radius:10px;font-weight:900;font-size:12px;background:rgba(34,197,94,.18);color:#22c55e;border:1.5px solid rgba(34,197,94,.4);cursor:pointer;-webkit-tap-highlight-color:rgba(34,197,94,.2)">💱 ' + sellPrice + ' CUTS</div>';
+          priceTag = '<div class="sell-price-btn" data-docid="' + item.docId + '" style="margin-top:6px;padding:6px 10px;border-radius:10px;font-weight:900;font-size:12px;background:rgba(34,197,94,.18);color:#22c55e;border:1.5px solid rgba(34,197,94,.4);cursor:pointer;-webkit-tap-highlight-color:rgba(34,197,94,.2)">💱 ' + sellPrice + ' CUTS</div>';
         }
         html += `
         <div class="inv-item sell-mode${rarClass}" style="aspect-ratio:auto;padding:8px;${sellDisabled ? 'opacity:.5' : ''}">
@@ -361,6 +361,15 @@ function renderInventory() {
     html += `</div></div>`;
   }
   container.innerHTML = html;
+
+  // Event delegation para botões de venda
+  container.querySelectorAll('.sell-price-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var docId = this.getAttribute('data-docid');
+      if (docId) openSellModal(docId);
+    });
+  });
 }
 
 // ── Tabs ──
