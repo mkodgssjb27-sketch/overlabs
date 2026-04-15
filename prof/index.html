@@ -4025,6 +4025,8 @@ let logAllEntries = [];
 let logLastDoc = null;
 let logCurrentFilter = 'todos';
 const LOG_PAGE_SIZE = 50;
+let _unsubLog = null;
+let _logRealtimeEntries = [];
 
 function switchLogTab(tab) {
   // legacy - ranking agora tem tela própria
@@ -4038,48 +4040,85 @@ function logFilterAction(filter) {
     btn.style.background = active ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.06)';
     btn.style.color = active ? '#f59e0b' : '#94a3b8';
   });
+  // Ao trocar filtro com real-time, apenas re-renderizar
+  if (_unsubLog) {
+    renderLogEntries();
+    // Se poucos resultados visíveis e tem entradas paginadas antigas pendentes, carregar mais
+    if (logCurrentFilter !== 'todos') {
+      var visibleCount = getFilteredLogCount();
+      if (visibleCount < 15 && logLastDoc) {
+        loadMoreOlderLogs();
+      }
+    }
+    return;
+  }
   logAllEntries = [];
   logLastDoc = null;
   loadActivityLog();
 }
 
-async function loadActivityLog() {
+function loadActivityLog() {
   if (!firebaseOk) return;
   const container = document.getElementById('log-list');
-  if (!logLastDoc) {
-    container.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
-  }
+  container.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
 
+  // Cancelar listener anterior
+  if (_unsubLog) { _unsubLog(); _unsubLog = null; }
+
+  logAllEntries = [];
+  logLastDoc = null;
+  _logRealtimeEntries = [];
+
+  // Listener em tempo real para as últimas LOG_PAGE_SIZE entradas
+  _unsubLog = db.collection('activity_log')
+    .orderBy('timestamp', 'desc')
+    .limit(LOG_PAGE_SIZE)
+    .onSnapshot(function(snap) {
+      _logRealtimeEntries = snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+      logLastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+      // Mesclar: real-time (mais recentes) + paginados antigos (sem duplicar)
+      var realtimeIds = new Set(_logRealtimeEntries.map(function(e) { return e.id; }));
+      var olderOnly = logAllEntries.filter(function(e) { return !realtimeIds.has(e.id); });
+      logAllEntries = _logRealtimeEntries.concat(olderOnly);
+      renderLogEntries();
+
+      var hasMore = snap.docs.length >= LOG_PAGE_SIZE;
+      // Auto-carregar mais se filtro ativo e poucos resultados
+      if (logCurrentFilter !== 'todos' && hasMore) {
+        var visibleCount = getFilteredLogCount();
+        if (visibleCount < 15) { loadMoreOlderLogs(); return; }
+      }
+      document.getElementById('log-load-more').style.display = hasMore ? 'inline-block' : 'none';
+    }, function(e) {
+      console.error('[Log] Erro:', e);
+      container.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar log</p></div>';
+    });
+}
+
+async function loadMoreOlderLogs() {
+  if (!firebaseOk || !logLastDoc) return;
   try {
-    let query = db.collection('activity_log').orderBy('timestamp', 'desc').limit(LOG_PAGE_SIZE);
-    if (logLastDoc) query = query.startAfter(logLastDoc);
-    const snap = await query.get();
-    if (snap.empty && logAllEntries.length === 0) {
-      container.innerHTML = '<div class="empty"><div class="icon">📋</div><p>Nenhuma atividade registrada</p><small>As atividades dos alunos aparecerão aqui</small></div>';
-      document.getElementById('log-load-more').style.display = 'none';
-      return;
-    }
+    var query = db.collection('activity_log').orderBy('timestamp', 'desc').limit(LOG_PAGE_SIZE).startAfter(logLastDoc);
+    var snap = await query.get();
+    if (snap.empty) { document.getElementById('log-load-more').style.display = 'none'; return; }
 
-    const newEntries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    logAllEntries = logAllEntries.concat(newEntries);
+    var newEntries = snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
     logLastDoc = snap.docs[snap.docs.length - 1] || null;
-    var hasMore = snap.docs.length >= LOG_PAGE_SIZE;
+
+    // Adicionar sem duplicar
+    var existingIds = new Set(logAllEntries.map(function(e) { return e.id; }));
+    newEntries.forEach(function(e) { if (!existingIds.has(e.id)) logAllEntries.push(e); });
 
     renderLogEntries();
 
-    // Se filtro ativo e poucos resultados visíveis, carregar mais automaticamente
+    var hasMore = snap.docs.length >= LOG_PAGE_SIZE;
     if (logCurrentFilter !== 'todos' && hasMore) {
       var visibleCount = getFilteredLogCount();
-      if (visibleCount < 15) {
-        loadActivityLog();
-        return;
-      }
+      if (visibleCount < 15) { loadMoreOlderLogs(); return; }
     }
-
     document.getElementById('log-load-more').style.display = hasMore ? 'inline-block' : 'none';
   } catch(e) {
-    console.error('[Log] Erro:', e);
-    container.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar log</p></div>';
+    console.error('[Log] Erro ao carregar mais:', e);
   }
 }
 
@@ -4097,7 +4136,7 @@ function getFilteredLogCount() {
 }
 
 function loadMoreLogs() {
-  loadActivityLog();
+  loadMoreOlderLogs();
 }
 
 function renderLogEntries() {
@@ -4996,6 +5035,7 @@ async function setEditorItemRarity(itemId, rarity) {
       activated = false;
       logAllEntries = [];
       logLastDoc = null;
+      _logRealtimeEntries = [];
       loadActivityLog();
       setTimeout(function() { indicator.style.maxHeight = '0'; indicator.style.padding = '0'; }, 1200);
     });
