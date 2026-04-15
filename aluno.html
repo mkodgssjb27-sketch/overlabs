@@ -2624,11 +2624,20 @@ function loadRanking() {
         return _rankingOrderCache;
       }).catch(function() { _rankingOrderCache = []; return []; });
 
+  // Buscar lista de ocultos
+  var hiddenPromise = db.collection('ranking_config').doc('hidden_users').get().then(function(doc) {
+    return doc.exists ? (doc.data().ids || []) : [];
+  }).catch(function() { return []; });
+
   unsubRanking = db.collection("users").onSnapshot(snap => {
-    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    const allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(u => u.username && u.username !== "teste");
 
-    orderPromise.then(function(savedOrder) {
+    Promise.all([orderPromise, hiddenPromise]).then(function(results) {
+      var savedOrder = results[0];
+      var hiddenIds = results[1];
+      var hiddenSet = new Set(hiddenIds);
+      var users = allUsers.filter(function(u) { return !hiddenSet.has(u.id); });
       // Ordenar com CUTS + ordem manual em empate
       if (savedOrder.length > 0) {
         var orderMap = {};

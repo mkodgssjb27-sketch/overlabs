@@ -4258,6 +4258,7 @@ function renderLogEntries() {
 
 // ── ESTATÍSTICAS DO RANKING ──
 let rankingUsers = []; // estado atual do ranking para reordenação
+let rankingHiddenSet = new Set(); // IDs ocultos do pódio
 
 async function loadCurrentRanking() {
   if (!firebaseOk) return;
@@ -4265,6 +4266,12 @@ async function loadCurrentRanking() {
   container.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
 
   try {
+    // Carregar lista de ocultos
+    try {
+      const hidDoc = await db.collection('ranking_config').doc('hidden_users').get();
+      rankingHiddenSet = new Set(hidDoc.exists ? (hidDoc.data().ids || []) : []);
+    } catch(e) { rankingHiddenSet = new Set(); }
+
     const snap = await db.collection('users').get();
     const users = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(u => u.username && u.username !== 'teste');
@@ -4323,7 +4330,8 @@ async function loadCurrentRanking() {
 
 async function saveRankingSnapshot(users) {
   try {
-    const top = users.slice(0, 10).map((u, i) => ({
+    var visible = users.filter(function(u) { return !rankingHiddenSet.has(u.id); });
+    const top = visible.slice(0, 10).map((u, i) => ({
       userId: u.id,
       firstName: u.firstName || '',
       cuts: u.cuts || 0,
@@ -4345,32 +4353,56 @@ function renderRankingList() {
     '<span style="font-size:12px;color:#64748b;font-weight:700">Use as setas para reordenar jogadores empatados</span>' +
     '<button onclick="resetRankingOrder()" style="padding:6px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171">🔄 Resetar</button>' +
   '</div>';
-  users.forEach((u, i) => {
+  // Separar visíveis e ocultos
+  var visibleUsers = users.filter(function(u) { return !rankingHiddenSet.has(u.id); });
+  var hiddenUsers = users.filter(function(u) { return rankingHiddenSet.has(u.id); });
+  visibleUsers.forEach((u, i) => {
     const pos = i + 1;
     const medal = medals[i] || '';
     const c = colors[i] || '#64748b';
     const isPodium = i < 3;
     const photo = u.photoURL ? '<img src="' + escapeHtml(u.photoURL) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : '<span style="font-size:14px;font-weight:800;color:#fff">' + ((u.firstName || '?')[0]) + '</span>';
     const upBtn = i > 0 ? '<button onclick="rankingMove(' + i + ',-1)" style="background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-size:12px;padding:4px 7px;border-radius:6px;cursor:pointer;font-weight:900;line-height:1" title="Subir">▲</button>' : '<div style="width:27px"></div>';
-    const downBtn = i < users.length - 1 ? '<button onclick="rankingMove(' + i + ',1)" style="background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-size:12px;padding:4px 7px;border-radius:6px;cursor:pointer;font-weight:900;line-height:1" title="Descer">▼</button>' : '<div style="width:27px"></div>';
+    const downBtn = i < visibleUsers.length - 1 ? '<button onclick="rankingMove(' + i + ',1)" style="background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-size:12px;padding:4px 7px;border-radius:6px;cursor:pointer;font-weight:900;line-height:1" title="Descer">▼</button>' : '<div style="width:27px"></div>';
+    const hideBtn = '<button onclick="toggleRankingHide(\'' + u.id + '\')" style="background:rgba(239,68,68,.1);border:none;color:#f87171;font-size:11px;padding:4px 7px;border-radius:6px;cursor:pointer;font-weight:700;line-height:1;margin-left:4px" title="Ocultar do pódio">👁‍🗨</button>';
     html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:4px;border-radius:12px;background:' + (isPodium ? 'rgba(245,158,11,.06)' : 'rgba(255,255,255,.02)') + ';border:1px solid ' + (isPodium ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.04)') + '">' +
       '<div style="display:flex;flex-direction:column;gap:2px">' + upBtn + downBtn + '</div>' +
       '<span style="font-weight:900;font-size:14px;color:' + c + ';min-width:28px;text-align:center">' + (medal || pos + 'º') + '</span>' +
       '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">' + photo + '</div>' +
       '<div style="flex:1;font-weight:700;font-size:13px;color:#e2e8f0">' + escapeHtml(u.firstName || '—') + '</div>' +
       '<span style="font-weight:900;font-size:14px;color:#f59e0b">🪙 ' + (u.cuts || 0) + '</span>' +
+      hideBtn +
     '</div>';
   });
+  // Seção de ocultos
+  if (hiddenUsers.length > 0) {
+    html += '<div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">' +
+      '<div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">👁‍🗨 Ocultos do Ranking (' + hiddenUsers.length + ')</div>';
+    hiddenUsers.forEach(function(u) {
+      const photo = u.photoURL ? '<img src="' + escapeHtml(u.photoURL) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : '<span style="font-size:14px;font-weight:800;color:#fff">' + ((u.firstName || '?')[0]) + '</span>';
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:4px;border-radius:12px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);opacity:.6">' +
+        '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">' + photo + '</div>' +
+        '<div style="flex:1;font-weight:700;font-size:13px;color:#94a3b8">' + escapeHtml(u.firstName || '—') + '</div>' +
+        '<span style="font-weight:900;font-size:14px;color:#64748b">🪙 ' + (u.cuts || 0) + '</span>' +
+        '<button onclick="toggleRankingHide(\'' + u.id + '\')" style="background:rgba(34,197,94,.12);border:none;color:#22c55e;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:700;line-height:1" title="Mostrar no pódio">Mostrar</button>' +
+      '</div>';
+    });
+    html += '</div>';
+  }
   container.innerHTML = html;
 }
 
-async function rankingMove(index, direction) {
-  const newIdx = index + direction;
-  if (newIdx < 0 || newIdx >= rankingUsers.length) return;
-  // Trocar posições
-  const temp = rankingUsers[index];
-  rankingUsers[index] = rankingUsers[newIdx];
-  rankingUsers[newIdx] = temp;
+async function rankingMove(visibleIndex, direction) {
+  var visibleUsers = rankingUsers.filter(function(u) { return !rankingHiddenSet.has(u.id); });
+  var newVisIdx = visibleIndex + direction;
+  if (newVisIdx < 0 || newVisIdx >= visibleUsers.length) return;
+  // Encontrar índices reais na lista completa
+  var realIdx = rankingUsers.indexOf(visibleUsers[visibleIndex]);
+  var realNewIdx = rankingUsers.indexOf(visibleUsers[newVisIdx]);
+  if (realIdx < 0 || realNewIdx < 0) return;
+  var temp = rankingUsers[realIdx];
+  rankingUsers[realIdx] = rankingUsers[realNewIdx];
+  rankingUsers[realNewIdx] = temp;
   renderRankingList();
   // Salvar ordem no Firestore
   await saveRankingOrder();
@@ -4400,6 +4432,25 @@ async function resetRankingOrder() {
   } catch(e) {
     showToast('Erro ao resetar');
     console.error(e);
+  }
+}
+
+async function toggleRankingHide(uid) {
+  if (!firebaseOk) return;
+  if (rankingHiddenSet.has(uid)) {
+    rankingHiddenSet.delete(uid);
+  } else {
+    rankingHiddenSet.add(uid);
+  }
+  renderRankingList();
+  try {
+    await db.collection('ranking_config').doc('hidden_users').set({
+      ids: Array.from(rankingHiddenSet),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) {
+    console.error('[Ranking] Erro ao salvar ocultos:', e);
+    showToast('Erro ao salvar');
   }
 }
 
