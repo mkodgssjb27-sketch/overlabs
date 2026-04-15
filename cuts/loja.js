@@ -717,11 +717,11 @@ function openSellModal(invDocId) {
   document.getElementById("sell-modal-type").textContent = (invItem.tipo || '').toUpperCase();
   document.getElementById("sell-modal-price").textContent = sellPrice;
   document.getElementById("sell-modal-balance").textContent = "Saldo atual: 🪙 " + userCuts + " → " + (userCuts + sellPrice) + " CUTS";
-  document.getElementById("sell-modal").classList.add("active");
+  document.getElementById("sell-modal").classList.add("show");
 }
 
 function closeSellModal() {
-  document.getElementById("sell-modal").classList.remove("active");
+  document.getElementById("sell-modal").classList.remove("show");
   pendingSellDocId = null;
 }
 
