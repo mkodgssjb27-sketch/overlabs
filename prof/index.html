@@ -5130,21 +5130,25 @@ async function saveCambioValue(itemId) {
 
 // ── Pull to refresh no Log ──
 (function() {
-  var startY = 0, pulling = false, activated = false;
+  var startY = 0, pulling = false, activated = false, startScrollTop = 0;
   document.addEventListener('DOMContentLoaded', function() {
     var container = document.querySelector('#screen-teacher-log .t-content');
     var indicator = document.getElementById('log-ptr');
     if (!container || !indicator) return;
     container.addEventListener('touchstart', function(e) {
       activated = false;
-      if (container.scrollTop <= 0) { startY = e.touches[0].clientY; pulling = true; }
+      startScrollTop = container.scrollTop;
+      if (startScrollTop <= 2) { startY = e.touches[0].clientY; pulling = true; }
       else { pulling = false; }
     }, { passive: true });
     container.addEventListener('touchmove', function(e) {
       if (!pulling) return;
-      // Só ativa se continua no topo (scrollTop===0) e puxou >80px
-      if (container.scrollTop > 0) { pulling = false; return; }
+      // Cancelar se a lista não está no topo
+      if (container.scrollTop > 2) { pulling = false; return; }
+      // Cancelar se o toque começou com a lista não no topo
+      if (startScrollTop > 2) { pulling = false; return; }
       var diff = e.touches[0].clientY - startY;
+      // Só ativa puxando para baixo com pelo menos 80px
       if (diff > 80) {
         indicator.style.maxHeight = '50px';
         indicator.style.padding = '12px 0';
@@ -5152,7 +5156,11 @@ async function saveCambioValue(itemId) {
       }
     }, { passive: true });
     container.addEventListener('touchend', function() {
-      if (!pulling || !activated) { pulling = false; return; }
+      if (!pulling || !activated) {
+        pulling = false;
+        indicator.style.maxHeight = '0'; indicator.style.padding = '0';
+        return;
+      }
       pulling = false;
       activated = false;
       logAllEntries = [];
