@@ -1561,6 +1561,10 @@ function renderFilteredFeed() {
     if (item.type === 'personal_msg' || item.type === 'waitlist_promotion') {
       return item.targetUserId === currentUser.id;
     }
+    if (item.type === 'poll') {
+      if (item.expiresAt && item.expiresAt.toMillis && item.expiresAt.toMillis() < now) return false;
+      return true;
+    }
     if (item.type !== "ride_created" && item.type !== "alert" && item.type !== "feed_post") return false;
     if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h24) return false;
     return true;
@@ -1587,13 +1591,51 @@ function renderFeed(items) {
       alert:        { bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.2)" },
       personal_msg: { bg: "rgba(139,92,246,.08)", border: "rgba(139,92,246,.2)" },
       waitlist_promotion: { bg: "rgba(34,197,94,.08)", border: "rgba(34,197,94,.2)" },
-      feed_post:    { bg: "rgba(99,102,241,.08)", border: "rgba(99,102,241,.2)" }
+      feed_post:    { bg: "rgba(99,102,241,.08)", border: "rgba(99,102,241,.2)" },
+      poll:         { bg: "rgba(245,158,11,.06)", border: "rgba(245,158,11,.25)" }
     };
     const c = colors[item.type] || colors.alert;
     const time = item.createdAt ? fmtTs(item.createdAt) : "agora";
 
+    if (item.type === 'poll') {
+      var votes = item.votes || {};
+      var myVote = currentUser && currentUser.id ? votes[currentUser.id] : undefined;
+      var hasVoted = myVote !== undefined;
+      var totalVotes = Object.keys(votes).length;
+      var opts = item.options || [];
+      var pollHtml = '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:16px;padding:16px;margin-bottom:10px">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
+        + '<span style="font-size:22px">📊</span>'
+        + '<span style="font-weight:800;font-size:14px;color:#fff;flex:1">' + escapeHtml(item.text) + '</span>'
+        + '<span style="font-size:11px;color:#64748b">' + time + '</span></div>';
+
+      opts.forEach(function(opt, idx) {
+        if (hasVoted) {
+          var count = 0;
+          Object.keys(votes).forEach(function(k) { if (votes[k] === idx) count++; });
+          var pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+          var isMyChoice = myVote === idx;
+          pollHtml += '<div style="margin-bottom:8px">'
+            + '<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:13px;font-weight:' + (isMyChoice ? '800' : '600') + ';color:' + (isMyChoice ? '#f59e0b' : '#cbd5e1') + '">' + (isMyChoice ? '✓ ' : '') + escapeHtml(opt) + '</span><span style="font-size:12px;font-weight:700;color:#94a3b8">' + pct + '%</span></div>'
+            + '<div style="height:6px;background:rgba(255,255,255,.06);border-radius:6px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + (isMyChoice ? 'linear-gradient(90deg,#f59e0b,#e85d04)' : 'rgba(148,163,184,.3)') + ';border-radius:6px;transition:width .3s"></div></div>'
+            + '</div>';
+        } else {
+          pollHtml += '<button onclick="votePoll(\'' + item.id + '\',' + idx + ')" style="display:block;width:100%;text-align:left;margin-bottom:8px;padding:12px 16px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">' + escapeHtml(opt) + '</button>';
+        }
+      });
+
+      if (hasVoted) {
+        pollHtml += '<div style="margin-top:6px;font-size:11px;color:#64748b">🗳️ ' + totalVotes + ' voto' + (totalVotes !== 1 ? 's' : '') + ' · Você já votou</div>';
+      } else {
+        pollHtml += '<div style="margin-top:6px;font-size:11px;color:#94a3b8">Toque para votar</div>';
+      }
+      pollHtml += '</div>';
+      return pollHtml;
+    }
+
     if (item.type === 'feed_post') {
       const uid = 'fp-' + item.id;
+      const postTitle = item.title ? escapeHtml(item.title) : 'Novo Post';
       const preview = item.text.length > 80 ? escapeHtml(item.text.substring(0, 80)) + '...' : escapeHtml(item.text);
       const full = escapeHtml(item.text).replace(/\n/g, '<br>');
       const hasImage = !!item.imageData;
@@ -1602,7 +1644,7 @@ function renderFeed(items) {
       return '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:16px;padding:16px;margin-bottom:10px">'
         + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
         + '<span style="font-size:22px">📝</span>'
-        + '<span style="font-weight:800;font-size:14px;color:#fff;flex:1">Novo Post</span>'
+        + '<span style="font-weight:800;font-size:14px;color:#fff;flex:1">' + postTitle + '</span>'
         + '<span style="font-size:11px;color:#64748b">' + time + '</span>'
         + '</div>'
         + '<div id="' + uid + '-short" style="' + (isExpanded ? 'display:none' : '') + '">'
@@ -1635,6 +1677,20 @@ function toggleFeedPost(id, expand) {
   var f = document.getElementById('fp-' + id + '-full');
   if (s) s.style.display = expand ? 'none' : '';
   if (f) f.style.display = expand ? '' : 'none';
+}
+
+async function votePoll(pollId, optionIdx) {
+  if (!currentUser || !currentUser.id) { showToast('Faça login para votar'); return; }
+  try {
+    var ref = db.collection('feed').doc(pollId);
+    await ref.update({
+      ['votes.' + currentUser.id]: optionIdx
+    });
+    showToast('✅ Voto registrado!');
+  } catch(e) {
+    console.error('[VotePoll] Erro:', e);
+    showToast('❌ Erro ao votar');
+  }
 }
 
 var _lbScale = 1, _lbX = 0, _lbY = 0, _lbStartDist = 0, _lbStartScale = 1, _lbStartX = 0, _lbStartY = 0, _lbMidX = 0, _lbMidY = 0;

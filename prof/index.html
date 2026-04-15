@@ -682,7 +682,10 @@ input,select,textarea{font-family:inherit;outline:none}
     </div>
   </div>
   <div class="t-content" style="max-width:660px">
-    <button onclick="showScreen('teacher-feed-new')" style="width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:8px">➕ Novo Post</button>
+    <div style="display:flex;gap:8px;margin-bottom:18px">
+      <button onclick="showScreen('teacher-feed-new')" style="flex:1;padding:14px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;color:#fff;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">➕ Novo Post</button>
+      <button onclick="showScreen('teacher-polls');loadPollsList()" style="flex:1;padding:14px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);border:none;color:#fff;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">📊 Enquetes</button>
+    </div>
     <div class="loading" id="feed-mgr-loading"><div class="spin"></div>Carregando...</div>
     <div class="empty" id="feed-mgr-empty" style="display:none"><div class="icon">📭</div><p>Nenhum item no feed</p></div>
     <div id="feed-mgr-list"></div>
@@ -699,6 +702,10 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
+      <div style="margin-bottom:16px">
+        <label class="lbl">TÍTULO</label>
+        <input class="inp" id="fp-title" placeholder="Título do post (opcional)">
+      </div>
       <div style="margin-bottom:16px">
         <label class="lbl">DESCRIÇÃO</label>
         <textarea class="inp" id="fp-text" rows="4" placeholder="Escreva algo para seus alunos..." style="resize:vertical;min-height:80px"></textarea>
@@ -720,8 +727,64 @@ input,select,textarea{font-family:inherit;outline:none}
           <button onclick="clearPostImage()" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:14px;cursor:pointer">✕</button>
         </div>
       </div>
-      <button onclick="publishFeedPost()" class="btn-main" id="btn-publish-post">📤 Publicar</button>
+      <button onclick="publishFeedPost()" class="btn-main" id="btn-publish-post">📤 Publicar Post</button>
+
+      <!-- Separador -->
+      <div style="display:flex;align-items:center;gap:12px;margin:24px 0 16px">
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.1)"></div>
+        <span style="color:#64748b;font-size:12px;font-weight:700">OU CRIAR ENQUETE</span>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.1)"></div>
+      </div>
+
+      <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:18px">
+        <div style="margin-bottom:14px">
+          <label class="lbl">📊 PERGUNTA DA ENQUETE</label>
+          <input class="inp" id="poll-question" placeholder="Qual é a sua pergunta?">
+        </div>
+        <div id="poll-options-list">
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+            <input class="inp poll-opt-input" placeholder="Alternativa 1" style="flex:1">
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+            <input class="inp poll-opt-input" placeholder="Alternativa 2" style="flex:1">
+          </div>
+        </div>
+        <button onclick="addPollOption()" style="width:100%;padding:10px;border-radius:10px;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.15);color:#94a3b8;font-weight:700;font-size:12px;cursor:pointer;margin-bottom:14px">+ Adicionar Alternativa</button>
+        <div style="margin-bottom:14px">
+          <label class="lbl">⏳ DURAÇÃO (dias)</label>
+          <input type="number" class="inp" id="poll-days" placeholder="7" min="1" max="365" value="7" style="text-align:center">
+        </div>
+        <button onclick="publishPoll()" class="btn-main" id="btn-publish-poll" style="background:linear-gradient(135deg,#f59e0b,#e85d04)">📊 Publicar Enquete</button>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — LISTA DE ENQUETES ═══════════════════════════════ -->
+<div class="screen" id="screen-teacher-polls">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-feed');loadFeedManager()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📊 Enquetes</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:660px">
+    <div class="loading" id="polls-loading"><div class="spin"></div>Carregando...</div>
+    <div class="empty" id="polls-empty" style="display:none"><div class="icon">📊</div><p>Nenhuma enquete criada</p></div>
+    <div id="polls-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — RESULTADO DE ENQUETE ════════════════════════════ -->
+<div class="screen" id="screen-teacher-poll-detail">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-polls');loadPollsList()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📊 Resultado da Enquete</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:660px">
+    <div id="poll-detail-content"></div>
   </div>
 </div>
 
@@ -2813,16 +2876,23 @@ function loadFeedManager() {
       allFeedItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       if (empty) empty.style.display = allFeedItems.length === 0 ? "block" : "none";
 
-      // Auto-excluir itens com mais de 48h
+      // Auto-excluir itens com mais de 48h (exceto enquetes que usam expiresAt)
       var now = Date.now();
       var h48 = 48 * 60 * 60 * 1000;
       allFeedItems.forEach(function(item) {
+        if (item.type === 'poll') {
+          if (item.expiresAt && item.expiresAt.toMillis && item.expiresAt.toMillis() < now) {
+            db.collection('feed').doc(item.id).delete().catch(function() {});
+          }
+          return;
+        }
         if (item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h48) {
           db.collection('feed').doc(item.id).delete().catch(function() {});
         }
       });
 
       renderFeedManager(allFeedItems.filter(function(item) {
+        if (item.type === 'poll') return false; // polls shown in their own screen
         return !(item.createdAt && item.createdAt.toMillis && (now - item.createdAt.toMillis()) > h48);
       }));
     });
@@ -2937,6 +3007,7 @@ function clearPostImage() {
 async function publishFeedPost() {
   if (!firebaseOk) return;
   var text = document.getElementById('fp-text').value.trim();
+  var title = document.getElementById('fp-title').value.trim();
   if (!text) { showToast('Escreva algo para publicar'); return; }
 
   var btn = document.getElementById('btn-publish-post');
@@ -2949,11 +3020,13 @@ async function publishFeedPost() {
       text: text,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
+    if (title) postData.title = title;
     if (_fpImageData) postData.imageData = _fpImageData;
 
     await db.collection('feed').add(postData);
     showToast('✅ Post publicado!');
     document.getElementById('fp-text').value = '';
+    document.getElementById('fp-title').value = '';
     clearPostImage();
     showScreen('teacher-feed');
     loadFeedManager();
@@ -2961,7 +3034,180 @@ async function publishFeedPost() {
     console.error('[FeedPost] Erro:', e);
     showToast('❌ Erro ao publicar');
   }
-  btn.disabled = false; btn.textContent = '📤 Publicar';
+  btn.disabled = false; btn.textContent = '📤 Publicar Post';
+}
+
+// ── Enquetes ──
+function addPollOption() {
+  var list = document.getElementById('poll-options-list');
+  var count = list.querySelectorAll('.poll-opt-input').length + 1;
+  var div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center';
+  div.innerHTML = '<input class="inp poll-opt-input" placeholder="Alternativa ' + count + '" style="flex:1">'
+    + '<button onclick="this.parentElement.remove()" style="width:32px;height:32px;border-radius:50%;background:rgba(239,68,68,.12);border:none;color:#f87171;font-size:14px;cursor:pointer;flex-shrink:0">✕</button>';
+  list.appendChild(div);
+}
+
+async function publishPoll() {
+  if (!firebaseOk) return;
+  var question = document.getElementById('poll-question').value.trim();
+  if (!question) { showToast('Escreva a pergunta da enquete'); return; }
+
+  var inputs = document.querySelectorAll('.poll-opt-input');
+  var options = [];
+  inputs.forEach(function(inp) {
+    var v = inp.value.trim();
+    if (v) options.push(v);
+  });
+  if (options.length < 2) { showToast('Adicione pelo menos 2 alternativas'); return; }
+
+  var days = parseInt(document.getElementById('poll-days').value) || 7;
+  if (days < 1) days = 1;
+
+  var btn = document.getElementById('btn-publish-poll');
+  btn.disabled = true; btn.textContent = 'Publicando...';
+
+  try {
+    var expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + days);
+
+    await db.collection('feed').add({
+      type: 'poll',
+      icon: '📊',
+      text: question,
+      options: options,
+      votes: {},
+      durationDays: days,
+      expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('✅ Enquete publicada!');
+    document.getElementById('poll-question').value = '';
+    document.querySelectorAll('.poll-opt-input').forEach(function(inp) { inp.value = ''; });
+    // Reset to 2 options
+    document.getElementById('poll-options-list').innerHTML = '<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center"><input class="inp poll-opt-input" placeholder="Alternativa 1" style="flex:1"></div><div style="display:flex;gap:8px;margin-bottom:8px;align-items:center"><input class="inp poll-opt-input" placeholder="Alternativa 2" style="flex:1"></div>';
+    document.getElementById('poll-days').value = '7';
+    showScreen('teacher-feed');
+    loadFeedManager();
+  } catch(e) {
+    console.error('[Poll] Erro:', e);
+    showToast('❌ Erro ao publicar enquete');
+  }
+  btn.disabled = false; btn.textContent = '📊 Publicar Enquete';
+}
+
+async function loadPollsList() {
+  if (!firebaseOk) return;
+  var loading = document.getElementById('polls-loading');
+  var empty = document.getElementById('polls-empty');
+  var list = document.getElementById('polls-list');
+  if (loading) loading.style.display = 'flex';
+  if (list) list.innerHTML = '';
+
+  try {
+    var snap = await db.collection('feed').where('type', '==', 'poll').orderBy('createdAt', 'desc').get();
+    if (loading) loading.style.display = 'none';
+    var polls = snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+    if (polls.length === 0) { if (empty) empty.style.display = 'block'; return; }
+    if (empty) empty.style.display = 'none';
+
+    var html = '';
+    polls.forEach(function(p) {
+      var totalVotes = 0;
+      if (p.votes) Object.keys(p.votes).forEach(function(k) { totalVotes++; });
+      var time = p.createdAt ? fmtTs(p.createdAt) : 'agora';
+      var expired = p.expiresAt && p.expiresAt.toMillis && p.expiresAt.toMillis() < Date.now();
+      html += '<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:16px;margin-bottom:10px;cursor:pointer;' + (expired ? 'opacity:.6' : '') + '" onclick="openPollDetail(\'' + p.id + '\')">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+        + '<span style="font-size:20px">📊</span>'
+        + '<span style="font-weight:800;font-size:14px;color:#fff;flex:1">' + escapeHtml(p.text) + '</span>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:12px;margin-left:32px">'
+        + '<span style="font-size:12px;color:#94a3b8">🗳️ ' + totalVotes + ' votos</span>'
+        + '<span style="font-size:12px;color:#64748b">' + time + '</span>'
+        + (expired ? '<span style="font-size:11px;font-weight:700;color:#f87171">EXPIRADA</span>' : '<span style="font-size:11px;font-weight:700;color:#22c55e">ATIVA</span>')
+        + '</div></div>';
+    });
+    list.innerHTML = html;
+  } catch(e) {
+    console.error('[Polls] Erro:', e);
+    if (loading) loading.style.display = 'none';
+    list.innerHTML = '<div class="empty"><div class="icon">❌</div><p>Erro ao carregar</p></div>';
+  }
+}
+
+async function openPollDetail(pollId) {
+  if (!firebaseOk) return;
+  var content = document.getElementById('poll-detail-content');
+  content.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
+  showScreen('teacher-poll-detail');
+
+  try {
+    var doc = await db.collection('feed').doc(pollId).get();
+    if (!doc.exists) { content.innerHTML = '<p style="color:#f87171">Enquete não encontrada</p>'; return; }
+    var p = doc.data();
+    var votes = p.votes || {};
+
+    // Get user names
+    var userIds = [];
+    Object.keys(votes).forEach(function(uid) { if (userIds.indexOf(uid) === -1) userIds.push(uid); });
+
+    var nameMap = {};
+    if (userIds.length > 0) {
+      var usersSnap = await db.collection('users').get();
+      usersSnap.forEach(function(d) {
+        var data = d.data();
+        nameMap[d.id] = data.firstName || data.username || d.id;
+      });
+    }
+
+    var totalVotes = Object.keys(votes).length;
+    var expired = p.expiresAt && p.expiresAt.toMillis && p.expiresAt.toMillis() < Date.now();
+
+    var html = '<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:20px;margin-bottom:16px">'
+      + '<div style="font-weight:900;font-size:16px;color:#fff;margin-bottom:4px">' + escapeHtml(p.text) + '</div>'
+      + '<div style="font-size:12px;color:#94a3b8;margin-bottom:16px">🗳️ ' + totalVotes + ' votos · ' + (expired ? '<span style="color:#f87171">Expirada</span>' : '<span style="color:#22c55e">Ativa (' + (p.durationDays || '?') + ' dias)</span>') + '</div>';
+
+    (p.options || []).forEach(function(opt, idx) {
+      var optVoters = [];
+      Object.keys(votes).forEach(function(uid) {
+        if (votes[uid] === idx) optVoters.push(nameMap[uid] || uid);
+      });
+      var pct = totalVotes > 0 ? Math.round((optVoters.length / totalVotes) * 100) : 0;
+
+      html += '<div style="margin-bottom:14px">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:700;font-size:13px;color:#fff">' + escapeHtml(opt) + '</span><span style="font-size:12px;font-weight:800;color:#f59e0b">' + optVoters.length + ' (' + pct + '%)</span></div>'
+        + '<div style="height:8px;background:rgba(255,255,255,.06);border-radius:8px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#f59e0b,#e85d04);border-radius:8px;transition:width .3s"></div></div>';
+
+      if (optVoters.length > 0) {
+        html += '<div style="margin-top:4px;margin-left:8px">';
+        optVoters.forEach(function(name) {
+          html += '<span style="display:inline-block;font-size:11px;color:#94a3b8;background:rgba(255,255,255,.06);padding:2px 8px;border-radius:8px;margin:2px 4px 2px 0">' + escapeHtml(name) + '</span>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+
+    html += '</div>'
+      + '<button onclick="deletePollItem(\'' + pollId + '\')" style="width:100%;padding:12px;border-radius:12px;background:rgba(239,68,68,.12);border:none;color:#f87171;font-weight:700;font-size:13px;cursor:pointer">🗑 Excluir Enquete</button>';
+
+    content.innerHTML = html;
+  } catch(e) {
+    console.error('[PollDetail] Erro:', e);
+    content.innerHTML = '<p style="color:#f87171">Erro ao carregar enquete</p>';
+  }
+}
+
+function deletePollItem(id) {
+  showConfirmModal("Excluir enquete?", "Esta ação não pode ser desfeita.", async function() {
+    try {
+      await db.collection('feed').doc(id).delete();
+      showToast('Enquete excluída');
+      showScreen('teacher-polls');
+      loadPollsList();
+    } catch(e) { showToast('Erro ao excluir'); }
+  });
 }
 
 // ── Notas de Patch ──
