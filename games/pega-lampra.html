@@ -231,6 +231,8 @@ async function createRoom(){
     await db.collection('game_rooms').doc(code).set({hostId:myId,hostName:myName,status:'waiting',createdAt:firebase.firestore.FieldValue.serverTimestamp(),collectibles:seedCollectibles(),duration:GAME_DURATION});
     roomCode=code;isHost=true;
     await addMeToRoom();enterWaiting();
+    // Log: room created
+    db.collection('activity_log').add({userId:myId,userName:myName,action:'game_room_created',detail:'Criou sala de Pega LAMPRAS ('+code+')',timestamp:firebase.firestore.FieldValue.serverTimestamp(),extra:{game:'pega-lampra',roomCode:code}}).catch(function(){});
   }catch(e){setErr('Erro: '+e.message);}
 }
 
@@ -671,6 +673,12 @@ async function endGame(){
     document.getElementById('my-reward').textContent='🎉 Você ganhou +'+myReward+' CUTS!';
     window.parent.postMessage({type:'GAME_REWARD',game:'pega-lampra',reward:myReward},'*');
   }else{document.getElementById('my-reward').style.display='none';}
+
+  // Log: game finished with results
+  var logResults=arr.map(function(e,i){return{name:e.name,score:e.score,alive:e.alive,position:i+1};});
+  var winnerName=arr.length>0?arr[0].name:'?';
+  db.collection('activity_log').add({userId:myId,userName:myName,action:'game_finished',detail:'Partida Pega LAMPRAS encerrada — Vencedor: '+winnerName,timestamp:firebase.firestore.FieldValue.serverTimestamp(),extra:{game:'pega-lampra',roomCode:roomCode||'',results:logResults,winner:winnerName}}).catch(function(){});
+
   cleanup();
 }
 </script>
