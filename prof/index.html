@@ -228,7 +228,12 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="menu-card" onclick="showScreen('teacher-log');loadActivityLog()">
         <span class="mc-icon">📊</span>
         <div class="mc-title">Registro de Log</div>
-        <div class="mc-desc">Atividades e estatísticas</div>
+        <div class="mc-desc">Atividades dos alunos</div>
+      </div>
+      <div class="menu-card" onclick="showScreen('teacher-ranking');loadCurrentRanking()">
+        <span class="mc-icon">🏆</span>
+        <div class="mc-title">Estatísticas Ranking</div>
+        <div class="mc-desc">Pódio e reordenação</div>
       </div>
       <div class="menu-card" onclick="showScreen('teacher-daily-login');loadDailyLoginConfig()">
         <span class="mc-icon">📅</span>
@@ -1267,17 +1272,11 @@ input,select,textarea{font-family:inherit;outline:none}
       <div><div class="t-title" style="font-size:16px">📊 Registro de Log</div><div class="t-sub">Atividades dos usuários</div></div>
     </div>
   </div>
-  <div class="t-content">
+  <div class="t-content" style="overscroll-behavior-y:contain">
     <!-- Pull to refresh -->
     <div id="log-ptr" style="text-align:center;max-height:0;overflow:hidden;padding:0;transition:max-height .3s,padding .3s;color:#64748b;font-size:13px;font-weight:700"><span style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.1);border-top-color:#f59e0b;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px"></span>Atualizando...</div>
 
-    <!-- Tabs: Log / Ranking -->
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button onclick="switchLogTab('log')" id="log-tab-log" style="flex:1;padding:12px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">📋 Log de Atividades</button>
-      <button onclick="switchLogTab('ranking')" id="log-tab-ranking" style="flex:1;padding:12px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🏆 Estatísticas Ranking</button>
-    </div>
-
-    <!-- Tab: Log de Atividades -->
+    <!-- Log de Atividades -->
     <div id="log-view-log">
       <!-- Filtros -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
@@ -1294,30 +1293,38 @@ input,select,textarea{font-family:inherit;outline:none}
         <button onclick="loadMoreLogs()" id="log-load-more" style="display:none;padding:10px 24px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-weight:700;font-size:13px;cursor:pointer">Carregar mais...</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <!-- Tab: Estatísticas do Ranking -->
-    <div id="log-view-ranking" style="display:none">
-      <div class="t-form" style="margin-bottom:20px">
-        <div class="section-title">🏆 Ranking Atual</div>
-        <div id="ranking-stats-current"><div class="loading"><div class="spin"></div>Carregando...</div></div>
-      </div>
-      <div class="t-form" style="margin-bottom:20px">
-        <div class="section-title">📊 Tempo no Pódio</div>
-        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-          <div>
-            <label class="lbl">DE</label>
-            <input type="date" class="inp" id="ranking-date-from" style="width:auto;padding:8px 12px;font-size:13px">
-          </div>
-          <div>
-            <label class="lbl">ATÉ</label>
-            <input type="date" class="inp" id="ranking-date-to" style="width:auto;padding:8px 12px;font-size:13px">
-          </div>
-          <div style="display:flex;align-items:flex-end">
-            <button onclick="loadRankingStats()" style="padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Analisar</button>
-          </div>
+<!-- ══ PROFESSOR — ESTATÍSTICAS DO RANKING ══════════════════════════ -->
+<div class="screen" id="screen-teacher-ranking">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <div><div class="t-title" style="font-size:16px">🏆 Estatísticas Ranking</div><div class="t-sub">Pódio e reordenação</div></div>
+    </div>
+  </div>
+  <div class="t-content">
+    <div class="t-form" style="margin-bottom:20px">
+      <div class="section-title">🏆 Ranking Atual</div>
+      <div id="ranking-stats-current"><div class="loading"><div class="spin"></div>Carregando...</div></div>
+    </div>
+    <div class="t-form" style="margin-bottom:20px">
+      <div class="section-title">📊 Tempo no Pódio</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <div>
+          <label class="lbl">DE</label>
+          <input type="date" class="inp" id="ranking-date-from" style="width:auto;padding:8px 12px;font-size:13px">
         </div>
-        <div id="ranking-stats-podium"><div style="color:#64748b;font-size:13px">Selecione um período e clique em "Analisar"</div></div>
+        <div>
+          <label class="lbl">ATÉ</label>
+          <input type="date" class="inp" id="ranking-date-to" style="width:auto;padding:8px 12px;font-size:13px">
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button onclick="loadRankingStats()" style="padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer">Analisar</button>
+        </div>
       </div>
+      <div id="ranking-stats-podium"><div style="color:#64748b;font-size:13px">Selecione um período e clique em "Analisar"</div></div>
     </div>
   </div>
 </div>
@@ -4020,20 +4027,7 @@ let logCurrentFilter = 'todos';
 const LOG_PAGE_SIZE = 50;
 
 function switchLogTab(tab) {
-  const tabLog = document.getElementById('log-tab-log');
-  const tabRanking = document.getElementById('log-tab-ranking');
-  const viewLog = document.getElementById('log-view-log');
-  const viewRanking = document.getElementById('log-view-ranking');
-  if (tab === 'log') {
-    tabLog.style.background = 'rgba(245,158,11,.15)'; tabLog.style.color = '#f59e0b';
-    tabRanking.style.background = 'rgba(255,255,255,.06)'; tabRanking.style.color = '#94a3b8';
-    viewLog.style.display = 'block'; viewRanking.style.display = 'none';
-  } else {
-    tabRanking.style.background = 'rgba(245,158,11,.15)'; tabRanking.style.color = '#f59e0b';
-    tabLog.style.background = 'rgba(255,255,255,.06)'; tabLog.style.color = '#94a3b8';
-    viewLog.style.display = 'none'; viewRanking.style.display = 'block';
-    loadCurrentRanking();
-  }
+  // legacy - ranking agora tem tela própria
 }
 
 function logFilterAction(filter) {
@@ -4069,13 +4063,37 @@ async function loadActivityLog() {
     const newEntries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     logAllEntries = logAllEntries.concat(newEntries);
     logLastDoc = snap.docs[snap.docs.length - 1] || null;
+    var hasMore = snap.docs.length >= LOG_PAGE_SIZE;
 
     renderLogEntries();
-    document.getElementById('log-load-more').style.display = snap.docs.length >= LOG_PAGE_SIZE ? 'inline-block' : 'none';
+
+    // Se filtro ativo e poucos resultados visíveis, carregar mais automaticamente
+    if (logCurrentFilter !== 'todos' && hasMore) {
+      var visibleCount = getFilteredLogCount();
+      if (visibleCount < 15) {
+        loadActivityLog();
+        return;
+      }
+    }
+
+    document.getElementById('log-load-more').style.display = hasMore ? 'inline-block' : 'none';
   } catch(e) {
     console.error('[Log] Erro:', e);
     container.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar log</p></div>';
   }
+}
+
+function getFilteredLogCount() {
+  var testeUserIds = new Set();
+  allStudents.forEach(function(s) { if (s.username === 'teste') testeUserIds.add(s.id); });
+  var filtered = logAllEntries.filter(function(e) { return !e.userId || !testeUserIds.has(e.userId); });
+  if (logCurrentFilter === 'todos') return filtered.length;
+  if (logCurrentFilter === 'navegacao') return filtered.filter(function(e) { return e.action === 'navegacao'; }).length;
+  if (logCurrentFilter === 'perfil') return filtered.filter(function(e) { return e.action && e.action.startsWith('perfil'); }).length;
+  if (logCurrentFilter === 'carona') return filtered.filter(function(e) { return e.action && e.action.startsWith('carona'); }).length;
+  if (logCurrentFilter === 'presente') return filtered.filter(function(e) { return e.action && e.action.includes('presente'); }).length;
+  if (logCurrentFilter === 'novo_usuario') return filtered.filter(function(e) { return e.action === 'novo_usuario'; }).length;
+  return filtered.filter(function(e) { return e.action === logCurrentFilter; }).length;
 }
 
 function loadMoreLogs() {
@@ -4951,30 +4969,35 @@ async function setEditorItemRarity(itemId, rarity) {
 
 // ── Pull to refresh no Log ──
 (function() {
-  var startY = 0, pulling = false;
+  var startY = 0, pulling = false, activated = false;
   document.addEventListener('DOMContentLoaded', function() {
     var container = document.querySelector('#screen-teacher-log .t-content');
     var indicator = document.getElementById('log-ptr');
     if (!container || !indicator) return;
     container.addEventListener('touchstart', function(e) {
+      activated = false;
       if (container.scrollTop <= 0) { startY = e.touches[0].clientY; pulling = true; }
+      else { pulling = false; }
     }, { passive: true });
     container.addEventListener('touchmove', function(e) {
       if (!pulling) return;
-      if (e.touches[0].clientY - startY > 60 && container.scrollTop <= 0) {
+      // Só ativa se continua no topo (scrollTop===0) e puxou >80px
+      if (container.scrollTop > 0) { pulling = false; return; }
+      var diff = e.touches[0].clientY - startY;
+      if (diff > 80) {
         indicator.style.maxHeight = '50px';
         indicator.style.padding = '12px 0';
+        activated = true;
       }
     }, { passive: true });
     container.addEventListener('touchend', function() {
-      if (!pulling) return;
+      if (!pulling || !activated) { pulling = false; return; }
       pulling = false;
-      if (parseInt(indicator.style.maxHeight) > 0) {
-        logAllEntries = [];
-        logLastDoc = null;
-        loadActivityLog();
-        setTimeout(function() { indicator.style.maxHeight = '0'; indicator.style.padding = '0'; }, 1200);
-      }
+      activated = false;
+      logAllEntries = [];
+      logLastDoc = null;
+      loadActivityLog();
+      setTimeout(function() { indicator.style.maxHeight = '0'; indicator.style.padding = '0'; }, 1200);
     });
   });
 })();
