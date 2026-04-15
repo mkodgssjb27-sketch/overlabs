@@ -1476,14 +1476,33 @@ input,select,textarea{font-family:inherit;outline:none}
     <!-- Itens publicados -->
     <div class="t-form">
       <div class="section-title">📦 Itens na Loja</div>
-      <div id="editor-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
-        <button onclick="editorFilter('todos')" class="editor-filter-btn active" data-filter="todos" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">Todos</button>
-        <button onclick="editorFilter('avatar')" class="editor-filter-btn" data-filter="avatar" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🖼️ Avatar</button>
-        <button onclick="editorFilter('moldura')" class="editor-filter-btn" data-filter="moldura" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🖼️ Moldura</button>
-        <button onclick="editorFilter('banner')" class="editor-filter-btn" data-filter="banner" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🌄 Banner</button>
-        <button onclick="editorFilter('emblema')" class="editor-filter-btn" data-filter="emblema" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🏅 Emblema</button>
+
+      <!-- Tabs: Itens / Câmbio -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button onclick="editorSwitchView('itens')" id="editor-view-itens-btn" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">📦 Itens</button>
+        <button onclick="editorSwitchView('cambio')" id="editor-view-cambio-btn" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">💱 Câmbio</button>
       </div>
-      <div id="editor-items-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
+
+      <!-- View: Itens -->
+      <div id="editor-view-itens">
+        <div id="editor-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+          <button onclick="editorFilter('todos')" class="editor-filter-btn active" data-filter="todos" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">Todos</button>
+          <button onclick="editorFilter('avatar')" class="editor-filter-btn" data-filter="avatar" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🖼️ Avatar</button>
+          <button onclick="editorFilter('moldura')" class="editor-filter-btn" data-filter="moldura" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🖼️ Moldura</button>
+          <button onclick="editorFilter('banner')" class="editor-filter-btn" data-filter="banner" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🌄 Banner</button>
+          <button onclick="editorFilter('emblema')" class="editor-filter-btn" data-filter="emblema" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🏅 Emblema</button>
+        </div>
+        <div id="editor-items-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
+      </div>
+
+      <!-- View: Câmbio -->
+      <div id="editor-view-cambio" style="display:none">
+        <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:12px;margin-bottom:14px">
+          <div style="font-size:12px;color:#f59e0b;font-weight:700">💱 Câmbio — Valor de Revenda</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:4px">Defina quanto o aluno recebe ao vender cada item do inventário de volta por CUTS. Deixe vazio ou 0 para bloquear a venda.</div>
+        </div>
+        <div id="editor-cambio-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
+      </div>
     </div>
 
   </div>
@@ -5001,6 +5020,83 @@ async function setEditorItemRarity(itemId, rarity) {
   } catch(e) {
     console.error("[Editor] Erro ao alterar raridade:", e);
     showToast("❌ Erro ao alterar raridade");
+  }
+}
+
+// ── Câmbio — Valor de Revenda ──
+function editorSwitchView(view) {
+  var itensView = document.getElementById('editor-view-itens');
+  var cambioView = document.getElementById('editor-view-cambio');
+  var btnItens = document.getElementById('editor-view-itens-btn');
+  var btnCambio = document.getElementById('editor-view-cambio-btn');
+  if (view === 'itens') {
+    itensView.style.display = 'block'; cambioView.style.display = 'none';
+    btnItens.style.background = 'rgba(245,158,11,.15)'; btnItens.style.color = '#f59e0b';
+    btnCambio.style.background = 'rgba(255,255,255,.06)'; btnCambio.style.color = '#94a3b8';
+  } else {
+    itensView.style.display = 'none'; cambioView.style.display = 'block';
+    btnCambio.style.background = 'rgba(245,158,11,.15)'; btnCambio.style.color = '#f59e0b';
+    btnItens.style.background = 'rgba(255,255,255,.06)'; btnItens.style.color = '#94a3b8';
+    renderCambioList();
+  }
+}
+
+function renderCambioList() {
+  var container = document.getElementById('editor-cambio-list');
+  var items = editorPublishedItems;
+  if (!items.length) {
+    container.innerHTML = '<div class="empty"><div class="icon">📦</div><p>Nenhum item publicado</p></div>';
+    return;
+  }
+
+  var tipoLabels = { avatar: '🖼️', moldura: '🖼️', banner: '🌄', emblema: '🏅' };
+  var rarColors = { comum: '#9ca3af', raro: '#3b82f6', super_raro: '#a855f7', lendaria: '#f59e0b' };
+
+  container.innerHTML = items.map(function(item) {
+    var safeNome = item.nome ? item.nome.replace(/</g,'&lt;').replace(/"/g,'&quot;') : '';
+    var safeUrl = item.url ? item.url.replace(/"/g,'&quot;') : '';
+    var tipoIcon = tipoLabels[item.tipo] || '📦';
+    var rarColor = rarColors[item.raridade] || '#64748b';
+    var valorVenda = item.valorVenda || 0;
+
+    return '<div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px;margin-bottom:8px">'
+      + '<img id="cambio-thumb-' + item.id + '" src="' + safeUrl + '" style="width:48px;height:48px;border-radius:10px;object-fit:contain;background:rgba(255,255,255,.02);flex-shrink:0">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-weight:700;font-size:13px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + tipoIcon + ' ' + safeNome + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-top:4px">'
+      + '<span style="font-size:11px;color:#64748b">Compra: 🪙 ' + (item.preco || 0) + '</span>'
+      + '<span style="width:4px;height:4px;border-radius:50%;background:' + rarColor + ';flex-shrink:0"></span>'
+      + '<span style="font-size:11px;color:' + rarColor + '">' + (item.raridade || 'sem raridade') + '</span>'
+      + '</div></div>'
+      + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
+      + '<span style="font-size:12px;color:#22c55e">💱</span>'
+      + '<input id="cambio-val-' + item.id + '" type="number" value="' + valorVenda + '" min="0" placeholder="0" style="width:70px;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#22c55e;font-size:13px;font-weight:900;text-align:center;font-family:inherit">'
+      + '<button onclick="saveCambioValue(\'' + item.id + '\')" style="padding:6px 10px;border-radius:8px;border:none;background:rgba(34,197,94,.15);color:#22c55e;font-weight:700;font-size:11px;cursor:pointer">💾</button>'
+      + '</div></div>';
+  }).join('');
+
+  // Carregar previews de chunks
+  editorPublishedItems.filter(function(i) { return i.chunked; }).forEach(function(item) {
+    var thumbEl = document.getElementById('cambio-thumb-' + item.id);
+    if (thumbEl) {
+      var fullThumb = document.getElementById('editor-thumb-' + item.id);
+      if (fullThumb && fullThumb.src !== item.url) thumbEl.src = fullThumb.src;
+    }
+  });
+}
+
+async function saveCambioValue(itemId) {
+  var input = document.getElementById('cambio-val-' + itemId);
+  var val = parseInt(input.value) || 0;
+  if (val < 0) val = 0;
+  try {
+    await db.collection('cuts_items').doc(itemId).update({ valorVenda: val });
+    var item = editorPublishedItems.find(function(i) { return i.id === itemId; });
+    if (item) item.valorVenda = val;
+    showToast(val > 0 ? '💱 Valor de revenda: ' + val + ' CUTS' : '🚫 Venda bloqueada para este item');
+  } catch(e) {
+    console.error('[Cambio] Erro:', e);
+    showToast('❌ Erro ao salvar valor');
   }
 }
 

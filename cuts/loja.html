@@ -74,6 +74,23 @@
   </div>
 </div>
 
+<!-- ── Modal de Venda ── -->
+<div class="modal-overlay" id="sell-modal">
+  <div class="modal-box">
+    <img class="modal-img" id="sell-modal-img" src="" alt="Item">
+    <div class="modal-name" id="sell-modal-name">—</div>
+    <div class="modal-type" id="sell-modal-type">—</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0">
+      <span style="font-size:22px">💱</span>
+      <span style="font-size:24px;font-weight:900;color:#22c55e" id="sell-modal-price">0</span>
+      <span style="font-size:14px;color:#94a3b8">CUTS</span>
+    </div>
+    <div id="sell-modal-balance" style="font-size:13px;color:#94a3b8;margin-bottom:16px">—</div>
+    <button id="btn-confirm-sell" onclick="confirmSell()" style="width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:900;font-size:15px;border:none;cursor:pointer;margin-bottom:8px">💱 Confirmar Venda</button>
+    <button class="btn-cancel" onclick="closeSellModal()">Cancelar</button>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 

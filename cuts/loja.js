@@ -91,7 +91,7 @@ function loadItems() {
       // Salvar cache local — somente metadados (sem url base64 que é gigante)
       try {
         var toCache = allItems.map(function(it) {
-          var c = { id: it.id, nome: it.nome, tipo: it.tipo, preco: it.preco, raridade: it.raridade || '', hidden: it.hidden || false, chunked: it.chunked || false };
+          var c = { id: it.id, nome: it.nome, tipo: it.tipo, preco: it.preco, raridade: it.raridade || '', hidden: it.hidden || false, chunked: it.chunked || false, valorVenda: it.valorVenda || 0 };
           if (it.expiraEm) c.expiraEm = (it.expiraEm.toDate ? it.expiraEm.toDate() : new Date(it.expiraEm)).toISOString();
           // Só salvar url se for URL http (pequena), não base64 (gigante)
           if (it.url && it.url.length < 500) c.url = it.url;
@@ -319,10 +319,14 @@ function renderInventory() {
     html += `<div class="inv-grid">`;
     items.forEach(item => {
       const rarClass = item.raridade ? ' inv-r-' + item.raridade : '';
+      // Verificar se item tem valor de revenda
+      const shopItem = allItems.find(i => i.id === item.id);
+      const sellPrice = shopItem && shopItem.valorVenda ? shopItem.valorVenda : 0;
       html += `
         <div class="inv-item ${item.equipado ? 'equipped' : ''}${rarClass}" onclick="toggleEquip('${item.id}', '${tipo}')">
           <img data-item-id="${item.id}" src="${escapeHtml(item.url)}" alt="${escapeHtml(item.nome)}">
           <div class="inv-name">${escapeHtml(item.nome)}</div>
+          ${sellPrice > 0 ? '<button onclick="event.stopPropagation();openSellModal(\'' + item.docId + '\')" style="margin-top:4px;padding:4px 10px;border-radius:8px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#22c55e;font-weight:700;font-size:10px;cursor:pointer;width:100%">💱 Vender ' + sellPrice + '</button>' : ''}
         </div>
       `;
     });
@@ -655,6 +659,86 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+// ── Venda (Câmbio) ──
+let pendingSellDocId = null;
+
+function openSellModal(invDocId) {
+  const invItem = myInventory.find(i => i.docId === invDocId);
+  if (!invItem) return;
+  const shopItem = allItems.find(i => i.id === invItem.itemId);
+  const sellPrice = shopItem && shopItem.valorVenda ? shopItem.valorVenda : 0;
+  if (sellPrice <= 0) { showToast("🚫 Este item não pode ser vendido"); return; }
+
+  if (invItem.equipado) {
+    showToast("⚠️ Desequipe o item antes de vender");
+    return;
+  }
+
+  pendingSellDocId = invDocId;
+  const url = chunkCache[invItem.itemId] || invItem.url || (shopItem && shopItem.url) || '';
+  document.getElementById("sell-modal-img").src = url;
+  document.getElementById("sell-modal-name").textContent = invItem.nome || (shopItem && shopItem.nome) || 'Item';
+  document.getElementById("sell-modal-type").textContent = (invItem.tipo || '').toUpperCase();
+  document.getElementById("sell-modal-price").textContent = sellPrice;
+  document.getElementById("sell-modal-balance").textContent = "Saldo atual: 🪙 " + userCuts + " → " + (userCuts + sellPrice) + " CUTS";
+  document.getElementById("sell-modal").classList.add("active");
+}
+
+function closeSellModal() {
+  document.getElementById("sell-modal").classList.remove("active");
+  pendingSellDocId = null;
+}
+
+async function confirmSell() {
+  if (!pendingSellDocId) return;
+  const invItem = myInventory.find(i => i.docId === pendingSellDocId);
+  if (!invItem) { closeSellModal(); return; }
+  const shopItem = allItems.find(i => i.id === invItem.itemId);
+  const sellPrice = shopItem && shopItem.valorVenda ? shopItem.valorVenda : 0;
+  if (sellPrice <= 0) { showToast("🚫 Venda indisponível"); closeSellModal(); return; }
+
+  if (invItem.equipado) { showToast("⚠️ Desequipe o item antes de vender"); closeSellModal(); return; }
+
+  const btn = document.getElementById("btn-confirm-sell");
+  btn.disabled = true;
+  btn.textContent = "⏳ Vendendo...";
+
+  try {
+    const batch = db.batch();
+
+    // 1. Remover do inventário
+    const invDocRef = db.collection("cuts_inventory").doc(pendingSellDocId);
+    batch.delete(invDocRef);
+
+    // 2. Devolver CUTS ao aluno
+    const userRef = db.collection("users").doc(currentUser.id);
+    batch.update(userRef, {
+      cuts: firebase.firestore.FieldValue.increment(sellPrice)
+    });
+
+    // 3. Registrar transação
+    const txRef = db.collection("cuts_transactions").doc();
+    batch.set(txRef, {
+      userId: currentUser.id,
+      valor: sellPrice,
+      tipo: "venda",
+      itemId: invItem.itemId,
+      itemNome: invItem.nome,
+      data: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await batch.commit();
+
+    showToast("💱 Vendido! +" + sellPrice + " CUTS");
+    closeSellModal();
+  } catch(e) {
+    console.error("[Loja] Erro ao vender:", e);
+    showToast("❌ Erro ao vender item");
+    btn.disabled = false;
+    btn.textContent = "💱 Confirmar Venda";
+  }
 }
 
 // ── Bootstrap ──
