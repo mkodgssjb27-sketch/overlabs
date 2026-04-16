@@ -14,6 +14,15 @@ canvas{display:block;position:fixed;top:0;left:0;width:100%;height:100%}
 .ov-btn{width:100%;padding:15px;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:10px}
 .btn-play{background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;box-shadow:0 4px 20px rgba(245,158,11,.3)}
 .btn-home{background:transparent;border:1.5px solid rgba(255,255,255,.12);color:#e2e8f0}
+@media(orientation:landscape){
+  .overlay{padding:10px}
+  .ov-card{padding:16px 20px;max-width:420px;border-radius:18px;flex-direction:row;flex-wrap:wrap;justify-content:center}
+  .ov-card>div:first-child{font-size:36px!important;margin-bottom:6px!important}
+  .ov-card>div:nth-child(2){font-size:18px!important}
+  .ov-card>div:nth-child(3){font-size:12px!important;margin-bottom:10px!important}
+  .ov-btn{padding:11px;font-size:14px;margin-bottom:6px}
+  #finalScore{font-size:36px!important}
+}
 </style></head><body>
 
 <canvas id="gc"></canvas>
@@ -74,12 +83,29 @@ function sz(){
   W=window.innerWidth;H=window.innerHeight;
   C.width=W;C.height=H;
   isLandscape=W>H;
-  GY=isLandscape?Math.round(H*0.78):Math.round(H*0.75);
-  if(playing&&!dead){playerX=Math.max(50,W*0.12);if(playerY>GY-playerR)playerY=GY-playerR;}
+  var oldGY=GY;
+  GY=isLandscape?Math.round(H*0.82):Math.round(H*0.75);
+  // Reposition player
+  playerX=Math.max(50,W*0.12);
+  if(oldGY>0&&playing&&!dead){
+    // Scale player Y proportionally to new ground
+    var distFromGround=oldGY-playerR-playerY;
+    playerY=GY-playerR-distFromGround;
+    if(playerY>GY-playerR){playerY=GY-playerR;playerVY=0;grounded=true;}
+  } else {
+    playerY=GY-playerR;
+  }
+  // Reposition existing obstacles to new ground level
+  for(var i=0;i<obs.length;i++){
+    var o=obs[i];
+    if(o.t==='b'){/* air obs keep relative */}
+    else{o.y=GY-o.h;}  // ground obstacles sit on new ground
+  }
+  mkStars();
 }
 sz();
 window.addEventListener('resize',sz);
-try{screen.orientation.addEventListener('change',function(){setTimeout(sz,100);});}catch(e){window.addEventListener('orientationchange',function(){setTimeout(sz,200);});}
+try{screen.orientation.addEventListener('change',function(){setTimeout(sz,50);setTimeout(sz,200);});}catch(e){window.addEventListener('orientationchange',function(){setTimeout(sz,50);setTimeout(sz,300);});}
 
 // Photo
 var photoImg=null,photoOk=false;
