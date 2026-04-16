@@ -260,26 +260,11 @@ function jump(){if(!playing||dead)return;if(grounded){playerVY=jumpF;grounded=fa
 document.addEventListener('keydown',function(e){if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump();}},{passive:false});
 document.addEventListener('touchstart',function(e){if(playing&&!dead){e.preventDefault();jump();}},{passive:false});
 
-// Fullscreen + landscape lock
-function goFullLandscape(){
-  var el=document.documentElement;
-  try{
-    var p=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
-    if(p)p.call(el).then(function(){
-      try{screen.orientation.lock('landscape').catch(function(){});}catch(e){}
-    }).catch(function(){});
-  }catch(e){}
-  try{screen.orientation.lock('landscape').catch(function(){});}catch(e){}
-}
-
 // Start / End
 function onPlay(){
   document.getElementById('startScreen').classList.add('hidden');
-  goFullLandscape();
-  setTimeout(function(){
-    sz();
-    document.getElementById('readyScreen').classList.remove('hidden');
-  },300);
+  sz();
+  document.getElementById('readyScreen').classList.remove('hidden');
 }
 function startGame(){
   document.getElementById('readyScreen').classList.add('hidden');
