@@ -167,8 +167,16 @@ function initReels(){buildReel('r1');buildReel('r2');buildReel('r3');
 initReels();
 
 /* ── Determine result ── */
+/* Guaranteed win system: pick a random spin within each window of 'luck' spins */
+var spinCount=0,winAt=0;
+function pickWinSpin(){winAt=Math.floor(Math.random()*luck)+1;spinCount=0;}
+pickWinSpin();
+
 function determineResult(){
-  if(Math.random()<(1/luck)){
+  spinCount++;
+  /* Guaranteed jackpot at the chosen spin, or forced at end of window */
+  if(spinCount===winAt||spinCount>=luck){
+    pickWinSpin();
     var s=Math.floor(Math.random()*8);
     return [s,s,s];
   }
