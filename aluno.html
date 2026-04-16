@@ -3811,26 +3811,33 @@ var JOGOS_CONFIG = {
 };
 
 function abrirMenuJogos() {
-  // Update game buttons based on config
+  // Always fetch fresh config from Firebase before showing menu
+  if (firebaseOk) {
+    db.collection('settings').doc('games').get().then(function(doc) {
+      var data = doc.exists ? doc.data() : {};
+      _gamesConfigCache = data;
+      _aplicarVisibilidadeJogos();
+      document.getElementById('jogosMenu').style.display = 'flex';
+    }).catch(function() {
+      _aplicarVisibilidadeJogos();
+      document.getElementById('jogosMenu').style.display = 'flex';
+    });
+  } else {
+    _aplicarVisibilidadeJogos();
+    document.getElementById('jogosMenu').style.display = 'flex';
+  }
+}
+function _aplicarVisibilidadeJogos() {
   var plBtn = document.getElementById('btn-jogo-pegalampra');
   if (plBtn && _gamesConfigCache) {
     var pl = _gamesConfigCache['pega-lampra'] || {};
-    if (pl.enabled === false) {
-      plBtn.style.display = 'none';
-    } else {
-      plBtn.style.display = 'flex';
-    }
+    plBtn.style.display = (pl.enabled === false) ? 'none' : 'flex';
   }
   var spBtn = document.getElementById('btn-jogo-saltopavoroso');
   if (spBtn && _gamesConfigCache) {
     var sp = _gamesConfigCache['salto-pavoroso'] || {};
-    if (sp.enabled === false) {
-      spBtn.style.display = 'none';
-    } else {
-      spBtn.style.display = 'flex';
-    }
+    spBtn.style.display = (sp.enabled === false) ? 'none' : 'flex';
   }
-  document.getElementById('jogosMenu').style.display = 'flex';
 }
 function fecharMenuJogos() {
   document.getElementById('jogosMenu').style.display = 'none';
