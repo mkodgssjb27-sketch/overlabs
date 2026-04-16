@@ -157,26 +157,9 @@ function drawHurdle(x,y,w,h){
   ctx.fillStyle='#fff';for(var i=0;i<w;i+=8)ctx.fillRect(x+i,y,4,5);
 }
 function drawBall(x,y,r){
-  // White volleyball body 🏐
-  ctx.fillStyle='#f0f0f0';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
-  // Subtle shading
-  var sg=ctx.createRadialGradient(x-r*0.3,y-r*0.3,0,x,y,r);
-  sg.addColorStop(0,'rgba(255,255,255,0.6)');sg.addColorStop(1,'rgba(0,0,0,0.1)');
-  ctx.fillStyle=sg;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
-  // Dark outline
-  ctx.strokeStyle='#999';ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();
-  // Panel seam lines (dark curved lines like real volleyball)
-  ctx.strokeStyle='#666';ctx.lineWidth=1;
-  // Center horizontal seam
-  ctx.beginPath();ctx.moveTo(x-r,y);ctx.bezierCurveTo(x-r*0.4,y-r*0.5,x+r*0.4,y-r*0.5,x+r,y);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x-r,y);ctx.bezierCurveTo(x-r*0.4,y+r*0.5,x+r*0.4,y+r*0.5,x+r,y);ctx.stroke();
-  // Left vertical seam
-  ctx.beginPath();ctx.moveTo(x-r*0.15,y-r);ctx.bezierCurveTo(x-r*0.6,y-r*0.3,x-r*0.6,y+r*0.3,x-r*0.15,y+r);ctx.stroke();
-  // Right vertical seam
-  ctx.beginPath();ctx.moveTo(x+r*0.15,y-r);ctx.bezierCurveTo(x+r*0.6,y-r*0.3,x+r*0.6,y+r*0.3,x+r*0.15,y+r);ctx.stroke();
-  // Top/bottom small curves
-  ctx.beginPath();ctx.moveTo(x-r*0.15,y-r);ctx.bezierCurveTo(x-r*0.05,y-r*0.65,x+r*0.05,y-r*0.65,x+r*0.15,y-r);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x-r*0.15,y+r);ctx.bezierCurveTo(x-r*0.05,y+r*0.65,x+r*0.05,y+r*0.65,x+r*0.15,y+r);ctx.stroke();
+  ctx.font=Math.round(r*2.2)+'px serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('🏐',x,y);
 }
 function drawObs(){
   for(var i=0;i<obs.length;i++){var o=obs[i];
