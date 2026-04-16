@@ -68,14 +68,18 @@ if(typeof db!=='undefined'){try{db.collection('settings').doc('games').get().the
 // Canvas
 var C=document.getElementById('gc'),ctx=C.getContext('2d');
 var W=window.innerWidth,H=window.innerHeight,GY=Math.round(H*0.75);
+var isLandscape=W>H;
 
 function sz(){
   W=window.innerWidth;H=window.innerHeight;
   C.width=W;C.height=H;
-  GY=Math.round(H*0.75);
+  isLandscape=W>H;
+  GY=isLandscape?Math.round(H*0.78):Math.round(H*0.75);
+  if(playing&&!dead){playerX=Math.max(50,W*0.12);if(playerY>GY-playerR)playerY=GY-playerR;}
 }
 sz();
 window.addEventListener('resize',sz);
+try{screen.orientation.addEventListener('change',function(){setTimeout(sz,100);});}catch(e){window.addEventListener('orientationchange',function(){setTimeout(sz,200);});}
 
 // Photo
 var photoImg=null,photoOk=false;
@@ -94,7 +98,8 @@ var playerY=GY-22,playerVY=0,grounded=true,playerX=Math.max(50,W*0.12),playerR=2
 var obs=[],nextObs=0,gOff=0;
 var gravity=0.58,jumpF=-11.5;
 var stars=[];
-var lastT=0;
+var lastT=0,accumulator=0;
+var FIXED_DT=1000/60;
 
 function mkStars(){stars=[];for(var i=0;i<25;i++)stars.push({x:Math.random()*W,y:Math.random()*GY*0.85,s:Math.random()*1.5+0.5,a:Math.random()*0.4+0.15});}
 mkStars();
@@ -103,7 +108,7 @@ mkStars();
 function diffLvl(){return Math.floor(score/150);}
 function curSpeed(){return baseSpeed+diffLvl()*0.6;}
 function curGap(){return Math.max(35,85-diffLvl()*7);}
-function airCh(){return Math.min(0.35,0.06+diffLvl()*0.05);}
+function airCh(){return Math.min(0.55,0.15+diffLvl()*0.07);}
 function dblCh(){return Math.min(0.45,diffLvl()*0.08);}
 
 // Spawn
@@ -183,25 +188,33 @@ function hit(){
   }return false;
 }
 
-// Game loop
+// Fixed-timestep game loop — eliminates micro stutters
+function fixedStep(){
+  speed=curSpeed();
+  gOff+=speed;
+  score+=speed*0.04;
+  playerVY+=gravity;
+  playerY+=playerVY;
+  if(playerY>=GY-playerR){playerY=GY-playerR;playerVY=0;grounded=true;}
+  nextObs--;
+  if(nextObs<=0){spawn();nextObs=curGap()+Math.random()*35;}
+  for(var i=obs.length-1;i>=0;i--){obs[i].x-=obs[i].s;if(obs[i].x+obs[i].w<-60)obs.splice(i,1);}
+  if(hit()){dead=true;endGame();}
+}
+
 function tick(now){
   requestAnimationFrame(tick);
   if(!lastT){lastT=now;return;}
   var dt=now-lastT;lastT=now;
-  if(dt>200)dt=200;
-  var steps=dt/16.667;if(steps>4)steps=4;
+  if(dt>250)dt=250;
 
   if(playing&&!dead){
-    speed=curSpeed();
-    gOff+=speed*steps;
-    score+=speed*steps*0.04;
-    playerVY+=gravity*steps;
-    playerY+=playerVY*steps;
-    if(playerY>=GY-playerR){playerY=GY-playerR;playerVY=0;grounded=true;}
-    nextObs-=steps;
-    if(nextObs<=0){spawn();nextObs=curGap()+Math.random()*35;}
-    for(var i=obs.length-1;i>=0;i--){obs[i].x-=obs[i].s*steps;if(obs[i].x+obs[i].w<-60)obs.splice(i,1);}
-    if(hit()){dead=true;endGame();}
+    accumulator+=dt;
+    while(accumulator>=FIXED_DT){
+      fixedStep();
+      accumulator-=FIXED_DT;
+      if(dead)break;
+    }
   }
 
   drawBg();drawGround();drawObs();
@@ -218,7 +231,7 @@ document.addEventListener('touchstart',function(e){if(playing&&!dead){e.preventD
 function startGame(){
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('endScreen').classList.add('hidden');
-  score=0;speed=baseSpeed;obs=[];nextObs=50;gOff=0;lastT=0;
+  score=0;speed=baseSpeed;obs=[];nextObs=50;gOff=0;lastT=0;accumulator=0;
   playerX=Math.max(50,W*0.12);playerY=GY-playerR;playerVY=0;grounded=true;
   dead=false;playing=true;
   mkStars();
