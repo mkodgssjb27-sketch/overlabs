@@ -97,6 +97,24 @@ var ctx = canvas.getContext('2d', { alpha: false });
 var W, H, GROUND_Y;
 var DPR = Math.min(window.devicePixelRatio || 1, 2);
 
+// ═══ GAME STATE (must be before resize) ═══
+var STATE = 'idle';
+var score = 0;
+var baseSpeed = 4.5;
+var speed = baseSpeed;
+var gravity = 0.58;
+var jumpForce = -11.5;
+var groundOffset = 0;
+var lastTime = 0;
+var accumulator = 0;
+var FIXED_DT = 1000 / 60;
+
+var player = { x: 60, y: 0, vy: 0, r: 22, grounded: true };
+var obstacles = [];
+var nextObstacleTimer = 0;
+var minObstacleGap = 85;
+var hiScore = 0;
+
 function resize() {
   W = window.innerWidth;
   H = window.innerHeight;
@@ -140,24 +158,6 @@ function prerenderPlayerCircle() {
   ox.restore;
   playerCircleCanvas = oc;
 }
-
-// ═══ GAME STATE ═══
-var STATE = 'idle';
-var score = 0;
-var baseSpeed = 4.5;
-var speed = baseSpeed;
-var gravity = 0.58;
-var jumpForce = -11.5;
-var groundOffset = 0;
-var lastTime = 0;
-var accumulator = 0;
-var FIXED_DT = 1000 / 60;
-
-var player = { x: 60, y: 0, vy: 0, r: 22, grounded: true };
-var obstacles = [];
-var nextObstacleTimer = 0;
-var minObstacleGap = 85;
-var hiScore = 0;
 
 // ═══ DIFFICULTY — every 150 pts ═══
 function getDifficultyLevel() { return Math.floor(score / 150); }
