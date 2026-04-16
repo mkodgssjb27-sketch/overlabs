@@ -1,0 +1,281 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>LAMPRALUCKY</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body{background:#0a0a0f;font-family:'Segoe UI',system-ui,sans-serif;overflow-y:auto;overflow-x:hidden;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;color:#e2e8f0;padding:12px 0 24px}
+.wrap{width:100%;max-width:380px;padding:0 14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+
+/* Balance */
+.bal{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px}
+.bal-l{font-size:11px;color:#94a3b8;font-weight:700}.bal-v{font-size:20px;font-weight:900;color:#f59e0b}
+
+/* Machine */
+.mach{position:relative;background:linear-gradient(180deg,#4c1d95 0%,#3b0f80 40%,#2d1060 100%);border-radius:22px;padding:18px 14px 20px;border:3px solid #f59e0b;box-shadow:0 0 30px rgba(245,158,11,.12),inset 0 2px 20px rgba(0,0,0,.3);width:100%}
+.mach-hdr{text-align:center;margin-bottom:12px}
+.mach-title{display:inline-block;background:linear-gradient(135deg,#f59e0b,#e85d04);padding:7px 22px;border-radius:30px;font-size:16px;font-weight:900;color:#fff;letter-spacing:.5px;box-shadow:0 3px 14px rgba(245,158,11,.3)}
+.reels-wrap{display:flex;gap:6px;justify-content:center;background:rgba(0,0,0,.35);border-radius:14px;padding:10px 8px;border:2px solid rgba(245,158,11,.2);position:relative}
+.reel-win{width:78px;height:234px;overflow:hidden;background:rgba(255,255,255,.93);border-radius:10px;border:2px solid rgba(245,158,11,.25);position:relative}
+.reel-strip{display:flex;flex-direction:column;will-change:transform}
+.reel-strip.sp{transition:transform cubic-bezier(.1,.7,.3,1)}
+.sym{width:78px;height:78px;display:flex;align-items:center;justify-content:center;font-size:44px;flex-shrink:0}
+.pay-line{position:absolute;top:50%;left:6px;right:6px;height:3px;background:#f59e0b;transform:translateY(-50%);opacity:0;pointer-events:none;border-radius:2px;z-index:5;box-shadow:0 0 10px #f59e0b}
+.pay-line.on{opacity:1;animation:plPulse .5s ease infinite alternate}
+@keyframes plPulse{from{opacity:.5;box-shadow:0 0 5px #f59e0b}to{opacity:1;box-shadow:0 0 20px #f59e0b}}
+
+/* Result */
+.res{min-height:36px;text-align:center;margin-top:6px;width:100%}
+.res-t{font-size:16px;font-weight:900;padding:4px 0}
+.res-t.w3{color:#22c55e;animation:pop .3s ease}
+.res-t.w2{color:#f59e0b}
+.res-t.lo{color:#ef4444}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* Bet */
+.bet{display:flex;align-items:center;gap:8px;width:100%;justify-content:center}
+.bet-b{width:40px;height:40px;border-radius:50%;border:2px solid rgba(245,158,11,.25);background:rgba(245,158,11,.08);color:#f59e0b;font-size:20px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bet-b:active{background:rgba(245,158,11,.25)}
+.bet-b.wide{width:auto;border-radius:10px;padding:0 10px;font-size:11px;font-weight:800}
+.bet-d{text-align:center;min-width:50px}
+.bet-lbl{font-size:10px;color:#94a3b8;font-weight:700}
+.bet-val{font-size:26px;font-weight:900;color:#fff}
+
+/* Buttons */
+.spin-b{width:100%;padding:15px;border:none;border-radius:16px;font-size:17px;font-weight:900;cursor:pointer;font-family:inherit;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;box-shadow:0 4px 20px rgba(245,158,11,.25);transition:opacity .2s}
+.spin-b:disabled{opacity:.35;cursor:not-allowed}
+.spin-b:active:not(:disabled){transform:scale(.97)}
+.back-b{width:100%;padding:11px;border:1.5px solid rgba(255,255,255,.1);border-radius:14px;background:transparent;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+
+/* Win overlay */
+.wov{position:fixed;inset:0;background:rgba(10,10,15,.92);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;backdrop-filter:blur(4px)}
+.wov.h{display:none}
+.wcard{background:#16213e;border:2px solid rgba(34,197,94,.3);border-radius:24px;padding:26px 22px;text-align:center;max-width:340px;width:100%;animation:pop .3s ease}
+
+/* Responsive landscape */
+@media(orientation:landscape){
+  body{padding:8px 0 16px}
+  .wrap{max-width:520px;gap:8px}
+  .mach{padding:12px 10px 14px}
+  .reel-win{width:68px;height:204px}
+  .sym{width:68px;height:68px;font-size:38px}
+}
+@media(max-width:340px){
+  .reel-win{width:66px;height:198px}
+  .sym{width:66px;height:66px;font-size:36px}
+}
+</style></head><body>
+
+<div class="wrap">
+  <div class="bal">
+    <div><div class="bal-l">SUAS MOEDAS</div><div class="bal-v" id="bal">0</div></div>
+    <div style="font-size:26px">🪙</div>
+  </div>
+
+  <div class="mach">
+    <div class="mach-hdr"><div class="mach-title">🎰 LAMPRALUCKY</div></div>
+    <div class="reels-wrap" id="reelsBox">
+      <div class="reel-win"><div class="reel-strip" id="r1"></div></div>
+      <div class="reel-win"><div class="reel-strip" id="r2"></div></div>
+      <div class="reel-win"><div class="reel-strip" id="r3"></div></div>
+      <div class="pay-line" id="payLine"></div>
+    </div>
+    <div class="res" id="resArea"></div>
+  </div>
+
+  <div class="bet">
+    <button class="bet-b wide" onclick="setBet(1)">MIN</button>
+    <button class="bet-b" onclick="addBet(-10)">−10</button>
+    <button class="bet-b" onclick="addBet(-1)">−</button>
+    <div class="bet-d"><div class="bet-lbl">APOSTA</div><div class="bet-val" id="betV">1</div></div>
+    <button class="bet-b" onclick="addBet(1)">+</button>
+    <button class="bet-b" onclick="addBet(10)">+10</button>
+    <button class="bet-b wide" onclick="setBet(myBal)">MAX</button>
+  </div>
+
+  <button class="spin-b" id="spinBtn" onclick="spin()">🎰 GIRAR</button>
+  <button class="back-b" onclick="goHome()">🏠 Voltar</button>
+</div>
+
+<div class="wov h" id="winOv">
+  <div class="wcard">
+    <div style="font-size:48px;margin-bottom:6px">🎉</div>
+    <div style="font-size:22px;font-weight:900;color:#22c55e;margin-bottom:4px" id="wTit">JACKPOT!</div>
+    <div style="color:#94a3b8;font-size:13px;margin-bottom:10px" id="wSub">Três iguais!</div>
+    <div style="font-size:44px;font-weight:900;color:#f59e0b;margin-bottom:2px" id="wAmt">+50</div>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">MOEDAS CUT 🪙</div>
+    <button class="spin-b" onclick="closeWin()">CONTINUAR</button>
+  </div>
+</div>
+
+<script>
+/* ── Firebase ── */
+var db;
+try{firebase.initializeApp({apiKey:"AIzaSyAc9Ews7WVz6GSBp9vzXF4sFI1SMwzklX0",authDomain:"carolampra.firebaseapp.com",projectId:"carolampra",storageBucket:"carolampra.firebasestorage.app",messagingSenderId:"821388549140",appId:"1:821388549140:web:3f60aa294f6f67949adb01"});db=firebase.firestore();}catch(e){}
+
+/* ── Player ── */
+var myId='',myName='Jogador',myBal=0;
+try{var pp=new URLSearchParams(location.search);myId=pp.get('id')||'';myName=decodeURIComponent(pp.get('name')||'Jogador');}catch(e){}
+
+function updBal(){document.getElementById('bal').textContent=myBal;if(bet>myBal&&myBal>0){bet=myBal;document.getElementById('betV').textContent=bet;}}
+
+/* Load balance from Firestore */
+function loadBal(){if(db&&myId){db.collection('users').doc(myId).get().then(function(d){if(d.exists){myBal=d.data().cuts||0;updBal();}}).catch(function(){});}}
+loadBal();
+
+/* Accept data from parent */
+window.addEventListener('message',function(e){
+  if(!e.data)return;
+  if(e.data.type==='PLAYER_DATA'){
+    myId=e.data.id||myId;myName=e.data.name||myName;
+    if(typeof e.data.cuts==='number'){myBal=e.data.cuts;updBal();}
+    else loadBal();
+  }
+  if(e.data.type==='BALANCE_UPDATE'){myBal=e.data.balance||0;updBal();}
+});
+
+/* ── Config from Firestore ── */
+var multiplier=5,luck=10;
+if(db){try{db.collection('settings').doc('games').get().then(function(d){
+  if(d.exists){var cfg=d.data()['lampralucky']||{};
+    if(cfg.multiplier>0)multiplier=cfg.multiplier;
+    if(cfg.luck>0)luck=cfg.luck;
+  }
+}).catch(function(){});}catch(e){}}
+
+/* ── Symbols ── */
+var SYMS=['🍒','🍋','🍊','🍇','🔔','⭐','💎','7️⃣'];
+var SH=78; /* symbol height matches CSS .sym height */
+var STRIP=60;
+var bet=1,spinning=false,lowBetSpins=0;
+
+function addBet(d){bet+=d;clampBet();}
+function setBet(v){bet=v;clampBet();}
+function clampBet(){if(bet<1)bet=1;if(bet>myBal)bet=myBal;if(bet<1)bet=1;document.getElementById('betV').textContent=bet;}
+
+/* ── Build reel strips ── */
+function buildReel(id){
+  var el=document.getElementById(id);el.innerHTML='';
+  for(var i=0;i<STRIP;i++){var d=document.createElement('div');d.className='sym';d.textContent=SYMS[Math.floor(Math.random()*8)];el.appendChild(d);}
+}
+function initReels(){buildReel('r1');buildReel('r2');buildReel('r3');
+  /* show initial position: symbol index 1 centered (top=0,center=1,bottom=2) */
+  var ids=['r1','r2','r3'];
+  for(var i=0;i<3;i++){var el=document.getElementById(ids[i]);el.style.transform='translateY(0)';}
+}
+initReels();
+
+/* ── Determine result ── */
+function determineResult(){
+  /* Special: low bet (<=2) AND fewer than 5 low-bet spins → guaranteed 3 match */
+  var forceWin=(bet<=2&&lowBetSpins<5);
+  if(forceWin||Math.random()<(1/luck)){
+    if(bet<=2)lowBetSpins++;
+    var s=Math.floor(Math.random()*8);
+    return [s,s,s];
+  }
+  /* 25% chance of 2 match */
+  if(Math.random()<0.25){
+    var s=Math.floor(Math.random()*8);
+    var o;do{o=Math.floor(Math.random()*8);}while(o===s);
+    var pos=Math.floor(Math.random()*3);
+    var r=[s,s,s];r[pos]=o;
+    return r;
+  }
+  /* Loss — all different */
+  var a=Math.floor(Math.random()*8);
+  var b;do{b=Math.floor(Math.random()*8);}while(b===a);
+  var c;do{c=Math.floor(Math.random()*8);}while(c===a||c===b);
+  return [a,b,c];
+}
+
+/* ── Spin ── */
+function spin(){
+  if(spinning)return;
+  if(myBal<1){showRes('Sem moedas! 🪙','lo');return;}
+  if(bet>myBal){bet=myBal;document.getElementById('betV').textContent=bet;}
+  if(bet<1)return;
+
+  spinning=true;
+  document.getElementById('spinBtn').disabled=true;
+  document.getElementById('resArea').innerHTML='';
+  document.getElementById('payLine').classList.remove('on');
+
+  /* Deduct bet */
+  var curBet=bet;
+  myBal-=curBet;updBal();
+  try{window.parent.postMessage({type:'GAME_BET',amount:curBet,game:'lampralucky'},'*');}catch(e){}
+
+  /* Rebuild strips for fresh random symbols */
+  buildReel('r1');buildReel('r2');buildReel('r3');
+
+  /* Determine result */
+  var result=determineResult();
+
+  /* Place target symbols at index 46 (center row when window shows indices 45,46,47) */
+  var TARGET=46;
+  var ids=['r1','r2','r3'];
+  for(var i=0;i<3;i++){
+    var el=document.getElementById(ids[i]);
+    /* Set target and neighbors */
+    el.children[TARGET-1].textContent=SYMS[(result[i]+7)%8];
+    el.children[TARGET].textContent=SYMS[result[i]];
+    el.children[TARGET+1].textContent=SYMS[(result[i]+1)%8];
+  }
+
+  /* Animate: start at translateY(0), end at target position */
+  /* For center symbol at TARGET to be in middle of window: translateY = -(TARGET-1)*SH */
+  var durations=[1.6,2.1,2.6];
+  for(var i=0;i<3;i++){
+    var el=document.getElementById(ids[i]);
+    el.classList.remove('sp');
+    el.style.transitionDuration='0s';
+    el.style.transform='translateY(0)';
+  }
+  /* Force reflow */
+  void document.getElementById('r1').offsetHeight;
+
+  for(var i=0;i<3;i++){
+    var el=document.getElementById(ids[i]);
+    el.style.transitionDuration=durations[i]+'s';
+    el.classList.add('sp');
+    el.style.transform='translateY(-'+((TARGET-1)*SH)+'px)';
+  }
+
+  /* After last reel stops */
+  setTimeout(function(){handleResult(result,curBet);},2800);
+}
+
+/* ── Handle result ── */
+function handleResult(r,curBet){
+  var a=r[0],b=r[1],c=r[2];
+  spinning=false;
+  document.getElementById('spinBtn').disabled=false;
+
+  if(a===b&&b===c){
+    /* JACKPOT — 3 match */
+    var payout=curBet*multiplier;
+    myBal+=payout;updBal();
+    try{window.parent.postMessage({type:'GAME_REWARD',reward:payout,game:'lampralucky'},'*');}catch(e){}
+    document.getElementById('payLine').classList.add('on');
+    showBigWin(payout);
+  } else if(a===b||b===c||a===c){
+    /* 2 match — recover half (min 1 if bet was 1) */
+    var payout=(curBet===1)?1:Math.floor(curBet/2);
+    myBal+=payout;updBal();
+    try{window.parent.postMessage({type:'GAME_REWARD',reward:payout,game:'lampralucky'},'*');}catch(e){}
+    document.getElementById('payLine').classList.add('on');
+    showRes('+'+payout+' moeda'+(payout!==1?'s':'')+' recuperada'+(payout!==1?'s':'')+'!','w2');
+  } else {
+    /* Loss */
+    showRes('Tente novamente!','lo');
+  }
+}
+
+function showRes(txt,cls){document.getElementById('resArea').innerHTML='<div class="res-t '+cls+'">'+txt+'</div>';}
+function showBigWin(amt){document.getElementById('wAmt').textContent='+'+amt;document.getElementById('winOv').classList.remove('h');}
+function closeWin(){document.getElementById('winOv').classList.add('h');}
+function goHome(){try{window.parent.postMessage({type:'GAME_GO_HOME'},'*');}catch(e){};}
+</script></body></html>

@@ -710,7 +710,7 @@ input,select{font-family:inherit;outline:none}
     <p style="color:#888;font-size:13px;margin-bottom:20px">Escolha um jogo para jogar!</p>
     <button id="btn-jogo-pegalampra" onclick="abrirJogo('pega-lampra')" style="width:100%;padding:14px;margin-bottom:10px;background:linear-gradient(135deg,#00d4ff,#0080ff);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit">🔵 Pega LAMPRAS</button>
     <button id="btn-jogo-saltopavoroso" onclick="abrirJogo('salto-pavoroso')" style="width:100%;padding:14px;margin-bottom:10px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit">🏃‍♂️ Salto PAVOROSO</button>
-    <button disabled style="width:100%;padding:14px;margin-bottom:10px;background:rgba(255,255,255,.04);color:#475569;border:1px solid rgba(255,255,255,.08);border-radius:14px;font-size:16px;cursor:not-allowed;font-family:inherit">🔒 Em breve...</button>
+    <button id="btn-jogo-lampralucky" onclick="abrirJogo('lampralucky')" style="width:100%;padding:14px;margin-bottom:10px;background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit">🎰 LAMPRALUCKY</button>
     <button onclick="fecharMenuJogos()" style="width:100%;padding:12px;margin-top:8px;background:transparent;color:#888;border:1px solid rgba(255,255,255,.1);border-radius:14px;font-size:14px;cursor:pointer;font-family:inherit">Voltar</button>
   </div>
 </div>
@@ -3807,7 +3807,7 @@ checkInstallGate();
 var JOGOS_CONFIG = {
   'pega-lampra': { url: 'games/pega-lampra.html', nome: 'Pega LAMPRAS' },
   'salto-pavoroso': { url: 'games/salto-pavoroso.html', nome: 'Salto PAVOROSO' },
-  'jogo3': { url: '', nome: 'Jogo 3' }
+  'lampralucky': { url: 'games/lampralucky.html', nome: 'LAMPRALUCKY' }
 };
 
 function abrirMenuJogos() {
@@ -3838,6 +3838,11 @@ function _aplicarVisibilidadeJogos() {
     var sp = _gamesConfigCache['salto-pavoroso'] || {};
     spBtn.style.display = (sp.enabled === false) ? 'none' : 'flex';
   }
+  var llBtn = document.getElementById('btn-jogo-lampralucky');
+  if (llBtn && _gamesConfigCache) {
+    var ll = _gamesConfigCache['lampralucky'] || {};
+    llBtn.style.display = (ll.enabled === false) ? 'none' : 'flex';
+  }
 }
 function fecharMenuJogos() {
   document.getElementById('jogosMenu').style.display = 'none';
@@ -3854,7 +3859,7 @@ function abrirJogo(nome) {
   var iframe = document.getElementById('jogoFrame');
   iframe.onload = function() {
     var photo = gifAvatarCache || localStorage.getItem('carolampra_photo') || '';
-    iframe.contentWindow.postMessage({ type: 'PLAYER_DATA', id: playerId, name: playerName, photo: photo }, '*');
+    iframe.contentWindow.postMessage({ type: 'PLAYER_DATA', id: playerId, name: playerName, photo: photo, cuts: parseInt(document.getElementById('sidebar-cuts').textContent) || 0 }, '*');
   };
 }
 function fecharJogo() {
@@ -3866,6 +3871,16 @@ function fecharJogo() {
 window.addEventListener('message', async function(event) {
   if (!event.data) return;
   if (event.data.type === 'GAME_GO_HOME') { fecharJogo(); showScreen('student-home'); return; }
+  if (event.data.type === 'GAME_BET') {
+    var betAmt = event.data.amount;
+    if (!betAmt || betAmt <= 0) return;
+    try {
+      if (!currentUser || !firebaseOk) return;
+      await db.collection('users').doc(currentUser.id).update({ cuts: firebase.firestore.FieldValue.increment(-betAmt) });
+      db.collection('activity_log').add({ userId: currentUser.id, userName: currentUser.firstName || currentUser.username, action: 'game_bet', detail: 'Apostou ' + betAmt + ' CUTS no ' + (event.data.game || 'jogo'), timestamp: firebase.firestore.FieldValue.serverTimestamp(), extra: { game: event.data.game || '', amount: betAmt } }).catch(function(e) { console.warn('[Log]', e); });
+    } catch(err) { console.error('Erro ao processar aposta:', err); }
+    return;
+  }
   if (event.data.type !== 'GAME_REWARD') return;
   var reward = event.data.reward;
   if (!reward || reward <= 0) return;

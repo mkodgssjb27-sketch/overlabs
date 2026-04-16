@@ -1267,14 +1267,33 @@ input,select,textarea{font-family:inherit;outline:none}
       <div style="font-size:11px;color:#64748b;margin-bottom:0">Exemplo: A cada 300 pontos o aluno ganha 1 CUTS. Se fizer 600 pontos = 2 CUTS, 900 = 3 CUTS, etc.</div>
     </div>
 
-    <!-- Jogo 3: Em breve -->
-    <div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:20px;margin-bottom:20px;opacity:.5">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🔒</div>
-        <div>
-          <div style="font-weight:800;color:#94a3b8;font-size:16px">Em breve</div>
-          <div style="font-size:12px;color:#475569">Próximo jogo a ser adicionado</div>
+    <!-- Jogo 3: LAMPRALUCKY -->
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(124,58,237,.2);border-radius:16px;padding:20px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#7c3aed,#4c1d95);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🎰</div>
+        <div style="flex:1">
+          <div style="font-weight:800;color:#fff;font-size:16px">LAMPRALUCKY</div>
+          <div style="font-size:12px;font-weight:700;margin-top:2px" id="lampralucky-status-label">✅ Ativo</div>
         </div>
+        <label style="position:relative;display:inline-block;width:52px;height:28px;flex-shrink:0">
+          <input type="checkbox" id="toggle-lampralucky" onchange="saveGamesConfig()" style="opacity:0;width:0;height:0">
+          <span style="position:absolute;cursor:pointer;inset:0;background:#334155;border-radius:28px;transition:.3s"></span>
+          <span style="position:absolute;left:3px;top:3px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.3s" id="toggle-lampralucky-dot"></span>
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div>
+          <label class="lbl">💰 Multiplicador</label>
+          <input type="number" class="inp" id="game-ll-multiplier" placeholder="5" min="1" value="5" style="text-align:center">
+        </div>
+        <div>
+          <label class="lbl">🍀 Sorte (1 em X)</label>
+          <input type="number" class="inp" id="game-ll-luck" placeholder="10" min="2" value="10" style="text-align:center">
+        </div>
+      </div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:0">
+        <b>Multiplicador:</b> Se o aluno aposta 5 moedas e multiplicador = 10x, ao acertar 3 iguais ganha 50 moedas.<br>
+        <b>Sorte:</b> 10 = 1 chance em 10 de acertar 3 iguais. 50 = 1 chance em 50, etc.
       </div>
     </div>
 
@@ -5510,6 +5529,13 @@ async function loadGamesConfig() {
     var spEnabled = sp.enabled !== false;
     setToggle('toggle-saltopavoroso', spEnabled);
     updateSaltoPavorosoStatus(spEnabled);
+    // LAMPRALUCKY
+    var ll = data['lampralucky'] || {};
+    document.getElementById('game-ll-multiplier').value = ll.multiplier || 5;
+    document.getElementById('game-ll-luck').value = ll.luck || 10;
+    var llEnabled = ll.enabled !== false;
+    setToggle('toggle-lampralucky', llEnabled);
+    updateLampraluckyStatus(llEnabled);
     // Toggles
     var gamesVisible = data.gamesVisible !== false; // default true
     var plEnabled = pl.enabled !== false; // default true
@@ -5540,6 +5566,10 @@ function updateSaltoPavorosoStatus(on) {
   var lbl = document.getElementById('saltopavoroso-status-label');
   if (lbl) { lbl.textContent = on ? '✅ Ativo' : '❌ Oculto'; lbl.style.color = on ? '#22c55e' : '#ef4444'; }
 }
+function updateLampraluckyStatus(on) {
+  var lbl = document.getElementById('lampralucky-status-label');
+  if (lbl) { lbl.textContent = on ? '✅ Ativo' : '❌ Oculto'; lbl.style.color = on ? '#22c55e' : '#ef4444'; }
+}
 
 async function saveGamesConfig() {
   if (!requireFirebase()) return;
@@ -5553,16 +5583,23 @@ async function saveGamesConfig() {
   var spEnabled = document.getElementById('toggle-saltopavoroso').checked;
   var spPoints = Math.max(1, parseInt(document.getElementById('game-sp-points').value) || 300);
   var spCoins = parseInt(document.getElementById('game-sp-coins').value) || 1;
+  // LAMPRALUCKY
+  var llEnabled = document.getElementById('toggle-lampralucky').checked;
+  var llMultiplier = Math.max(1, parseInt(document.getElementById('game-ll-multiplier').value) || 5);
+  var llLuck = Math.max(2, parseInt(document.getElementById('game-ll-luck').value) || 10);
   setToggle('toggle-games-visible', gamesVisible);
   setToggle('toggle-pegalampra', plEnabled);
   setToggle('toggle-saltopavoroso', spEnabled);
+  setToggle('toggle-lampralucky', llEnabled);
   updatePegalampraStatus(plEnabled);
   updateSaltoPavorosoStatus(spEnabled);
+  updateLampraluckyStatus(llEnabled);
   try {
     await db.collection('settings').doc('games').set({
       gamesVisible: gamesVisible,
       'pega-lampra': { first: first, second: second, third: third, enabled: plEnabled, minPlayers: minPlayers },
-      'salto-pavoroso': { enabled: spEnabled, pointsPerReward: spPoints, coinsPerReward: spCoins }
+      'salto-pavoroso': { enabled: spEnabled, pointsPerReward: spPoints, coinsPerReward: spCoins },
+      'lampralucky': { enabled: llEnabled, multiplier: llMultiplier, luck: llLuck }
     }, { merge: true });
     showToast('✅ Configuração de Games salva!');
   } catch(e) {
