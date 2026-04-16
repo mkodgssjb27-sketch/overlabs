@@ -51,6 +51,13 @@ canvas{display:block;position:fixed;top:0;left:0;width:100%;height:100%}
   </div>
 </div>
 
+<div class="overlay hidden" id="readyScreen">
+  <div style="text-align:center">
+    <div style="font-size:16px;color:#94a3b8;margin-bottom:16px">📱 Segure o celular na horizontal</div>
+    <button class="ov-btn btn-play" id="btnStart" style="max-width:280px;padding:20px 40px;font-size:22px;border-radius:18px">🏁 COMEÇAR</button>
+  </div>
+</div>
+
 <script>
 try {
 firebase.initializeApp({apiKey:"AIzaSyAc9Ews7WVz6GSBp9vzXF4sFI1SMwzklX0",authDomain:"carolampra.firebaseapp.com",projectId:"carolampra",storageBucket:"carolampra.firebasestorage.app",messagingSenderId:"821388549140",appId:"1:821388549140:web:3f60aa294f6f67949adb01"});
@@ -253,10 +260,31 @@ function jump(){if(!playing||dead)return;if(grounded){playerVY=jumpF;grounded=fa
 document.addEventListener('keydown',function(e){if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump();}},{passive:false});
 document.addEventListener('touchstart',function(e){if(playing&&!dead){e.preventDefault();jump();}},{passive:false});
 
+// Fullscreen + landscape lock
+function goFullLandscape(){
+  var el=document.documentElement;
+  try{
+    var p=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
+    if(p)p.call(el).then(function(){
+      try{screen.orientation.lock('landscape').catch(function(){});}catch(e){}
+    }).catch(function(){});
+  }catch(e){}
+  try{screen.orientation.lock('landscape').catch(function(){});}catch(e){}
+}
+
 // Start / End
-function startGame(){
+function onPlay(){
   document.getElementById('startScreen').classList.add('hidden');
+  goFullLandscape();
+  setTimeout(function(){
+    sz();
+    document.getElementById('readyScreen').classList.remove('hidden');
+  },300);
+}
+function startGame(){
+  document.getElementById('readyScreen').classList.add('hidden');
   document.getElementById('endScreen').classList.add('hidden');
+  sz();
   score=0;speed=baseSpeed;obs=[];nextObs=50;gOff=0;lastT=0;accumulator=0;
   playerX=Math.max(50,W*0.12);playerY=GY-playerR;playerVY=0;grounded=true;
   dead=false;playing=true;
@@ -284,8 +312,12 @@ function showEnd(emoji,title,sub,fs,coins){
 }
 function goHome(){try{window.parent.postMessage({type:'GAME_GO_HOME'},'*');}catch(e){}}
 
-document.getElementById('btnPlay').onclick=startGame;
-document.getElementById('btnRetry').onclick=startGame;
+document.getElementById('btnPlay').onclick=onPlay;
+document.getElementById('btnStart').onclick=startGame;
+document.getElementById('btnRetry').onclick=function(){
+  document.getElementById('endScreen').classList.add('hidden');
+  document.getElementById('readyScreen').classList.remove('hidden');
+};
 document.getElementById('btnHome1').onclick=goHome;
 document.getElementById('btnHome2').onclick=goHome;
 </script>
