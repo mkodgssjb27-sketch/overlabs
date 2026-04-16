@@ -132,7 +132,6 @@ window.addEventListener('message',function(e){
     myId=e.data.id||myId;myName=e.data.name||myName;
     if(typeof e.data.cuts==='number'){myBal=e.data.cuts;updBal();}
     else loadBal();
-    loadBeginner();
   }
   if(e.data.type==='BALANCE_UPDATE'){myBal=e.data.balance||0;updBal();}
 });
@@ -150,19 +149,7 @@ if(db){try{db.collection('settings').doc('games').get().then(function(d){
 var SYMS=['🍒','🍋','🍊','🍇','🔔','⭐','💎','7️⃣'];
 var SH=78; /* symbol height matches CSS .sym height */
 var STRIP=60;
-var bet=1,spinning=false,beginnerUsed=true,beginnerSpins=99;
-
-/* Load beginner status from Firestore — only first-time players get the boost */
-function loadBeginner(){
-  if(!db||!myId)return;
-  db.collection('users').doc(myId).get().then(function(d){
-    if(!d.exists)return;
-    var ls=d.data().lampraluckySpins;
-    if(typeof ls==='undefined'){beginnerUsed=false;beginnerSpins=0;}
-    else{beginnerSpins=ls;beginnerUsed=(ls>=5);}
-  }).catch(function(){});
-}
-loadBeginner();
+var bet=1,spinning=false;
 
 function addBet(d){bet+=d;clampBet();}
 function setBet(v){bet=v;clampBet();}
@@ -174,7 +161,6 @@ function buildReel(id){
   for(var i=0;i<STRIP;i++){var d=document.createElement('div');d.className='sym';d.textContent=SYMS[Math.floor(Math.random()*8)];el.appendChild(d);}
 }
 function initReels(){buildReel('r1');buildReel('r2');buildReel('r3');
-  /* show initial position: symbol index 1 centered (top=0,center=1,bottom=2) */
   var ids=['r1','r2','r3'];
   for(var i=0;i<3;i++){var el=document.getElementById(ids[i]);el.style.transform='translateY(0)';}
 }
@@ -182,15 +168,7 @@ initReels();
 
 /* ── Determine result ── */
 function determineResult(){
-  /* Special: first-time player, bet <=2, fewer than 5 total spins ever → guaranteed 3 match */
-  var forceWin=(!beginnerUsed&&bet<=2&&beginnerSpins<5);
-  if(forceWin){
-    beginnerSpins++;
-    if(beginnerSpins>=5)beginnerUsed=true;
-    /* Save spin count to Firestore so it persists forever */
-    if(db&&myId){try{db.collection('users').doc(myId).update({lampraluckySpins:beginnerSpins});}catch(e){}}
-  }
-  if(forceWin||Math.random()<(1/luck)){
+  if(Math.random()<(1/luck)){
     var s=Math.floor(Math.random()*8);
     return [s,s,s];
   }
