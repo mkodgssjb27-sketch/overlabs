@@ -1,0 +1,537 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Salto PAVOROSO</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body{background:#f7f7f7;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;height:100vh;height:100dvh;touch-action:none}
+canvas{display:block;width:100%;height:100%}
+#start-overlay,#gameover-overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:20px}
+#start-overlay{background:rgba(10,10,26,.92);backdrop-filter:blur(6px)}
+#gameover-overlay{background:rgba(10,10,26,.88);backdrop-filter:blur(6px);display:none}
+.ov-card{background:#16213e;border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:32px 28px;width:100%;max-width:360px;text-align:center}
+.ov-title{font-size:24px;font-weight:900;color:#fff;margin-bottom:6px}
+.ov-sub{color:#94a3b8;font-size:14px;margin-bottom:20px}
+.ov-btn{width:100%;padding:15px;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:10px}
+.btn-play{background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;box-shadow:0 4px 20px rgba(245,158,11,.3)}
+.btn-home{background:transparent;border:1.5px solid rgba(255,255,255,.12);color:#e2e8f0}
+.ov-score{font-size:48px;font-weight:900;color:#f59e0b;margin:12px 0 4px}
+.ov-coins{font-size:20px;font-weight:800;color:#22c55e;margin-bottom:20px}
+.ov-emoji{font-size:52px;margin-bottom:12px}
+</style></head><body>
+
+<canvas id="gc"></canvas>
+
+<!-- START SCREEN -->
+<div id="start-overlay">
+  <div class="ov-card">
+    <div class="ov-emoji">🏃‍♂️</div>
+    <div class="ov-title">Salto PAVOROSO</div>
+    <div class="ov-sub">Pule os obstáculos e sobreviva o máximo!</div>
+    <div id="start-player-name" style="font-weight:800;color:#00d4ff;font-size:16px;margin-bottom:20px"></div>
+    <button class="ov-btn btn-play" onclick="startGame()">▶ Jogar</button>
+    <button class="ov-btn btn-home" onclick="goHome()">🏠 Voltar</button>
+  </div>
+</div>
+
+<!-- GAME OVER SCREEN -->
+<div id="gameover-overlay">
+  <div class="ov-card">
+    <div class="ov-emoji">💀</div>
+    <div class="ov-title">Fim de Jogo!</div>
+    <div class="ov-sub">Você bateu num obstáculo!</div>
+    <div style="font-size:13px;color:#94a3b8;font-weight:700;margin-bottom:4px">PONTUAÇÃO</div>
+    <div class="ov-score" id="go-score">0</div>
+    <div class="ov-coins" id="go-coins">+0 CUTS 🪙</div>
+    <button class="ov-btn btn-play" onclick="startGame()">🔄 Jogar Novamente</button>
+    <button class="ov-btn btn-home" onclick="goHome()">🏠 Voltar</button>
+  </div>
+</div>
+
+<script>
+// ═══ FIREBASE ═══
+firebase.initializeApp({
+  apiKey:"AIzaSyAc9Ews7WVz6GSBp9vzXF4sFI1SMwzklX0",authDomain:"carolampra.firebaseapp.com",
+  projectId:"carolampra",storageBucket:"carolampra.firebasestorage.app",
+  messagingSenderId:"821388549140",appId:"1:821388549140:web:3f60aa294f6f67949adb01"
+});
+var db = firebase.firestore();
+
+// ═══ PLAYER DATA ═══
+var params = new URLSearchParams(location.search);
+var myId = params.get('id') || '';
+var myName = decodeURIComponent(params.get('name') || 'Jogador');
+var myPhoto = '';
+
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'PLAYER_DATA') {
+    myId = e.data.id || myId;
+    myName = e.data.name || myName;
+    myPhoto = e.data.photo || '';
+    document.getElementById('start-player-name').textContent = myName;
+    loadPlayerPhoto();
+  }
+});
+document.getElementById('start-player-name').textContent = myName;
+
+// ═══ GAME CONFIG (from Firebase) ═══
+var rewardPoints = 300;  // a cada X pontos
+var rewardCoins = 1;     // ganha Y moedas
+(async function loadConfig() {
+  try {
+    var doc = await db.collection('settings').doc('games').get();
+    if (doc.exists) {
+      var sp = doc.data()['salto-pavoroso'] || {};
+      if (sp.pointsPerReward > 0) rewardPoints = sp.pointsPerReward;
+      if (sp.coinsPerReward > 0) rewardCoins = sp.coinsPerReward;
+    }
+  } catch(e) { console.warn('Config load error', e); }
+})();
+
+// ═══ CANVAS SETUP ═══
+var canvas = document.getElementById('gc');
+var ctx = canvas.getContext('2d');
+var W, H, GROUND_Y, SCALE;
+var DPR = window.devicePixelRatio || 1;
+
+function resize() {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  SCALE = Math.min(W / 400, H / 700, 1.8);
+  GROUND_Y = H * 0.72;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ═══ PLAYER PHOTO ═══
+var playerImg = null;
+var playerImgLoaded = false;
+function loadPlayerPhoto() {
+  if (!myPhoto) return;
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() { playerImg = img; playerImgLoaded = true; };
+  img.onerror = function() { playerImgLoaded = false; };
+  img.src = myPhoto;
+}
+
+// ═══ GAME STATE ═══
+var STATE = 'idle'; // idle, playing, dead
+var score = 0;
+var frameCount = 0;
+var baseSpeed = 4.5;
+var speed = baseSpeed;
+var gravity = 0.55;
+var jumpForce = -11;
+var groundOffset = 0;
+
+// Player
+var player = { x: 60, y: 0, vy: 0, r: 22, jumping: false, grounded: true };
+// Obstacles
+var obstacles = [];
+var nextObstacleTimer = 0;
+var minObstacleGap = 90;
+// Score
+var hiScore = 0;
+
+// Difficulty scaling
+function getDifficultyLevel() { return Math.floor(score / 200); }
+function getSpeed() {
+  var lvl = getDifficultyLevel();
+  return baseSpeed + lvl * 0.7;
+}
+function getMinGap() {
+  var lvl = getDifficultyLevel();
+  return Math.max(40, minObstacleGap - lvl * 8);
+}
+function getAirChance() {
+  var lvl = getDifficultyLevel();
+  return Math.min(0.35, 0.05 + lvl * 0.05);
+}
+
+// ═══ OBSTACLE TYPES ═══
+// Ground obstacles: cones, barriers (sports equipment)
+// Air obstacles: volleyballs
+function spawnObstacle() {
+  var spd = getSpeed();
+  var isAir = Math.random() < getAirChance();
+  if (isAir) {
+    // Volleyball in the air
+    var airY = GROUND_Y - 55 - Math.random() * 40;
+    obstacles.push({ x: W + 30, y: airY, w: 28, h: 28, type: 'ball', speed: spd });
+  } else {
+    // Ground obstacle: cone or hurdle
+    var types = ['cone', 'hurdle', 'cone', 'cone'];
+    var t = types[Math.floor(Math.random() * types.length)];
+    var oh, ow;
+    if (t === 'cone') { ow = 22; oh = 32 + Math.random() * 10; }
+    else { ow = 32; oh = 28 + Math.random() * 8; }
+    obstacles.push({ x: W + 30, y: GROUND_Y - oh, w: ow, h: oh, type: t, speed: spd });
+  }
+}
+
+// ═══ DRAWING ═══
+function drawGround() {
+  // Ground line
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, GROUND_Y);
+  ctx.lineTo(W, GROUND_Y);
+  ctx.stroke();
+
+  // Ground texture (small dashes)
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 1;
+  var dashW = 20;
+  var off = groundOffset % (dashW * 3);
+  for (var i = -dashW * 3; i < W + dashW * 3; i += dashW * 3) {
+    var x = i - off;
+    ctx.beginPath();
+    ctx.moveTo(x, GROUND_Y + 8);
+    ctx.lineTo(x + 8, GROUND_Y + 8);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + 14, GROUND_Y + 14);
+    ctx.lineTo(x + 20, GROUND_Y + 14);
+    ctx.stroke();
+  }
+}
+
+function drawPlayer() {
+  var px = player.x;
+  var py = player.y;
+  var r = player.r;
+
+  ctx.save();
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath();
+  ctx.ellipse(px, GROUND_Y + 2, r * 0.8, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Circle clip for photo
+  ctx.beginPath();
+  ctx.arc(px, py, r, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+
+  if (playerImgLoaded && playerImg) {
+    ctx.drawImage(playerImg, px - r, py - r, r * 2, r * 2);
+  } else {
+    // Fallback gradient circle
+    var grad = ctx.createRadialGradient(px, py, 0, px, py, r);
+    grad.addColorStop(0, '#f59e0b');
+    grad.addColorStop(1, '#e85d04');
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold ' + (r * 0.9) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(myName.charAt(0).toUpperCase(), px, py);
+  }
+  ctx.restore();
+
+  // Border ring
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.arc(px, py, r, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function drawCone(x, y, w, h) {
+  // Orange traffic cone
+  ctx.fillStyle = '#ff6b00';
+  ctx.beginPath();
+  ctx.moveTo(x + w / 2, y);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x, y + h);
+  ctx.closePath();
+  ctx.fill();
+  // Stripe
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(x + w * 0.2, y + h * 0.35, w * 0.6, h * 0.12);
+  ctx.fillRect(x + w * 0.15, y + h * 0.6, w * 0.7, h * 0.12);
+  // Base
+  ctx.fillStyle = '#cc5500';
+  ctx.fillRect(x - 3, y + h - 4, w + 6, 5);
+}
+
+function drawHurdle(x, y, w, h) {
+  // Athletic hurdle
+  ctx.fillStyle = '#e74c3c';
+  ctx.fillRect(x, y, w, 5);
+  // Legs
+  ctx.fillStyle = '#bbb';
+  ctx.fillRect(x + 2, y + 4, 3, h - 4);
+  ctx.fillRect(x + w - 5, y + 4, 3, h - 4);
+  // Stripes on bar
+  ctx.fillStyle = '#fff';
+  for (var i = 0; i < w; i += 8) {
+    ctx.fillRect(x + i, y, 4, 5);
+  }
+}
+
+function drawVolleyball(x, y, r) {
+  // Ball
+  ctx.fillStyle = '#f5f5dc';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // Lines on volleyball
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(x, y, r, -0.3, Math.PI + 0.3);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x, y - r);
+  ctx.quadraticCurveTo(x + r * 0.3, y, x, y + r);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x, y - r);
+  ctx.quadraticCurveTo(x - r * 0.3, y, x, y + r);
+  ctx.stroke();
+}
+
+function drawObstacles() {
+  for (var i = 0; i < obstacles.length; i++) {
+    var o = obstacles[i];
+    if (o.type === 'cone') {
+      drawCone(o.x, o.y, o.w, o.h);
+    } else if (o.type === 'hurdle') {
+      drawHurdle(o.x, o.y, o.w, o.h);
+    } else if (o.type === 'ball') {
+      drawVolleyball(o.x + o.w / 2, o.y + o.h / 2, o.w / 2);
+    }
+  }
+}
+
+function drawScore() {
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 18px monospace';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'top';
+  ctx.fillText(String(Math.floor(score)).padStart(5, '0'), W - 16, 16);
+
+  if (hiScore > 0) {
+    ctx.fillStyle = '#999';
+    ctx.font = 'bold 13px monospace';
+    ctx.fillText('HI ' + String(hiScore).padStart(5, '0'), W - 16, 40);
+  }
+
+  // Difficulty indicator
+  var lvl = getDifficultyLevel();
+  if (lvl > 0) {
+    ctx.fillStyle = '#e85d04';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Nível ' + (lvl + 1), 16, 16);
+  }
+}
+
+// ═══ COLLISION ═══
+function checkCollision() {
+  var px = player.x, py = player.y, pr = player.r * 0.8; // slightly forgiving
+  for (var i = 0; i < obstacles.length; i++) {
+    var o = obstacles[i];
+    if (o.type === 'ball') {
+      // Circle-circle
+      var cx = o.x + o.w / 2, cy = o.y + o.h / 2, cr = o.w / 2;
+      var dx = px - cx, dy = py - cy;
+      if (Math.sqrt(dx * dx + dy * dy) < pr + cr * 0.8) return true;
+    } else {
+      // Circle-rect
+      var rx = o.x, ry = o.y, rw = o.w, rh = o.h;
+      var closestX = Math.max(rx, Math.min(px, rx + rw));
+      var closestY = Math.max(ry, Math.min(py, ry + rh));
+      var ddx = px - closestX, ddy = py - closestY;
+      if (ddx * ddx + ddy * ddy < pr * pr) return true;
+    }
+  }
+  return false;
+}
+
+// ═══ GAME LOOP ═══
+function update() {
+  if (STATE !== 'playing') return;
+
+  speed = getSpeed();
+  groundOffset += speed;
+  frameCount++;
+  score += speed * 0.04;
+
+  // Player gravity
+  player.vy += gravity;
+  player.y += player.vy;
+  if (player.y >= GROUND_Y - player.r) {
+    player.y = GROUND_Y - player.r;
+    player.vy = 0;
+    player.grounded = true;
+    player.jumping = false;
+  }
+
+  // Spawn obstacles
+  nextObstacleTimer--;
+  if (nextObstacleTimer <= 0) {
+    spawnObstacle();
+    var gap = getMinGap() + Math.random() * 40;
+    nextObstacleTimer = gap;
+  }
+
+  // Move obstacles
+  for (var i = obstacles.length - 1; i >= 0; i--) {
+    obstacles[i].x -= obstacles[i].speed;
+    if (obstacles[i].x + obstacles[i].w < -50) {
+      obstacles.splice(i, 1);
+    }
+  }
+
+  // Collision
+  if (checkCollision()) {
+    die();
+    return;
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Sky gradient
+  var skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+  skyGrad.addColorStop(0, '#e8e8e8');
+  skyGrad.addColorStop(1, '#f7f7f7');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, GROUND_Y);
+
+  // Below ground
+  ctx.fillStyle = '#f0f0f0';
+  ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+
+  // Clouds (decorative)
+  drawClouds();
+
+  drawGround();
+  drawObstacles();
+  drawPlayer();
+  drawScore();
+}
+
+// Simple clouds
+var clouds = [];
+function initClouds() {
+  clouds = [];
+  for (var i = 0; i < 3; i++) {
+    clouds.push({ x: Math.random() * W, y: 30 + Math.random() * (GROUND_Y * 0.3), w: 50 + Math.random() * 40, speed: 0.3 + Math.random() * 0.5 });
+  }
+}
+function drawClouds() {
+  ctx.fillStyle = '#ddd';
+  for (var i = 0; i < clouds.length; i++) {
+    var c = clouds[i];
+    c.x -= c.speed;
+    if (c.x + c.w < 0) { c.x = W + 20; c.y = 30 + Math.random() * (GROUND_Y * 0.3); }
+    // Simple cloud shape
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.w * 0.22, 0, Math.PI * 2);
+    ctx.arc(c.x + c.w * 0.2, c.y - c.w * 0.08, c.w * 0.28, 0, Math.PI * 2);
+    ctx.arc(c.x + c.w * 0.45, c.y, c.w * 0.22, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ═══ CONTROLS ═══
+function jump() {
+  if (STATE === 'dead') return;
+  if (STATE === 'idle') return;
+  if (player.grounded) {
+    player.vy = jumpForce;
+    player.grounded = false;
+    player.jumping = true;
+  }
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    e.preventDefault();
+    jump();
+  }
+});
+document.addEventListener('touchstart', function(e) {
+  if (STATE === 'playing') {
+    e.preventDefault();
+    jump();
+  }
+}, { passive: false });
+canvas.addEventListener('click', function() {
+  if (STATE === 'playing') jump();
+});
+
+// ═══ GAME LIFECYCLE ═══
+function startGame() {
+  document.getElementById('start-overlay').style.display = 'none';
+  document.getElementById('gameover-overlay').style.display = 'none';
+
+  score = 0;
+  frameCount = 0;
+  speed = baseSpeed;
+  obstacles = [];
+  nextObstacleTimer = 60;
+  groundOffset = 0;
+
+  player.y = GROUND_Y - player.r;
+  player.vy = 0;
+  player.grounded = true;
+  player.jumping = false;
+
+  initClouds();
+  STATE = 'playing';
+}
+
+function die() {
+  STATE = 'dead';
+  var finalScore = Math.floor(score);
+  if (finalScore > hiScore) hiScore = finalScore;
+
+  // Calculate CUTS reward
+  var earnedCoins = Math.floor(finalScore / rewardPoints) * rewardCoins;
+
+  document.getElementById('go-score').textContent = finalScore;
+  document.getElementById('go-coins').textContent = '+' + earnedCoins + ' CUTS 🪙';
+  document.getElementById('gameover-overlay').style.display = 'flex';
+
+  // Send reward to parent
+  if (earnedCoins > 0) {
+    window.parent.postMessage({ type: 'GAME_REWARD', game: 'salto-pavoroso', reward: earnedCoins }, '*');
+  }
+}
+
+function goHome() {
+  window.parent.postMessage({ type: 'GAME_GO_HOME' }, '*');
+}
+
+// ═══ INIT ═══
+resize();
+player.y = GROUND_Y - player.r;
+initClouds();
+loop();
+</script>
+</body></html>

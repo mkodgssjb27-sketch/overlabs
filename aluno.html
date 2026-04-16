@@ -709,7 +709,7 @@ input,select{font-family:inherit;outline:none}
     <h2 style="color:#fff;font-size:20px;font-weight:900;margin-bottom:6px">Games</h2>
     <p style="color:#888;font-size:13px;margin-bottom:20px">Escolha um jogo para jogar!</p>
     <button id="btn-jogo-pegalampra" onclick="abrirJogo('pega-lampra')" style="width:100%;padding:14px;margin-bottom:10px;background:linear-gradient(135deg,#00d4ff,#0080ff);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit">🔵 Pega LAMPRAS</button>
-    <button disabled style="width:100%;padding:14px;margin-bottom:10px;background:rgba(255,255,255,.04);color:#475569;border:1px solid rgba(255,255,255,.08);border-radius:14px;font-size:16px;cursor:not-allowed;font-family:inherit">🔒 Em breve...</button>
+    <button id="btn-jogo-saltopavoroso" onclick="abrirJogo('salto-pavoroso')" style="width:100%;padding:14px;margin-bottom:10px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit">🏃‍♂️ Salto PAVOROSO</button>
     <button disabled style="width:100%;padding:14px;margin-bottom:10px;background:rgba(255,255,255,.04);color:#475569;border:1px solid rgba(255,255,255,.08);border-radius:14px;font-size:16px;cursor:not-allowed;font-family:inherit">🔒 Em breve...</button>
     <button onclick="fecharMenuJogos()" style="width:100%;padding:12px;margin-top:8px;background:transparent;color:#888;border:1px solid rgba(255,255,255,.1);border-radius:14px;font-size:14px;cursor:pointer;font-family:inherit">Voltar</button>
   </div>
@@ -3806,7 +3806,7 @@ checkInstallGate();
 // ========== SISTEMA DE JOGOS (NÃO ALTERA NADA EXISTENTE) ==========
 var JOGOS_CONFIG = {
   'pega-lampra': { url: 'games/pega-lampra.html', nome: 'Pega LAMPRAS' },
-  'jogo2': { url: '', nome: 'Jogo 2' },
+  'salto-pavoroso': { url: 'games/salto-pavoroso.html', nome: 'Salto PAVOROSO' },
   'jogo3': { url: '', nome: 'Jogo 3' }
 };
 
@@ -3819,6 +3819,15 @@ function abrirMenuJogos() {
       plBtn.style.display = 'none';
     } else {
       plBtn.style.display = 'flex';
+    }
+  }
+  var spBtn = document.getElementById('btn-jogo-saltopavoroso');
+  if (spBtn && _gamesConfigCache) {
+    var sp = _gamesConfigCache['salto-pavoroso'] || {};
+    if (sp.enabled === false) {
+      spBtn.style.display = 'none';
+    } else {
+      spBtn.style.display = 'flex';
     }
   }
   document.getElementById('jogosMenu').style.display = 'flex';
