@@ -8,113 +8,65 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 body{background:#0a0a0f;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;height:100vh;height:100dvh;touch-action:none}
 canvas{display:block;position:fixed;top:0;left:0;width:100%;height:100%}
-.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:20px;background:rgba(10,10,15,.94);backdrop-filter:blur(6px)}
-.overlay.hidden{display:none}
-.ov-card{background:#16213e;border:1px solid rgba(245,158,11,.15);border-radius:24px;padding:32px 28px;width:100%;max-width:360px;text-align:center}
-.ov-btn{width:100%;padding:15px;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:10px}
-.btn-play{background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;box-shadow:0 4px 20px rgba(245,158,11,.3)}
-.btn-home{background:transparent;border:1.5px solid rgba(255,255,255,.12);color:#e2e8f0}
-@media(orientation:landscape){
-  .overlay{padding:10px}
-  .ov-card{padding:16px 20px;max-width:420px;border-radius:18px;flex-direction:row;flex-wrap:wrap;justify-content:center}
-  .ov-card>div:first-child{font-size:36px!important;margin-bottom:6px!important}
-  .ov-card>div:nth-child(2){font-size:18px!important}
-  .ov-card>div:nth-child(3){font-size:12px!important;margin-bottom:10px!important}
-  .ov-btn{padding:11px;font-size:14px;margin-bottom:6px}
-  #finalScore{font-size:36px!important}
-}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:20px;background:rgba(10,10,15,.94)}
+.ov.h{display:none}
+.card{background:#16213e;border:1px solid rgba(245,158,11,.15);border-radius:24px;padding:28px 24px;width:100%;max-width:340px;text-align:center}
+.b{width:100%;padding:14px;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:8px}
+.bp{background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff}
+.bh{background:transparent;border:1.5px solid rgba(255,255,255,.12);color:#e2e8f0}
+@media(orientation:landscape){.card{padding:16px 18px;max-width:380px}}
 </style></head><body>
-
 <canvas id="gc"></canvas>
 
-<div class="overlay" id="startScreen">
-  <div class="ov-card">
-    <div style="font-size:52px;margin-bottom:12px">🏃‍♂️</div>
-    <div style="font-size:24px;font-weight:900;color:#fff;margin-bottom:6px">Salto PAVOROSO</div>
-    <div style="color:#94a3b8;font-size:14px;margin-bottom:20px">Pule os obstáculos e sobreviva o máximo!</div>
-    <div id="startName" style="font-weight:800;color:#f59e0b;font-size:16px;margin-bottom:20px"></div>
-    <button class="ov-btn btn-play" id="btnPlay">▶ Jogar</button>
-    <button class="ov-btn btn-home" id="btnHome1">🏠 Voltar</button>
-  </div>
-</div>
+<div class="ov" id="S1">
+<div class="card">
+<div style="font-size:48px;margin-bottom:8px">🏃‍♂️</div>
+<div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">Salto PAVOROSO</div>
+<div style="color:#94a3b8;font-size:13px;margin-bottom:14px">Pule os obstáculos e sobreviva!</div>
+<div id="pn" style="font-weight:800;color:#f59e0b;font-size:15px;margin-bottom:14px"></div>
+<button class="b bp" onclick="go()">▶ JOGAR</button>
+<button class="b bh" onclick="goHome()">🏠 Voltar</button>
+</div></div>
 
-<div class="overlay hidden" id="endScreen">
-  <div class="ov-card">
-    <div style="font-size:52px;margin-bottom:12px">💀</div>
-    <div style="font-size:24px;font-weight:900;color:#fff;margin-bottom:6px">Fim de Jogo!</div>
-    <div style="color:#94a3b8;font-size:14px;margin-bottom:12px">Você bateu num obstáculo!</div>
-    <div style="font-size:13px;color:#94a3b8;font-weight:700;margin-bottom:4px">PONTUAÇÃO</div>
-    <div id="finalScore" style="font-size:48px;font-weight:900;color:#f59e0b;margin:4px 0"></div>
-    <div id="finalCoins" style="font-size:20px;font-weight:800;color:#22c55e;margin-bottom:20px"></div>
-    <button class="ov-btn btn-play" id="btnRetry">🔄 Jogar Novamente</button>
-    <button class="ov-btn btn-home" id="btnHome2">🏠 Voltar</button>
-  </div>
-</div>
-
-<div class="overlay hidden" id="readyScreen">
-  <div style="text-align:center">
-    <div style="font-size:16px;color:#94a3b8;margin-bottom:16px">📱 Segure o celular na horizontal</div>
-    <button class="ov-btn btn-play" id="btnStart" style="max-width:280px;padding:20px 40px;font-size:22px;border-radius:18px">🏁 COMEÇAR</button>
-  </div>
-</div>
+<div class="ov h" id="S2">
+<div class="card">
+<div id="s2e" style="font-size:48px;margin-bottom:8px">💀</div>
+<div id="s2t" style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">Fim de Jogo!</div>
+<div id="s2s" style="color:#94a3b8;font-size:13px;margin-bottom:10px">Você bateu num obstáculo!</div>
+<div style="font-size:12px;color:#94a3b8;font-weight:700">PONTUAÇÃO</div>
+<div id="s2p" style="font-size:44px;font-weight:900;color:#f59e0b;margin:2px 0"></div>
+<div id="s2c" style="font-size:18px;font-weight:800;color:#22c55e;margin-bottom:14px"></div>
+<button class="b bp" onclick="go()">🔄 Jogar Novamente</button>
+<button class="b bh" onclick="goHome()">🏠 Voltar</button>
+</div></div>
 
 <script>
-try {
-firebase.initializeApp({apiKey:"AIzaSyAc9Ews7WVz6GSBp9vzXF4sFI1SMwzklX0",authDomain:"carolampra.firebaseapp.com",projectId:"carolampra",storageBucket:"carolampra.firebasestorage.app",messagingSenderId:"821388549140",appId:"1:821388549140:web:3f60aa294f6f67949adb01"});
-var db=firebase.firestore();
-} catch(e){console.error('Firebase init error',e);}
+var db;
+try{firebase.initializeApp({apiKey:"AIzaSyAc9Ews7WVz6GSBp9vzXF4sFI1SMwzklX0",authDomain:"carolampra.firebaseapp.com",projectId:"carolampra",storageBucket:"carolampra.firebasestorage.app",messagingSenderId:"821388549140",appId:"1:821388549140:web:3f60aa294f6f67949adb01"});db=firebase.firestore();}catch(e){}
 
 var myId='',myName='Jogador',myPhoto='';
 try{var pp=new URLSearchParams(location.search);myId=pp.get('id')||'';myName=decodeURIComponent(pp.get('name')||'Jogador');}catch(e){}
-document.getElementById('startName').textContent=myName;
+document.getElementById('pn').textContent=myName;
 
 window.addEventListener('message',function(e){
   if(e.data&&e.data.type==='PLAYER_DATA'){
     myId=e.data.id||myId;myName=e.data.name||myName;myPhoto=e.data.photo||'';
-    document.getElementById('startName').textContent=myName;
+    document.getElementById('pn').textContent=myName;
     loadPhoto();
   }
 });
 
 var rewardPoints=300,rewardCoins=1;
-if(typeof db!=='undefined'){try{db.collection('settings').doc('games').get().then(function(doc){
-  if(doc.exists){var sp=doc.data()['salto-pavoroso']||{};if(sp.pointsPerReward>0)rewardPoints=sp.pointsPerReward;rewardCoins=(typeof sp.coinsPerReward==='number')?sp.coinsPerReward:1;}
-}).catch(function(e){console.warn('cfg err',e)});}catch(e){}}
+if(db){try{db.collection('settings').doc('games').get().then(function(d){
+  if(d.exists){var sp=d.data()['salto-pavoroso']||{};if(sp.pointsPerReward>0)rewardPoints=sp.pointsPerReward;rewardCoins=(typeof sp.coinsPerReward==='number')?sp.coinsPerReward:1;}
+}).catch(function(){});}catch(e){}}
 
-// Canvas
 var C=document.getElementById('gc'),ctx=C.getContext('2d');
-var W=window.innerWidth,H=window.innerHeight,GY=Math.round(H*0.75);
-var isLandscape=W>H;
-
-function sz(){
-  W=window.innerWidth;H=window.innerHeight;
-  C.width=W;C.height=H;
-  isLandscape=W>H;
-  var oldGY=GY;
-  GY=isLandscape?Math.round(H*0.82):Math.round(H*0.75);
-  // Reposition player
-  playerX=Math.max(50,W*0.12);
-  if(oldGY>0&&playing&&!dead){
-    // Scale player Y proportionally to new ground
-    var distFromGround=oldGY-playerR-playerY;
-    playerY=GY-playerR-distFromGround;
-    if(playerY>GY-playerR){playerY=GY-playerR;playerVY=0;grounded=true;}
-  } else {
-    playerY=GY-playerR;
-  }
-  // Reposition existing obstacles to new ground level
-  for(var i=0;i<obs.length;i++){
-    var o=obs[i];
-    if(o.t==='b'){/* air obs keep relative */}
-    else{o.y=GY-o.h;}  // ground obstacles sit on new ground
-  }
-  mkStars();
-}
+var W=1,H=1,GY=1;
+function sz(){W=window.innerWidth;H=window.innerHeight;C.width=W;C.height=H;GY=Math.round(H*(W>H?0.82:0.75));}
 sz();
 window.addEventListener('resize',sz);
-try{screen.orientation.addEventListener('change',function(){setTimeout(sz,50);setTimeout(sz,200);});}catch(e){window.addEventListener('orientationchange',function(){setTimeout(sz,50);setTimeout(sz,300);});}
 
-// Photo
 var photoImg=null,photoOk=false;
 function loadPhoto(){
   if(!myPhoto)return;
@@ -124,33 +76,25 @@ function loadPhoto(){
   im.src=myPhoto;
 }
 
-// State
-var playing=false,dead=false;
-var score=0,hiScore=0,speed=0,baseSpeed=4.5;
-var playerY=GY-22,playerVY=0,grounded=true,playerX=Math.max(50,W*0.12),playerR=22;
-var obs=[],nextObs=0,gOff=0;
-var gravity=0.58,jumpF=-11.5;
-var stars=[];
-var lastT=0,accumulator=0;
-var FIXED_DT=1000/60;
+var playing=false,dead=false,score=0,hiScore=0,speed=0,baseSpeed=4.5;
+var pY=0,pVY=0,grounded=true,pX=60,pR=22;
+var obs=[],nextObs=0,gOff=0,gravity=0.58,jumpF=-11.5;
+var stars=[],lastT=0,acc=0,FDT=1000/60;
 
-function mkStars(){stars=[];for(var i=0;i<25;i++)stars.push({x:Math.random()*W,y:Math.random()*GY*0.85,s:Math.random()*1.5+0.5,a:Math.random()*0.4+0.15});}
+function mkStars(){stars=[];for(var i=0;i<25;i++)stars.push({x:Math.random()*W,y:Math.random()*GY*0.85,s:Math.random()*1.5+0.5});}
 mkStars();
 
-// Difficulty
 function diffLvl(){return Math.floor(score/150);}
-function curSpeed(){return Math.min(10,baseSpeed+diffLvl()*0.5);}
+function curSpd(){return Math.min(10,baseSpeed+diffLvl()*0.5);}
 function curGap(){return Math.max(35,85-diffLvl()*7);}
 function airCh(){return Math.min(0.55,0.15+diffLvl()*0.07);}
-function dblCh(){return Math.min(0.45,diffLvl()*0.08);}
 
-// Spawn
 function spawn(){
-  var s=curSpeed();
+  var s=curSpd();
   if(Math.random()<airCh()){
     obs.push({x:W+30,y:GY-60-Math.random()*35,w:30,h:30,t:'b',s:s});
-  } else {
-    var n=Math.random()<dblCh()?2:1,bx=W+30;
+  }else{
+    var n=Math.random()<Math.min(0.45,diffLvl()*0.08)?2:1,bx=W+30;
     for(var i=0;i<n;i++){
       var cone=Math.random()<0.7,ow,oh;
       if(cone){ow=22;oh=32+Math.random()*10;}else{ow=34;oh=28+Math.random()*8;}
@@ -159,20 +103,10 @@ function spawn(){
   }
 }
 
-// Drawing
-function drawBg(){
-  ctx.fillStyle='#0a0a0f';ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='rgba(255,255,255,0.3)';
-  for(var i=0;i<stars.length;i++){var s=stars[i];ctx.fillRect(s.x,s.y,s.s,s.s);}
-}
-function drawGround(){
-  ctx.strokeStyle='#f59e0b';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,GY);ctx.lineTo(W,GY);ctx.stroke();
-  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;
-  var off=gOff%60;
-  for(var x=-60;x<W+60;x+=60){var xx=x-off;ctx.beginPath();ctx.moveTo(xx,GY+8);ctx.lineTo(xx+8,GY+8);ctx.stroke();ctx.beginPath();ctx.moveTo(xx+20,GY+14);ctx.lineTo(xx+28,GY+14);ctx.stroke();}
-}
+function drawBg(){ctx.fillStyle='#0a0a0f';ctx.fillRect(0,0,W,H);ctx.fillStyle='rgba(255,255,255,0.3)';for(var i=0;i<stars.length;i++){var s=stars[i];ctx.fillRect(s.x,s.y,s.s,s.s);}}
+function drawGnd(){ctx.strokeStyle='#f59e0b';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,GY);ctx.lineTo(W,GY);ctx.stroke();ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;var off=gOff%60;for(var x=-60;x<W+60;x+=60){var xx=x-off;ctx.beginPath();ctx.moveTo(xx,GY+8);ctx.lineTo(xx+8,GY+8);ctx.stroke();}}
 function drawMe(){
-  var r=playerR,px=playerX,py=playerY;
+  var r=pR,px=pX,py=pY;
   ctx.fillStyle='rgba(245,158,11,0.1)';ctx.beginPath();ctx.ellipse(px,GY+2,r*0.8,4,0,0,Math.PI*2);ctx.fill();
   ctx.save();ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);ctx.closePath();ctx.clip();
   if(photoOk&&photoImg){ctx.drawImage(photoImg,px-r,py-r,r*2,r*2);}
@@ -180,130 +114,61 @@ function drawMe(){
   ctx.restore();
   ctx.strokeStyle='#f59e0b';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);ctx.stroke();
 }
-function drawCone(x,y,w,h){
-  ctx.fillStyle='#ff6b00';ctx.beginPath();ctx.moveTo(x+w/2,y);ctx.lineTo(x+w,y+h);ctx.lineTo(x,y+h);ctx.closePath();ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,0.8)';ctx.fillRect(x+w*0.2,y+h*0.35,w*0.6,h*0.12);ctx.fillRect(x+w*0.15,y+h*0.6,w*0.7,h*0.12);
-  ctx.fillStyle='#cc5500';ctx.fillRect(x-3,y+h-4,w+6,5);
-}
-function drawHurdle(x,y,w,h){
-  ctx.fillStyle='#e74c3c';ctx.fillRect(x,y,w,5);ctx.fillStyle='#aaa';ctx.fillRect(x+2,y+4,3,h-4);ctx.fillRect(x+w-5,y+4,3,h-4);
-  ctx.fillStyle='#fff';for(var i=0;i<w;i+=8)ctx.fillRect(x+i,y,4,5);
-}
-function drawBall(x,y,r){
-  ctx.font=Math.round(r*2.2)+'px serif';
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText('🏐',x,y);
-}
-function drawObs(){
-  for(var i=0;i<obs.length;i++){var o=obs[i];
-    if(o.t==='c')drawCone(o.x,o.y,o.w,o.h);
-    else if(o.t==='h')drawHurdle(o.x,o.y,o.w,o.h);
-    else drawBall(o.x+o.w/2,o.y+o.h/2,o.w/2);
-  }
-}
-function drawHud(){
-  ctx.fillStyle='#e2e8f0';ctx.font='bold 18px monospace';ctx.textAlign='right';ctx.textBaseline='top';
-  ctx.fillText(String(Math.floor(score)).padStart(5,'0'),W-16,16);
-  if(hiScore>0){ctx.fillStyle='#64748b';ctx.font='bold 13px monospace';ctx.fillText('HI '+String(hiScore).padStart(5,'0'),W-16,40);}
-  var lv=diffLvl();if(lv>0){ctx.fillStyle='#f59e0b';ctx.font='bold 12px sans-serif';ctx.textAlign='left';ctx.fillText('Nível '+(lv+1),16,16);}
-}
+function drawCone(x,y,w,h){ctx.fillStyle='#ff6b00';ctx.beginPath();ctx.moveTo(x+w/2,y);ctx.lineTo(x+w,y+h);ctx.lineTo(x,y+h);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(255,255,255,0.8)';ctx.fillRect(x+w*0.2,y+h*0.35,w*0.6,h*0.12);ctx.fillRect(x+w*0.15,y+h*0.6,w*0.7,h*0.12);ctx.fillStyle='#cc5500';ctx.fillRect(x-3,y+h-4,w+6,5);}
+function drawHurdle(x,y,w,h){ctx.fillStyle='#e74c3c';ctx.fillRect(x,y,w,5);ctx.fillStyle='#aaa';ctx.fillRect(x+2,y+4,3,h-4);ctx.fillRect(x+w-5,y+4,3,h-4);ctx.fillStyle='#fff';for(var i=0;i<w;i+=8)ctx.fillRect(x+i,y,4,5);}
+function drawObs(){for(var i=0;i<obs.length;i++){var o=obs[i];if(o.t==='c')drawCone(o.x,o.y,o.w,o.h);else if(o.t==='h')drawHurdle(o.x,o.y,o.w,o.h);else{ctx.font=Math.round(o.w*1.1)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🏐',o.x+o.w/2,o.y+o.h/2);}}}
+function drawHud(){ctx.fillStyle='#e2e8f0';ctx.font='bold 18px monospace';ctx.textAlign='right';ctx.textBaseline='top';ctx.fillText(String(Math.floor(score)).padStart(5,'0'),W-16,16);if(hiScore>0){ctx.fillStyle='#64748b';ctx.font='bold 13px monospace';ctx.fillText('HI '+String(hiScore).padStart(5,'0'),W-16,40);}var lv=diffLvl();if(lv>0){ctx.fillStyle='#f59e0b';ctx.font='bold 12px sans-serif';ctx.textAlign='left';ctx.fillText('Nível '+(lv+1),16,16);}}
 
-// Collision
 function hit(){
-  var px=playerX,py=playerY,pr=playerR*0.78;
+  var px=pX,py=pY,pr=pR*0.78;
   for(var i=0;i<obs.length;i++){var o=obs[i];
     if(o.t==='b'){var cx=o.x+o.w/2,cy=o.y+o.h/2,cr=o.w/2,dx=px-cx,dy=py-cy;if(dx*dx+dy*dy<(pr+cr*0.78)*(pr+cr*0.78))return true;}
     else{var ax=Math.max(o.x,Math.min(px,o.x+o.w)),ay=Math.max(o.y,Math.min(py,o.y+o.h)),dx2=px-ax,dy2=py-ay;if(dx2*dx2+dy2*dy2<pr*pr)return true;}
   }return false;
 }
 
-// Fixed-timestep game loop — eliminates micro stutters
-function fixedStep(){
-  speed=curSpeed();
-  gOff+=speed;
-  score+=speed*0.04;
-  if(score>=5000){score=5000;dead=true;winGame();return;}
-  playerVY+=gravity;
-  playerY+=playerVY;
-  if(playerY>=GY-playerR){playerY=GY-playerR;playerVY=0;grounded=true;}
-  nextObs--;
-  if(nextObs<=0){spawn();nextObs=curGap()+Math.random()*35;}
+function step(){
+  speed=curSpd();gOff+=speed;score+=speed*0.04;
+  if(score>=5000){score=5000;dead=true;endG('🏆','Você Venceu!','Pontuação máxima!');return;}
+  pVY+=gravity;pY+=pVY;
+  if(pY>=GY-pR){pY=GY-pR;pVY=0;grounded=true;}
+  nextObs--;if(nextObs<=0){spawn();nextObs=curGap()+Math.random()*35;}
   for(var i=obs.length-1;i>=0;i--){obs[i].x-=obs[i].s;if(obs[i].x+obs[i].w<-60)obs.splice(i,1);}
-  if(hit()){dead=true;endGame();}
+  if(hit()){dead=true;endG('💀','Fim de Jogo!','Você bateu num obstáculo!');}
 }
 
 function tick(now){
   requestAnimationFrame(tick);
   if(!lastT){lastT=now;return;}
-  var dt=now-lastT;lastT=now;
-  if(dt>250)dt=250;
-
-  if(playing&&!dead){
-    accumulator+=dt;
-    var maxSteps=5;
-    while(accumulator>=FIXED_DT&&maxSteps>0){
-      fixedStep();
-      accumulator-=FIXED_DT;
-      maxSteps--;
-      if(dead)break;
-    }
-    if(accumulator>FIXED_DT*2)accumulator=FIXED_DT;
-  }
-
-  drawBg();drawGround();drawObs();
-  if(playing||dead){drawMe();drawHud();}
+  var dt=now-lastT;lastT=now;if(dt>250)dt=250;
+  if(playing&&!dead){acc+=dt;var m=5;while(acc>=FDT&&m>0){step();acc-=FDT;m--;if(dead)break;}if(acc>FDT*2)acc=FDT;}
+  drawBg();drawGnd();drawObs();if(playing||dead){drawMe();drawHud();}
 }
 requestAnimationFrame(tick);
 
-// Jump
-function jump(){if(!playing||dead)return;if(grounded){playerVY=jumpF;grounded=false;}}
+function jump(){if(!playing||dead)return;if(grounded){pVY=jumpF;grounded=false;}}
 document.addEventListener('keydown',function(e){if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump();}},{passive:false});
 document.addEventListener('touchstart',function(e){if(playing&&!dead){e.preventDefault();jump();}},{passive:false});
 
-// Start / End
-function onPlay(){
-  document.getElementById('startScreen').classList.add('hidden');
-  sz();
-  document.getElementById('readyScreen').classList.remove('hidden');
-}
-function startGame(){
-  document.getElementById('readyScreen').classList.add('hidden');
-  document.getElementById('endScreen').classList.add('hidden');
-  sz();
-  score=0;speed=baseSpeed;obs=[];nextObs=50;gOff=0;lastT=0;accumulator=0;
-  playerX=Math.max(50,W*0.12);playerY=GY-playerR;playerVY=0;grounded=true;
+function go(){
+  document.getElementById('S1').className='ov h';
+  document.getElementById('S2').className='ov h';
+  sz();mkStars();
+  score=0;speed=baseSpeed;obs=[];nextObs=50;gOff=0;lastT=0;acc=0;
+  pX=Math.max(50,W*0.12);pY=GY-pR;pVY=0;grounded=true;
   dead=false;playing=true;
-  mkStars();
 }
-function endGame(){
+function endG(emoji,title,sub){
   var fs=Math.floor(score);if(fs>hiScore)hiScore=fs;
   var coins=0;if(rewardCoins>0&&rewardPoints>0)coins=Math.floor(fs/rewardPoints)*rewardCoins;
-  showEnd('💀','Fim de Jogo!','Você bateu num obstáculo!',fs,coins);
-}
-function winGame(){
-  var fs=5000;if(fs>hiScore)hiScore=fs;
-  var coins=0;if(rewardCoins>0&&rewardPoints>0)coins=Math.floor(fs/rewardPoints)*rewardCoins;
-  showEnd('🏆','Você Venceu!','Pontuação máxima alcançada!',fs,coins);
-}
-function showEnd(emoji,title,sub,fs,coins){
-  document.querySelector('#endScreen .ov-card').children[0].textContent=emoji;
-  document.querySelector('#endScreen .ov-card').children[1].textContent=title;
-  document.querySelector('#endScreen .ov-card').children[2].textContent=sub;
-  document.getElementById('finalScore').textContent=fs;
-  if(coins>0){document.getElementById('finalCoins').textContent='+'+coins+' CUTS 🪙';document.getElementById('finalCoins').style.display='block';}
-  else{document.getElementById('finalCoins').textContent='';document.getElementById('finalCoins').style.display='none';}
-  document.getElementById('endScreen').classList.remove('hidden');
+  document.getElementById('s2e').textContent=emoji;
+  document.getElementById('s2t').textContent=title;
+  document.getElementById('s2s').textContent=sub;
+  document.getElementById('s2p').textContent=fs;
+  if(coins>0){document.getElementById('s2c').textContent='+'+coins+' CUTS 🪙';document.getElementById('s2c').style.display='block';}
+  else{document.getElementById('s2c').textContent='';document.getElementById('s2c').style.display='none';}
+  document.getElementById('S2').className='ov';
   if(coins>0)try{window.parent.postMessage({type:'GAME_REWARD',game:'salto-pavoroso',reward:coins},'*');}catch(e){}
 }
 function goHome(){try{window.parent.postMessage({type:'GAME_GO_HOME'},'*');}catch(e){}}
-
-document.getElementById('btnPlay').onclick=onPlay;
-document.getElementById('btnStart').onclick=startGame;
-document.getElementById('btnRetry').onclick=function(){
-  document.getElementById('endScreen').classList.add('hidden');
-  document.getElementById('readyScreen').classList.remove('hidden');
-};
-document.getElementById('btnHome1').onclick=goHome;
-document.getElementById('btnHome2').onclick=goHome;
-</script>
-</body></html>
+</script></body></html>
