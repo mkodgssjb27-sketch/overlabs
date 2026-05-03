@@ -2107,6 +2107,8 @@ async function saveEditRide() {
     const rideRef = db.collection("rides").doc(currentDetailRideId);
     let promoted = 0;
     let promotedUsers = [];
+    let demoted = 0;
+    let demotedUsers = [];
 
     await db.runTransaction(async tx => {
       const doc = await tx.get(rideRef);
@@ -2124,6 +2126,16 @@ async function saveEditRide() {
         booked = [...booked, ...promovidos];
         wl = wl.slice(qtdPromover);
         promoted = qtdPromover;
+      }
+
+      // Se reduziu as vagas abaixo dos confirmados, manda os últimos para o início da fila de espera
+      if (booked.length > seats) {
+        const qtdRebaixar = booked.length - seats;
+        const rebaixados = booked.slice(seats);
+        demotedUsers = rebaixados;
+        booked = booked.slice(0, seats);
+        wl = [...rebaixados, ...wl];
+        demoted = qtdRebaixar;
       }
 
       tx.update(rideRef, { title, date, time, seats, visible, booked, waitlist: wl });
@@ -2146,8 +2158,29 @@ async function saveEditRide() {
       });
     }
 
-    if (promoted > 0) {
+    // Notificar alunos rebaixados para a fila de espera
+    for (const du of demotedUsers) {
+      await db.collection("feed").add({
+        type: "waitlist_demotion",
+        icon: "⚠️",
+        text: "Você voltou para a fila de espera",
+        detail: `O número de vagas da carona "${title}" foi reduzido e você foi movido para a fila de espera.`,
+        targetUserId: du.userId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await db.collection("notifications").doc(du.userId).collection("items").add({
+        msg: `⚠️ O número de vagas da carona "${title}" foi reduzido e você voltou para a fila de espera.`,
+        read: false,
+        at: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    if (promoted > 0 && demoted > 0) {
+      showToast(`✅ Carona atualizada! ${promoted} promovido(s), ${demoted} para fila`);
+    } else if (promoted > 0) {
       showToast(`✅ Carona atualizada! ${promoted} aluno(s) saiu(ram) da fila de espera`);
+    } else if (demoted > 0) {
+      showToast(`✅ Carona atualizada! ${demoted} aluno(s) movido(s) para a fila de espera`);
     } else {
       showToast("✅ Carona atualizada!");
     }
