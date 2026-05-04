@@ -4952,6 +4952,7 @@ function openInscricaoDetail(id) {
             <div style="font-size:12px;color:#64748b;font-weight:700">Equipes inscritas</div>
           </div>
           <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+            <button onclick="editInscricaoTitle('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">✏️ Editar título</button>
             <button onclick="toggleInscricaoVisible('${id}',${!isVisible})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:${isVisible?'rgba(148,163,184,.12);color:#94a3b8':'rgba(34,197,94,.12);color:#22c55e'}">${isVisible?'👁‍🗨 Ocultar':'👁 Exibir'}</button>
             <button onclick="toggleInscricao('${id}',${!isOpen})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:${isOpen?'rgba(239,68,68,.12);color:#f87171':'rgba(34,197,94,.12);color:#22c55e'}">${isOpen?'🔒 Fechar':'🔓 Abrir'}</button>
             <button onclick="deleteInscricao('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(239,68,68,.08);color:#f87171">🗑 Excluir</button>
@@ -4974,6 +4975,7 @@ function openInscricaoDetail(id) {
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
             <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0">${i + 1}</div>
             <div style="flex:1;font-weight:800;color:#fff;font-size:14px">Equipe ${i + 1}</div>
+            <button onclick="removeInscritoTeam('${id}',${i})" style="background:rgba(239,68,68,.12);color:#f87171;border:none;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🗑 Remover</button>
           </div>
           <div style="padding-left:8px">${membersHtml}</div>
         </div>`;
@@ -4993,6 +4995,44 @@ async function toggleInscricaoVisible(id, visible) {
     showToast(visible ? "✅ Inscrição visível" : "👁‍🗨 Inscrição oculta");
     openInscricaoDetail(id);
   } catch(e) { showToast("Erro"); console.error(e); }
+}
+
+async function editInscricaoTitle(id) {
+  try {
+    const doc = await db.collection("inscricoes").doc(id).get();
+    if (!doc.exists) { showToast("Inscrição não encontrada"); return; }
+    const current = (doc.data() || {}).title || "";
+    const novo = prompt("Editar título da inscrição:", current);
+    if (novo === null) return;
+    const trimmed = novo.trim();
+    if (!trimmed) { showToast("Título não pode ficar vazio"); return; }
+    if (trimmed === current) return;
+    await db.collection("inscricoes").doc(id).update({ title: trimmed });
+    showToast("✅ Título atualizado");
+    openInscricaoDetail(id);
+  } catch(e) { showToast("Erro ao editar título"); console.error(e); }
+}
+
+async function removeInscritoTeam(id, idx) {
+  showConfirmModal("Remover equipe?", "A equipe será excluída da inscrição.", async () => {
+    try {
+      await db.runTransaction(async tx => {
+        const ref = db.collection("inscricoes").doc(id);
+        const snap = await tx.get(ref);
+        if (!snap.exists) throw "Não encontrada";
+        const data = snap.data();
+        const inscritos = Array.isArray(data.inscritos) ? data.inscritos.slice() : [];
+        if (idx < 0 || idx >= inscritos.length) throw "Índice inválido";
+        inscritos.splice(idx, 1);
+        tx.update(ref, { inscritos });
+      });
+      showToast("✅ Equipe removida");
+      openInscricaoDetail(id);
+    } catch(e) {
+      showToast(typeof e === "string" ? e : "Erro ao remover");
+      console.error(e);
+    }
+  });
 }
 
 async function toggleInscricao(id, open) {
