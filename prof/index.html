@@ -1267,6 +1267,28 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
 </div>
 
+<!-- Input Modal (substitui prompt) -->
+<div id="input-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center">
+  <div style="background:#1e293b;border-radius:18px;padding:24px;max-width:380px;width:92%;border:1px solid rgba(255,255,255,.1)">
+    <div style="font-size:17px;font-weight:800;color:#e2e8f0;margin-bottom:8px" id="input-modal-title"></div>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:14px" id="input-modal-msg"></div>
+    <input id="input-modal-field" class="inp" style="width:100%;margin-bottom:16px">
+    <div style="display:flex;gap:10px">
+      <button id="input-modal-cancel" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#94a3b8;font-weight:700;font-size:14px">Cancelar</button>
+      <button id="input-modal-ok" style="flex:1;padding:12px;border-radius:12px;border:none;background:rgba(56,189,248,.2);color:#38bdf8;font-weight:700;font-size:14px">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Picker Modal (lista de opções) -->
+<div id="picker-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center">
+  <div style="background:#1e293b;border-radius:18px;padding:22px;max-width:420px;width:94%;max-height:85vh;border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column">
+    <div style="font-size:17px;font-weight:800;color:#e2e8f0;margin-bottom:14px" id="picker-modal-title"></div>
+    <div id="picker-modal-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+    <button id="picker-modal-cancel" style="padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#94a3b8;font-weight:700;font-size:14px">Cancelar</button>
+  </div>
+</div>
+
 <!-- ══ MODAL INVENTÁRIO DO ALUNO ═════════════════════════════════════ -->
 <div id="inventory-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center">
   <div style="background:#1e293b;border-radius:18px;padding:28px 24px;max-width:480px;width:94%;max-height:85vh;border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column">
@@ -5066,7 +5088,7 @@ async function editInscricaoTitle(id) {
     const doc = await db.collection("inscricoes").doc(id).get();
     if (!doc.exists) { showToast("Inscrição não encontrada"); return; }
     const current = (doc.data() || {}).title || "";
-    const novo = prompt("Editar título da inscrição:", current);
+    const novo = await showInputModal("Editar título", "Novo título da inscrição:", current);
     if (novo === null) return;
     const trimmed = novo.trim();
     if (!trimmed) { showToast("Título não pode ficar vazio"); return; }
@@ -5104,6 +5126,60 @@ function _tornFmtDate(ts) {
   if (!ts) return '';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function showInputModal(title, msg, defaultValue) {
+  return new Promise(resolve => {
+    const modal = document.getElementById("input-modal");
+    const t = document.getElementById("input-modal-title");
+    const m = document.getElementById("input-modal-msg");
+    const inp = document.getElementById("input-modal-field");
+    const ok = document.getElementById("input-modal-ok");
+    const cancel = document.getElementById("input-modal-cancel");
+    if (!modal) { resolve(null); return; }
+    t.textContent = title || '';
+    m.textContent = msg || '';
+    m.style.display = msg ? 'block' : 'none';
+    inp.value = defaultValue || '';
+    modal.style.display = 'flex';
+    setTimeout(()=>{ try { inp.focus(); inp.select && inp.select(); } catch(e){} }, 50);
+    function close(val){
+      modal.style.display = 'none';
+      ok.onclick = null; cancel.onclick = null; inp.onkeydown = null;
+      resolve(val);
+    }
+    ok.onclick = () => close(inp.value);
+    cancel.onclick = () => close(null);
+    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); close(inp.value); } if (e.key === 'Escape') close(null); };
+  });
+}
+
+function showPickerModal(title, options) {
+  // options: [{value, label, current}]
+  return new Promise(resolve => {
+    const modal = document.getElementById("picker-modal");
+    const t = document.getElementById("picker-modal-title");
+    const list = document.getElementById("picker-modal-list");
+    const cancel = document.getElementById("picker-modal-cancel");
+    if (!modal) { resolve(undefined); return; }
+    t.textContent = title || '';
+    list.innerHTML = '';
+    function close(val){
+      modal.style.display = 'none';
+      cancel.onclick = null;
+      list.innerHTML = '';
+      resolve(val);
+    }
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.style.cssText = 'padding:14px;border-radius:12px;border:1px solid '+(opt.current?'rgba(245,158,11,.4)':'rgba(255,255,255,.08)')+';background:'+(opt.current?'rgba(245,158,11,.1)':'rgba(255,255,255,.04)')+';color:#fff;font-weight:700;font-size:14px;text-align:left;cursor:pointer';
+      btn.textContent = (opt.current ? '✓ ' : '') + (opt.label || '');
+      btn.onclick = () => close(opt.value);
+      list.appendChild(btn);
+    });
+    cancel.onclick = () => close(undefined);
+    modal.style.display = 'flex';
+  });
 }
 
 async function loadTorneiosIntoInscForm(currentValue) {
@@ -5244,16 +5320,16 @@ async function editTorneio(id) {
     const doc = await db.collection("torneios").doc(id).get();
     if (!doc.exists) return;
     const t = doc.data();
-    const novoTitle = prompt("Novo título do torneio:", t.title || "");
+    const novoTitle = await showInputModal("Editar título", "Novo título do torneio:", t.title || "");
     if (novoTitle === null) return;
     const trimmed = novoTitle.trim();
     if (!trimmed) { showToast("Título não pode ficar vazio"); return; }
     const sd = t.startDate && t.startDate.toDate ? t.startDate.toDate() : new Date();
     const ed = t.endDate && t.endDate.toDate ? t.endDate.toDate() : new Date();
     const fmt = d => d.toISOString().slice(0,10);
-    const startStr = prompt("Data de início (AAAA-MM-DD):", fmt(sd));
+    const startStr = await showInputModal("Data de início", "Formato AAAA-MM-DD", fmt(sd));
     if (startStr === null) return;
-    const endStr = prompt("Data de fim (AAAA-MM-DD):", fmt(ed));
+    const endStr = await showInputModal("Data de fim", "Formato AAAA-MM-DD", fmt(ed));
     if (endStr === null) return;
     const start = new Date(startStr + "T00:00:00");
     const end = new Date(endStr + "T23:59:59");
@@ -5308,16 +5384,12 @@ async function editInscricaoTorneio(id) {
       showToast("Crie um torneio primeiro");
       return;
     }
-    let msg = "Digite o número do torneio (0 = nenhum):\n\n0. — Nenhum —\n";
-    torns.forEach((t,i)=>{
-      const cur = (t.id === current) ? " ← atual" : "";
-      msg += `${i+1}. ${t.title || '(sem título)'}${cur}\n`;
-    });
-    const ans = prompt(msg, "0");
-    if (ans === null) return;
-    const idx = parseInt(ans, 10);
-    if (isNaN(idx) || idx < 0 || idx > torns.length) { showToast("Opção inválida"); return; }
-    const newTid = idx === 0 ? null : torns[idx-1].id;
+    const options = [{ value: '__NONE__', label: '— Nenhum (desanexar) —', current: !current }];
+    torns.forEach(t => options.push({ value: t.id, label: '🏆 ' + (t.title || '(sem título)'), current: t.id === current }));
+    const chosen = await showPickerModal("Anexar a torneio", options);
+    if (chosen === undefined) return;
+    const newTid = chosen === '__NONE__' ? null : chosen;
+    if (newTid === (current || null)) return;
     await db.collection("inscricoes").doc(id).update({ tournamentId: newTid });
     showToast("✅ Atualizado");
     openInscricaoDetail(id);
