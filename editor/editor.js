@@ -66,8 +66,8 @@ function handleFileSelect(input) {
   }
 
   // Validar tamanho (max 10MB)
-  if (file.size > 10 * 1024 * 1024) {
-    showToast("❌ Arquivo muito grande (máx. 10MB)");
+  if (file.size > 8 * 1024 * 1024) {
+    showToast("❌ Arquivo muito grande (máx. 8MB)");
     input.value = "";
     return;
   }
@@ -87,7 +87,7 @@ function handleFileSelect(input) {
 /* ═══════════════════════════════════════════
    EDITOR DE VÍDEO → GIF
    ═══════════════════════════════════════════ */
-const VID_GIF_MAX_BYTES = 5 * 1024 * 1024; // 5MB
+const VID_GIF_MAX_BYTES = 8 * 1024 * 1024; // 8MB
 const VID_GIF_MAX_DURATION = 10;            // 10s recorte
 let vidEditorState = {
   file: null,
@@ -267,6 +267,8 @@ async function convertVideoToGif() {
 
   // Tentativas adaptativas para ficar <= 5MB
   const attempts = [
+    { width: 480, fps: 16 },
+    { width: 420, fps: 14 },
     { width: 360, fps: 14 },
     { width: 320, fps: 12 },
     { width: 280, fps: 10 },
@@ -301,7 +303,7 @@ async function convertVideoToGif() {
     return;
   }
   if (blob.size > VID_GIF_MAX_BYTES) {
-    showToast(`⚠️ GIF resultou em ${(blob.size/1024/1024).toFixed(2)}MB (acima de 5MB). Tente recorte menor.`);
+    showToast(`⚠️ GIF resultou em ${(blob.size/1024/1024).toFixed(2)}MB (acima de 8MB). Tente recorte menor.`);
     btn.disabled = false;
     progressWrap.style.display = "none";
     return;
@@ -396,7 +398,7 @@ function updateUploadUI() {
   } else {
     zone.classList.remove("has-file");
     zone.querySelector(".uz-text").textContent = "Clique para enviar imagem ou GIF";
-    zone.querySelector(".uz-hint").textContent = "PNG, GIF, JPG, WebP (máx. 5MB)";
+    zone.querySelector(".uz-hint").textContent = "PNG, GIF, JPG, WebP (máx. 8MB)";
     preview.classList.remove("show");
     previewImg.src = "";
   }
