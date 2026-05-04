@@ -41,8 +41,14 @@ function handleFileSelect(input) {
   const file = input.files[0];
   if (!file) return;
 
+  const name = (file.name || "").toLowerCase();
+  const isVideoExt = /\.(mp4|webm|mov|mkv|m4v|mpeg|mpg|avi|3gp)$/i.test(name);
+  const isImageExt = /\.(png|jpg|jpeg|gif|webp)$/i.test(name);
+  const isVideo = (file.type && file.type.startsWith("video/")) || isVideoExt;
+  const isImage = (file.type && /^image\/(png|jpeg|gif|webp)$/.test(file.type)) || isImageExt;
+
   // Vídeo? abre editor de vídeo→GIF
-  if (file.type && file.type.startsWith("video/")) {
+  if (isVideo) {
     if (file.size > 200 * 1024 * 1024) {
       showToast("❌ Vídeo muito grande (máx. 200MB)");
       input.value = "";
@@ -53,8 +59,7 @@ function handleFileSelect(input) {
   }
 
   // Validar tipo (imagens)
-  const allowed = ["image/png", "image/gif", "image/jpeg", "image/webp"];
-  if (!allowed.includes(file.type)) {
+  if (!isImage) {
     showToast("❌ Formato não suportado. Use imagem ou vídeo.");
     input.value = "";
     return;
