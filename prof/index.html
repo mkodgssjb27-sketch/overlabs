@@ -5039,6 +5039,7 @@ function openInscricaoDetail(id) {
           <div style="flex:1;display:flex;flex-direction:column;gap:8px">
             <button onclick="editInscricaoTitle('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">✏️ Editar título</button>
             <button onclick="editInscricaoMaxVagas('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(167,139,250,.12);color:#a78bfa">👥 Editar vagas</button>
+            <button onclick="addInscritoTeamManual('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(34,197,94,.12);color:#22c55e">➕ Adicionar equipe</button>
             <button onclick="editInscricaoTorneio('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">🏆 Anexar a torneio</button>
             <button onclick="toggleInscricaoVisible('${id}',${!isVisible})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:${isVisible?'rgba(148,163,184,.12);color:#94a3b8':'rgba(34,197,94,.12);color:#22c55e'}">${isVisible?'👁‍🗨 Ocultar':'👁 Exibir'}</button>
             <button onclick="toggleInscricao('${id}',${!isOpen})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:${isOpen?'rgba(239,68,68,.12);color:#f87171':'rgba(34,197,94,.12);color:#22c55e'}">${isOpen?'🔒 Fechar':'🔓 Abrir'}</button>
@@ -5119,6 +5120,48 @@ async function editInscricaoMaxVagas(id) {
     showToast("✅ Vagas atualizadas");
     openInscricaoDetail(id);
   } catch(e) { showToast("Erro ao editar vagas"); console.error(e); }
+}
+
+async function addInscritoTeamManual(id) {
+  try {
+    const doc = await db.collection("inscricoes").doc(id).get();
+    if (!doc.exists) { showToast("Inscrição não encontrada"); return; }
+    const data = doc.data() || {};
+    const inscritos = Array.isArray(data.inscritos) ? data.inscritos.slice() : [];
+    const max = parseInt(data.maxRegistrations, 10) || 0;
+    if (max && inscritos.length >= max) { showToast("Limite de vagas atingido"); return; }
+    const teamSize = parseInt(data.teamSize, 10) || 1;
+    const members = [];
+    for (let i = 0; i < teamSize; i++) {
+      const label = teamSize > 1 ? `Nome do jogador ${i + 1} de ${teamSize}:` : "Nome do jogador:";
+      const nome = await showInputModal(`Adicionar equipe (${i + 1}/${teamSize})`, label, "");
+      if (nome === null) return;
+      const t = String(nome).trim();
+      if (!t) { showToast("Nome não pode ficar vazio"); return; }
+      members.push(t);
+    }
+    await db.runTransaction(async tx => {
+      const ref = db.collection("inscricoes").doc(id);
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw "Não encontrada";
+      const cur = snap.data() || {};
+      const arr = Array.isArray(cur.inscritos) ? cur.inscritos.slice() : [];
+      const curMax = parseInt(cur.maxRegistrations, 10) || 0;
+      if (curMax && arr.length >= curMax) throw "Limite de vagas atingido";
+      arr.push({
+        members,
+        addedManually: true,
+        addedBy: (firebase.auth().currentUser && firebase.auth().currentUser.uid) || null,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      tx.update(ref, { inscritos: arr });
+    });
+    showToast("✅ Equipe adicionada");
+    openInscricaoDetail(id);
+  } catch(e) {
+    showToast(typeof e === "string" ? e : "Erro ao adicionar equipe");
+    console.error(e);
+  }
 }
 
 async function removeInscritoTeam(id, idx) {
