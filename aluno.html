@@ -416,18 +416,33 @@ input,select{font-family:inherit;outline:none}
     </div>
     <div class="s-content" id="s-tournaments-content">
       <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">🏐 Torneios</div>
-      <button onclick="showScreen('student-inscricoes');loadStudentInscricoes()" style="width:100%;padding:18px;border-radius:16px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <span style="font-size:22px">📝</span> Inscrições
-      </button>
-      <div style="text-align:center;padding:40px 20px">
-        <p style="color:#64748b;font-size:14px;max-width:320px;margin:0 auto">Mais funções de torneios estarão disponíveis em breve!</p>
-      </div>
+      <div class="loading" id="student-torn-loading"><div class="spin"></div>Carregando...</div>
+      <div class="empty" id="student-torn-empty" style="display:none"><div class="icon">🏆</div><p>Nenhum torneio disponível</p><small>Em breve novos torneios!</small></div>
+      <div id="student-torn-list"></div>
     </div>
     <div class="s-bottom-nav">
       <button class="nav-btn" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
       <button class="nav-btn" onclick="switchStudentTab('list')"><span>�️</span><span>Reservas</span></button>
       <button class="nav-btn" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
       <button class="nav-btn active" onclick="switchStudentTab('tournaments')"><span>🏐</span><span>Torneios</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALUNO — DETALHE DO TORNEIO ═══════════════════════════════════ -->
+<div class="screen" id="screen-student-torneio-detail">
+  <div class="app-wrap">
+    <div class="s-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button onclick="switchStudentTab('tournaments')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px;border:none">←</button>
+        <div class="s-htitle" style="font-size:16px" id="student-torn-title">Torneio</div>
+      </div>
+    </div>
+    <div class="s-content">
+      <div id="student-torn-info" style="margin-bottom:14px"></div>
+      <div style="font-size:14px;font-weight:800;color:#94a3b8;margin-bottom:10px">📝 Inscrições disponíveis</div>
+      <div class="empty" id="student-torn-insc-empty" style="display:none"><div class="icon">📝</div><p>Sem inscrições nesse torneio</p></div>
+      <div id="student-torn-insc-list"></div>
     </div>
   </div>
 </div>
@@ -1019,6 +1034,7 @@ function switchStudentTab(tab) {
   const map = { home: "student-home", list: "student-list", presence: "student-presence", tournaments: "student-tournaments" };
   showScreen(map[tab] || "student-home");
   if (tab === "presence") initMyPresence();
+  if (tab === "tournaments") loadStudentTorneios();
 }
 
 // ── Helpers ──
@@ -4177,6 +4193,113 @@ function loadStudentInscricoes() {
       if (empty) empty.style.display = "block";
     });
   });
+}
+
+// ── Torneios (aluno) ──
+function _stuTornFmtDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function loadStudentTorneios() {
+  if (!firebaseOk) return;
+  const list = document.getElementById("student-torn-list");
+  const loading = document.getElementById("student-torn-loading");
+  const empty = document.getElementById("student-torn-empty");
+  if (loading) loading.style.display = "flex";
+  if (list) list.innerHTML = "";
+  db.collection("torneios").orderBy("createdAt", "desc").get().then(snap => {
+    if (loading) loading.style.display = "none";
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (empty) empty.style.display = items.length === 0 ? "block" : "none";
+    if (!list) return;
+    list.innerHTML = items.map(t => `
+      <div onclick="openStudentTorneio('${t.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:18px;margin-bottom:10px;cursor:pointer">
+        <div style="font-weight:800;font-size:15px;color:#fff;margin-bottom:6px">🏆 ${escapeHtml(t.title || '')}</div>
+        <div style="color:#f59e0b;font-size:12px;font-weight:700">📅 ${_stuTornFmtDate(t.startDate)} → ${_stuTornFmtDate(t.endDate)}</div>
+      </div>`).join("");
+  }).catch(e => {
+    if (loading) loading.style.display = "none";
+    console.error("[Torneios aluno] erro orderBy, fallback", e);
+    db.collection("torneios").get().then(snap => {
+      let items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      items.sort((a,b)=>{
+        const ta=a.createdAt&&a.createdAt.toMillis?a.createdAt.toMillis():0;
+        const tb=b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():0;
+        return tb-ta;
+      });
+      if (empty) empty.style.display = items.length === 0 ? "block" : "none";
+      if (!list) return;
+      list.innerHTML = items.map(t => `
+        <div onclick="openStudentTorneio('${t.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:18px;margin-bottom:10px;cursor:pointer">
+          <div style="font-weight:800;font-size:15px;color:#fff;margin-bottom:6px">🏆 ${escapeHtml(t.title || '')}</div>
+          <div style="color:#f59e0b;font-size:12px;font-weight:700">📅 ${_stuTornFmtDate(t.startDate)} → ${_stuTornFmtDate(t.endDate)}</div>
+        </div>`).join("");
+    }).catch(()=>{});
+  });
+}
+
+async function openStudentTorneio(id) {
+  if (!firebaseOk) return;
+  try {
+    const doc = await db.collection("torneios").doc(id).get();
+    if (!doc.exists) { showToast("Torneio não encontrado"); return; }
+    const t = doc.data();
+    document.getElementById("student-torn-title").textContent = "🏆 " + (t.title || "Torneio");
+    document.getElementById("student-torn-info").innerHTML = `
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:14px;padding:14px">
+        <div style="color:#f59e0b;font-weight:800;font-size:13px;margin-bottom:4px">Período</div>
+        <div style="color:#fff;font-size:14px">📅 ${_stuTornFmtDate(t.startDate)} até ${_stuTornFmtDate(t.endDate)}</div>
+      </div>`;
+    showScreen("student-torneio-detail");
+
+    const list = document.getElementById("student-torn-insc-list");
+    const empty = document.getElementById("student-torn-insc-empty");
+    list.innerHTML = "";
+    let snap;
+    try {
+      snap = await db.collection("inscricoes").where("tournamentId", "==", id).get();
+    } catch(e) {
+      snap = await db.collection("inscricoes").get();
+      snap = { docs: snap.docs.filter(d => (d.data() || {}).tournamentId === id) };
+    }
+    let items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    items = items.filter(insc => {
+      if (insc.open === false) return false;
+      if (insc.visible === false) return false;
+      if (_stuInscDeadlinePassed(insc)) return false;
+      const count = (insc.inscritos || []).length;
+      const max = insc.maxRegistrations || 0;
+      const alreadyIn = currentUser && (insc.inscritos || []).some(p => p.userId === currentUser.id);
+      if (max > 0 && count >= max && !alreadyIn) return false;
+      return true;
+    });
+    items.sort((a,b)=>{
+      const ta=a.createdAt&&a.createdAt.toMillis?a.createdAt.toMillis():0;
+      const tb=b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():0;
+      return tb-ta;
+    });
+    if (empty) empty.style.display = items.length === 0 ? "block" : "none";
+    list.innerHTML = items.map(insc => {
+      const inscritos = insc.inscritos || [];
+      const alreadyIn = currentUser && inscritos.some(p => p.userId === currentUser.id);
+      const teamLbl = insc.teamSize ? _stuInscTeamLabel(insc.teamSize) : '';
+      const deadlineTxt = _stuInscFmtDeadline(insc);
+      const max = insc.maxRegistrations || 0;
+      const countTxt = max > 0 ? `${inscritos.length}/${max} equipes` : `${inscritos.length} equipes`;
+      return `
+        <div onclick="openStudentInscricao('${insc.id}')" style="background:rgba(255,255,255,.04);border:1px solid ${alreadyIn ? 'rgba(34,197,94,.3)' : 'rgba(255,255,255,.08)'};border-radius:16px;padding:18px;margin-bottom:10px;cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+            <span style="font-weight:800;font-size:15px;color:#fff">${escapeHtml(insc.title || '')}</span>
+            ${alreadyIn ? '<span style="font-size:12px;color:#22c55e;font-weight:800;white-space:nowrap">✅ Inscrito</span>' : '<span style="font-size:12px;color:#f59e0b;font-weight:800;white-space:nowrap">Inscrever-se →</span>'}
+          </div>
+          ${teamLbl ? `<div style="color:#a78bfa;font-size:12px;font-weight:700;margin-bottom:4px">👥 ${teamLbl}</div>` : ''}
+          <div style="color:#64748b;font-size:12px">${countTxt}</div>
+          ${deadlineTxt ? `<div style="color:#64748b;font-size:11px;margin-top:4px">⏰ Até ${deadlineTxt}</div>` : ''}
+        </div>`;
+    }).join("");
+  } catch(e) { showToast("Erro ao carregar torneio"); console.error(e); }
 }
 
 function openStudentInscricao(id) {

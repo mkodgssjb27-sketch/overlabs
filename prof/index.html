@@ -1046,19 +1046,17 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
   <div class="t-content" style="max-width:560px">
     <div style="display:flex;flex-direction:column;gap:12px;padding:10px 0">
-      <button onclick="showScreen('teacher-criar-inscricao')" style="padding:20px;border-radius:16px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px">
+      <button onclick="showScreen('teacher-criar-inscricao');loadTorneiosIntoInscForm()" style="padding:20px;border-radius:16px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px">
         <span style="font-size:22px">📝</span> Criar Inscrição
       </button>
       <button onclick="showScreen('teacher-consultar-inscricao');loadInscricoes()" style="padding:20px;border-radius:16px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);color:#38bdf8;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px">
         <span style="font-size:22px">🔍</span> Consultar Inscrição
       </button>
-      <button disabled style="padding:20px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#475569;font-weight:800;font-size:15px;cursor:not-allowed;display:flex;align-items:center;gap:12px;position:relative">
+      <button onclick="showScreen('teacher-criar-torneio')" style="padding:20px;border-radius:16px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#f59e0b;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px">
         <span style="font-size:22px">🏆</span> Criar Torneio
-        <span style="position:absolute;right:16px;font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:800">EM BREVE</span>
       </button>
-      <button disabled style="padding:20px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#475569;font-weight:800;font-size:15px;cursor:not-allowed;display:flex;align-items:center;gap:12px;position:relative">
+      <button onclick="showScreen('teacher-consultar-torneios');loadTorneios()" style="padding:20px;border-radius:16px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);color:#a78bfa;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px">
         <span style="font-size:22px">📋</span> Consultar Torneio
-        <span style="position:absolute;right:16px;font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:800">EM BREVE</span>
       </button>
       <button disabled style="padding:20px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#475569;font-weight:800;font-size:15px;cursor:not-allowed;display:flex;align-items:center;gap:12px;position:relative">
         <span style="font-size:22px">📊</span> Criar Tabela de Torneio
@@ -1107,6 +1105,10 @@ input,select,textarea{font-family:inherit;outline:none}
       <div style="margin-bottom:18px">
         <label class="lbl">DATA LIMITE PARA INSCRIÇÃO</label>
         <input type="datetime-local" class="inp" id="insc-deadline">
+      </div>
+      <div style="margin-bottom:18px">
+        <label class="lbl">ANEXAR A TORNEIO (opcional)</label>
+        <select class="inp" id="insc-torneio"><option value="">— Nenhum —</option></select>
       </div>
       <div style="margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;padding:14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)">
         <div>
@@ -1167,6 +1169,63 @@ input,select,textarea{font-family:inherit;outline:none}
     <div id="inscricao-detail-stats" style="margin-bottom:16px"></div>
     <div class="empty" id="inscricao-detail-empty" style="display:none"><div class="icon">👥</div><p>Nenhum inscrito ainda</p></div>
     <div id="inscricao-detail-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — CRIAR TORNEIO ═══════════════════ -->
+<div class="screen" id="screen-teacher-criar-torneio">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-tournaments')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">🏆 Criar Torneio</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <div class="t-form">
+      <div style="margin-bottom:18px">
+        <label class="lbl">TÍTULO DO TORNEIO</label>
+        <input class="inp" id="torn-title" placeholder="Ex: Copa Over Labs 2026">
+      </div>
+      <div style="margin-bottom:18px">
+        <label class="lbl">DATA DE INÍCIO</label>
+        <input type="date" class="inp" id="torn-start">
+      </div>
+      <div style="margin-bottom:18px">
+        <label class="lbl">DATA DE FIM</label>
+        <input type="date" class="inp" id="torn-end">
+      </div>
+      <p class="err-txt" id="torn-err" style="margin-bottom:12px"></p>
+      <button onclick="criarTorneio()" class="btn-main" id="btn-criar-torn">✅ Criar Torneio</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — CONSULTAR TORNEIOS ════════════════ -->
+<div class="screen" id="screen-teacher-consultar-torneios">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-tournaments')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📋 Consultar Torneios</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:660px">
+    <div class="loading" id="torneios-loading"><div class="spin"></div>Carregando...</div>
+    <div class="empty" id="torneios-empty" style="display:none"><div class="icon">🏆</div><p>Nenhum torneio criado</p></div>
+    <div id="torneios-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — DETALHE DO TORNEIO ══════════════ -->
+<div class="screen" id="screen-teacher-torneio-detail">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-consultar-torneios');loadTorneios()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px" id="torneio-detail-title">Torneio</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:660px">
+    <div id="torneio-detail-info" style="margin-bottom:16px"></div>
+    <div id="torneio-detail-list"></div>
   </div>
 </div>
 
@@ -4820,6 +4879,8 @@ async function criarInscricao() {
   const maxRegistrations = maxRaw ? Math.max(1, parseInt(maxRaw, 10) || 0) : 0;
   const deadlineRaw = document.getElementById("insc-deadline").value;
   const visible = document.getElementById("insc-visible").checked;
+  const tornSel = document.getElementById("insc-torneio");
+  const tournamentId = tornSel ? (tornSel.value || null) : null;
 
   const errEl = document.getElementById("insc-err");
   if (!title) { errEl.textContent = "Informe o título"; return; }
@@ -4841,6 +4902,7 @@ async function criarInscricao() {
       deadline: firebase.firestore.Timestamp.fromDate(deadline),
       visible,
       open: true,
+      tournamentId: tournamentId || null,
       inscritos: [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -4850,6 +4912,7 @@ async function criarInscricao() {
     document.getElementById("insc-max").value = "";
     document.getElementById("insc-deadline").value = "";
     document.getElementById("insc-visible").checked = true;
+    var tSel = document.getElementById("insc-torneio"); if (tSel) tSel.value = "";
     showToast("✅ Inscrição criada!");
     showScreen("teacher-tournaments");
   } catch(e) {
@@ -4953,6 +5016,7 @@ function openInscricaoDetail(id) {
           </div>
           <div style="flex:1;display:flex;flex-direction:column;gap:8px">
             <button onclick="editInscricaoTitle('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">✏️ Editar título</button>
+            <button onclick="editInscricaoTorneio('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">🏆 Anexar a torneio</button>
             <button onclick="toggleInscricaoVisible('${id}',${!isVisible})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:${isVisible?'rgba(148,163,184,.12);color:#94a3b8':'rgba(34,197,94,.12);color:#22c55e'}">${isVisible?'👁‍🗨 Ocultar':'👁 Exibir'}</button>
             <button onclick="toggleInscricao('${id}',${!isOpen})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:${isOpen?'rgba(239,68,68,.12);color:#f87171':'rgba(34,197,94,.12);color:#22c55e'}">${isOpen?'🔒 Fechar':'🔓 Abrir'}</button>
             <button onclick="deleteInscricao('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(239,68,68,.08);color:#f87171">🗑 Excluir</button>
@@ -5033,6 +5097,198 @@ async function removeInscritoTeam(id, idx) {
       console.error(e);
     }
   });
+}
+
+// ── Torneios (CRUD professor) ──
+function _tornFmtDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+async function loadTorneiosIntoInscForm(currentValue) {
+  const sel = document.getElementById("insc-torneio");
+  if (!sel || !firebaseOk) return;
+  try {
+    const snap = await db.collection("torneios").orderBy("createdAt", "desc").get();
+    const opts = ['<option value="">— Nenhum —</option>'];
+    snap.docs.forEach(d => {
+      const t = d.data();
+      const sel2 = (currentValue && currentValue === d.id) ? ' selected' : '';
+      opts.push(`<option value="${d.id}"${sel2}>${escapeHtml(t.title || 'Torneio')}</option>`);
+    });
+    sel.innerHTML = opts.join("");
+  } catch(e) { console.error(e); }
+}
+
+async function criarTorneio() {
+  if (!requireFirebase()) return;
+  const title = document.getElementById("torn-title").value.trim();
+  const startRaw = document.getElementById("torn-start").value;
+  const endRaw = document.getElementById("torn-end").value;
+  const errEl = document.getElementById("torn-err");
+  if (!title) { errEl.textContent = "Informe o título"; return; }
+  if (!startRaw) { errEl.textContent = "Informe a data de início"; return; }
+  if (!endRaw) { errEl.textContent = "Informe a data de fim"; return; }
+  const start = new Date(startRaw + "T00:00:00");
+  const end = new Date(endRaw + "T23:59:59");
+  if (end.getTime() < start.getTime()) { errEl.textContent = "Data de fim antes do início"; return; }
+  errEl.textContent = "";
+  const btn = document.getElementById("btn-criar-torn");
+  btn.disabled = true; btn.textContent = "Criando...";
+  try {
+    await db.collection("torneios").add({
+      title,
+      startDate: firebase.firestore.Timestamp.fromDate(start),
+      endDate: firebase.firestore.Timestamp.fromDate(end),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    document.getElementById("torn-title").value = "";
+    document.getElementById("torn-start").value = "";
+    document.getElementById("torn-end").value = "";
+    showToast("✅ Torneio criado!");
+    showScreen("teacher-tournaments");
+  } catch(e) { showToast("Erro ao criar torneio"); console.error(e); }
+  btn.disabled = false; btn.textContent = "✅ Criar Torneio";
+}
+
+function loadTorneios() {
+  if (!firebaseOk) return;
+  const list = document.getElementById("torneios-list");
+  const loading = document.getElementById("torneios-loading");
+  const empty = document.getElementById("torneios-empty");
+  if (loading) loading.style.display = "flex";
+  if (list) list.innerHTML = "";
+  db.collection("torneios").orderBy("createdAt", "desc").get().then(snap => {
+    if (loading) loading.style.display = "none";
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (empty) empty.style.display = items.length === 0 ? "block" : "none";
+    if (!list) return;
+    list.innerHTML = items.map(t => `
+      <div onclick="openTorneioDetail('${t.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;margin-bottom:10px;cursor:pointer">
+        <div style="font-weight:800;font-size:15px;color:#fff;margin-bottom:6px">🏆 ${escapeHtml(t.title || '')}</div>
+        <div style="color:#64748b;font-size:12px">📅 ${_tornFmtDate(t.startDate)} → ${_tornFmtDate(t.endDate)}</div>
+      </div>`).join("");
+  }).catch(e => {
+    if (loading) loading.style.display = "none";
+    console.error(e);
+  });
+}
+
+async function openTorneioDetail(id) {
+  if (!firebaseOk) return;
+  try {
+    const doc = await db.collection("torneios").doc(id).get();
+    if (!doc.exists) { showToast("Torneio não encontrado"); return; }
+    const t = doc.data();
+    document.getElementById("torneio-detail-title").textContent = "🏆 " + (t.title || "Torneio");
+    const info = document.getElementById("torneio-detail-info");
+    info.innerHTML = `
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:14px;padding:14px;margin-bottom:12px">
+        <div style="color:#f59e0b;font-weight:800;font-size:13px;margin-bottom:4px">Período</div>
+        <div style="color:#fff;font-size:14px">📅 ${_tornFmtDate(t.startDate)} até ${_tornFmtDate(t.endDate)}</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button onclick="editTorneio('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">✏️ Editar</button>
+        <button onclick="deleteTorneio('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171">🗑 Excluir</button>
+      </div>
+      <div style="font-weight:800;font-size:13px;color:#94a3b8;margin-bottom:8px">📝 Inscrições anexadas</div>`;
+    const list = document.getElementById("torneio-detail-list");
+    const snap = await db.collection("inscricoes").where("tournamentId", "==", id).get();
+    const inscs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (inscs.length === 0) {
+      list.innerHTML = `<div class="empty"><div class="icon">📝</div><p>Nenhuma inscrição anexada</p></div>`;
+    } else {
+      inscs.sort((a,b)=>{
+        const ta=a.createdAt&&a.createdAt.toMillis?a.createdAt.toMillis():0;
+        const tb=b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():0;
+        return tb-ta;
+      });
+      list.innerHTML = inscs.map(insc => {
+        const count = (insc.inscritos || []).length;
+        const maxTxt = insc.maxRegistrations ? `/${insc.maxRegistrations}` : '';
+        return `
+          <div onclick="openInscricaoDetail('${insc.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;cursor:pointer">
+            <div style="font-weight:800;color:#fff;font-size:14px;margin-bottom:4px">${escapeHtml(insc.title || '')}</div>
+            <div style="color:#64748b;font-size:12px">${count}${maxTxt} equipes</div>
+          </div>`;
+      }).join("");
+    }
+    showScreen("teacher-torneio-detail");
+  } catch(e) { showToast("Erro ao carregar torneio"); console.error(e); }
+}
+
+async function editTorneio(id) {
+  try {
+    const doc = await db.collection("torneios").doc(id).get();
+    if (!doc.exists) return;
+    const t = doc.data();
+    const novoTitle = prompt("Novo título do torneio:", t.title || "");
+    if (novoTitle === null) return;
+    const trimmed = novoTitle.trim();
+    if (!trimmed) { showToast("Título não pode ficar vazio"); return; }
+    const sd = t.startDate && t.startDate.toDate ? t.startDate.toDate() : new Date();
+    const ed = t.endDate && t.endDate.toDate ? t.endDate.toDate() : new Date();
+    const fmt = d => d.toISOString().slice(0,10);
+    const startStr = prompt("Data de início (AAAA-MM-DD):", fmt(sd));
+    if (startStr === null) return;
+    const endStr = prompt("Data de fim (AAAA-MM-DD):", fmt(ed));
+    if (endStr === null) return;
+    const start = new Date(startStr + "T00:00:00");
+    const end = new Date(endStr + "T23:59:59");
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) { showToast("Datas inválidas"); return; }
+    if (end.getTime() < start.getTime()) { showToast("Fim antes do início"); return; }
+    await db.collection("torneios").doc(id).update({
+      title: trimmed,
+      startDate: firebase.firestore.Timestamp.fromDate(start),
+      endDate: firebase.firestore.Timestamp.fromDate(end)
+    });
+    showToast("✅ Torneio atualizado");
+    openTorneioDetail(id);
+  } catch(e) { showToast("Erro"); console.error(e); }
+}
+
+function deleteTorneio(id) {
+  showConfirmModal("Excluir torneio?", "As inscrições anexadas serão desanexadas (não excluídas).", async () => {
+    try {
+      const snap = await db.collection("inscricoes").where("tournamentId", "==", id).get();
+      const batch = db.batch();
+      snap.docs.forEach(d => batch.update(d.ref, { tournamentId: null }));
+      batch.delete(db.collection("torneios").doc(id));
+      await batch.commit();
+      showToast("✅ Torneio excluído");
+      showScreen("teacher-consultar-torneios");
+      loadTorneios();
+    } catch(e) { showToast("Erro ao excluir"); console.error(e); }
+  });
+}
+
+async function editInscricaoTorneio(id) {
+  if (!firebaseOk) return;
+  try {
+    const insDoc = await db.collection("inscricoes").doc(id).get();
+    if (!insDoc.exists) { showToast("Não encontrada"); return; }
+    const current = insDoc.data().tournamentId || "";
+    const tornsSnap = await db.collection("torneios").orderBy("createdAt", "desc").get();
+    const torns = tornsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (torns.length === 0) {
+      showToast("Crie um torneio primeiro");
+      return;
+    }
+    let msg = "Digite o número do torneio (0 = nenhum):\n\n0. — Nenhum —\n";
+    torns.forEach((t,i)=>{
+      const cur = (t.id === current) ? " ← atual" : "";
+      msg += `${i+1}. ${t.title}${cur}\n`;
+    });
+    const ans = prompt(msg, "0");
+    if (ans === null) return;
+    const idx = parseInt(ans, 10);
+    if (isNaN(idx) || idx < 0 || idx > torns.length) { showToast("Opção inválida"); return; }
+    const newTid = idx === 0 ? null : torns[idx-1].id;
+    await db.collection("inscricoes").doc(id).update({ tournamentId: newTid });
+    showToast("✅ Atualizado");
+    openInscricaoDetail(id);
+  } catch(e) { showToast("Erro"); console.error(e); }
 }
 
 async function toggleInscricao(id, open) {
