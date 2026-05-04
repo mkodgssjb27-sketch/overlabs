@@ -4097,11 +4097,12 @@ function loadStudentInscricoes() {
   if (loading) loading.style.display = "flex";
   if (list) list.innerHTML = "";
 
-  db.collection("inscricoes").where("open", "==", true).orderBy("createdAt", "desc").get().then(snap => {
+  db.collection("inscricoes").orderBy("createdAt", "desc").get().then(snap => {
     if (loading) loading.style.display = "none";
     let items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // filtra: visível && deadline futura (se houver) && limite não alcançado
+    // filtra: aberta && visível && deadline futura (se houver) && limite não alcançado
     items = items.filter(insc => {
+      if (insc.open === false) return false;
       if (insc.visible === false) return false;
       if (_stuInscDeadlinePassed(insc)) return false;
       const count = (insc.inscritos || []).length;
@@ -4132,7 +4133,49 @@ function loadStudentInscricoes() {
     }).join("");
   }).catch(e => {
     if (loading) loading.style.display = "none";
-    console.error(e);
+    console.error("[Inscrições] erro orderBy, tentando fallback sem orderBy", e);
+    // Fallback sem orderBy (caso createdAt de algum doc seja null)
+    db.collection("inscricoes").get().then(snap => {
+      let items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      items.sort((a, b) => {
+        const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+        const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+        return tb - ta;
+      });
+      items = items.filter(insc => {
+        if (insc.open === false) return false;
+        if (insc.visible === false) return false;
+        if (_stuInscDeadlinePassed(insc)) return false;
+        const count = (insc.inscritos || []).length;
+        const max = insc.maxRegistrations || 0;
+        const alreadyIn = currentUser && (insc.inscritos || []).some(p => p.userId === currentUser.id);
+        if (max > 0 && count >= max && !alreadyIn) return false;
+        return true;
+      });
+      if (empty) empty.style.display = items.length === 0 ? "block" : "none";
+      if (!list) return;
+      list.innerHTML = items.map(insc => {
+        const inscritos = insc.inscritos || [];
+        const alreadyIn = currentUser && inscritos.some(p => p.userId === currentUser.id);
+        const teamLbl = insc.teamSize ? _stuInscTeamLabel(insc.teamSize) : '';
+        const deadlineTxt = _stuInscFmtDeadline(insc);
+        const max = insc.maxRegistrations || 0;
+        const countTxt = max > 0 ? `${inscritos.length}/${max} equipes` : `${inscritos.length} equipes`;
+        return `
+          <div onclick="openStudentInscricao('${insc.id}')" style="background:rgba(255,255,255,.04);border:1px solid ${alreadyIn ? 'rgba(34,197,94,.3)' : 'rgba(255,255,255,.08)'};border-radius:16px;padding:18px;margin-bottom:10px;cursor:pointer">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+              <span style="font-weight:800;font-size:15px;color:#fff">${escapeHtml(insc.title || '')}</span>
+              ${alreadyIn ? '<span style="font-size:12px;color:#22c55e;font-weight:800;white-space:nowrap">✅ Inscrito</span>' : '<span style="font-size:12px;color:#f59e0b;font-weight:800;white-space:nowrap">Inscrever-se →</span>'}
+            </div>
+            ${teamLbl ? `<div style="color:#a78bfa;font-size:12px;font-weight:700;margin-bottom:4px">👥 ${teamLbl}</div>` : ''}
+            <div style="color:#64748b;font-size:12px">${countTxt}</div>
+            ${deadlineTxt ? `<div style="color:#64748b;font-size:11px;margin-top:4px">⏰ Até ${deadlineTxt}</div>` : ''}
+          </div>`;
+      }).join("");
+    }).catch(err => {
+      console.error("[Inscrições] fallback também falhou", err);
+      if (empty) empty.style.display = "block";
+    });
   });
 }
 
