@@ -5038,6 +5038,7 @@ function openInscricaoDetail(id) {
           </div>
           <div style="flex:1;display:flex;flex-direction:column;gap:8px">
             <button onclick="editInscricaoTitle('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">✏️ Editar título</button>
+            <button onclick="editInscricaoMaxVagas('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(167,139,250,.12);color:#a78bfa">👥 Editar vagas</button>
             <button onclick="editInscricaoTorneio('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">🏆 Anexar a torneio</button>
             <button onclick="toggleInscricaoVisible('${id}',${!isVisible})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:${isVisible?'rgba(148,163,184,.12);color:#94a3b8':'rgba(34,197,94,.12);color:#22c55e'}">${isVisible?'👁‍🗨 Ocultar':'👁 Exibir'}</button>
             <button onclick="toggleInscricao('${id}',${!isOpen})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:${isOpen?'rgba(239,68,68,.12);color:#f87171':'rgba(34,197,94,.12);color:#22c55e'}">${isOpen?'🔒 Fechar':'🔓 Abrir'}</button>
@@ -5097,6 +5098,27 @@ async function editInscricaoTitle(id) {
     showToast("✅ Título atualizado");
     openInscricaoDetail(id);
   } catch(e) { showToast("Erro ao editar título"); console.error(e); }
+}
+
+async function editInscricaoMaxVagas(id) {
+  try {
+    const doc = await db.collection("inscricoes").doc(id).get();
+    if (!doc.exists) { showToast("Inscrição não encontrada"); return; }
+    const data = doc.data() || {};
+    const currentMax = parseInt(data.maxRegistrations, 10) || 0;
+    const inscritosCount = Array.isArray(data.inscritos) ? data.inscritos.length : 0;
+    const novo = await showInputModal("Editar vagas", "Número de vagas (mín 4, máx 16):", String(currentMax || 4));
+    if (novo === null) return;
+    const n = parseInt(String(novo).trim(), 10);
+    if (!Number.isFinite(n)) { showToast("Valor inválido"); return; }
+    if (n < 4) { showToast("Mínimo de 4 vagas"); return; }
+    if (n > 16) { showToast("Máximo de 16 vagas"); return; }
+    if (n < inscritosCount) { showToast(`Já existem ${inscritosCount} equipes inscritas`); return; }
+    if (n === currentMax) return;
+    await db.collection("inscricoes").doc(id).update({ maxRegistrations: n });
+    showToast("✅ Vagas atualizadas");
+    openInscricaoDetail(id);
+  } catch(e) { showToast("Erro ao editar vagas"); console.error(e); }
 }
 
 async function removeInscritoTeam(id, idx) {
