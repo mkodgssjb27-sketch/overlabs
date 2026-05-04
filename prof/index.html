@@ -524,6 +524,46 @@ input,select,textarea{font-family:inherit;outline:none}
     </div>
   </div>
   <div class="t-content" style="max-width:700px">
+
+    <!-- Toggle modo em massa -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <button id="btn-bulk-pres-toggle" onclick="toggleBulkPresencaMode()" style="flex:1;min-width:140px;padding:12px;border-radius:12px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#22c55e;font-weight:800;font-size:13px;cursor:pointer">⚡ Lançar em Massa</button>
+    </div>
+
+    <!-- Painel de lançamento em massa (oculto por padrão) -->
+    <div id="bulk-pres-panel" style="display:none;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.25);border-radius:16px;padding:16px;margin-bottom:16px">
+      <div style="font-weight:800;color:#22c55e;font-size:14px;margin-bottom:12px">⚡ Presença em Massa</div>
+      <div style="margin-bottom:12px">
+        <label class="lbl">TÍTULO DO TREINO</label>
+        <input type="text" class="inp" id="bulk-pres-title" placeholder="Ex: Arena Grussaí" maxlength="60" style="color-scheme:dark">
+      </div>
+      <div style="margin-bottom:12px">
+        <label class="lbl">DATA DO TREINO</label>
+        <input type="date" class="inp" id="bulk-pres-date" style="color-scheme:dark">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <label class="lbl">HORÁRIO INÍCIO</label>
+          <input type="time" class="inp" id="bulk-pres-time-start" style="color-scheme:dark">
+        </div>
+        <div>
+          <label class="lbl">HORÁRIO FIM</label>
+          <input type="time" class="inp" id="bulk-pres-time-end" style="color-scheme:dark">
+        </div>
+      </div>
+      <div style="margin-bottom:12px">
+        <label class="lbl">🪙 CUTS A CONCEDER</label>
+        <input type="number" class="inp" id="bulk-pres-cuts" min="0" placeholder="0" value="0" style="color-scheme:dark">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <button onclick="bulkPresSelectAll(true)" style="flex:1;min-width:120px;padding:10px;border-radius:10px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);color:#38bdf8;font-weight:700;font-size:12px;cursor:pointer">✓ Selecionar Todos</button>
+        <button onclick="bulkPresSelectAll(false)" style="flex:1;min-width:120px;padding:10px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-weight:700;font-size:12px;cursor:pointer">Limpar Seleção</button>
+      </div>
+      <p class="err-txt" id="bulk-pres-err" style="margin-bottom:10px"></p>
+      <button onclick="saveBulkPresenca()" id="btn-save-bulk-pres" class="btn-main">💾 Salvar (<span id="bulk-pres-count">0</span> selecionados)</button>
+      <div style="font-size:11px;color:#64748b;margin-top:8px;text-align:center">Toque nos alunos abaixo para selecionar</div>
+    </div>
+
     <div class="loading" id="presence-loading"><div class="spin"></div>Carregando...</div>
     <div class="empty" id="presence-empty" style="display:none"><div class="icon">👥</div><p>Nenhum aluno cadastrado</p></div>
     <div id="presence-students-list"></div>
@@ -1258,8 +1298,9 @@ input,select,textarea{font-family:inherit;outline:none}
 
     <!-- Status dos alunos esta semana -->
     <div class="section-title">📊 Progresso dos Alunos (Semana Atual)</div>
-    <div style="margin-bottom:12px">
+    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
       <button onclick="loadDailyLoginStudents()" style="padding:8px 16px;border-radius:10px;background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-weight:700;font-size:12px;cursor:pointer">🔄 Atualizar</button>
+      <button onclick="clearAllDailyLogins()" style="padding:8px 16px;border-radius:10px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#ef4444;font-weight:700;font-size:12px;cursor:pointer">🧹 Limpar Tudo</button>
     </div>
     <div id="dl-students-list">
       <div class="loading"><div class="spin"></div>Carregando...</div>
@@ -3920,6 +3961,9 @@ function deletePatchNote(id) {
 // ── Presenças ──
 let presenceStudentId = null;
 let presenceStudentName = '';
+let bulkPresMode = false;
+let bulkPresSelected = {}; // { userId: { firstName } }
+let bulkPresStudentsCache = [];
 
 function loadPresenceStudents() {
   if (!firebaseOk) return;
@@ -3932,28 +3976,180 @@ function loadPresenceStudents() {
   db.collection("users").orderBy("createdAt", "desc").get().then(snap => {
     if (loading) loading.style.display = "none";
     const students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    bulkPresStudentsCache = students;
     if (empty) empty.style.display = students.length === 0 ? "block" : "none";
     if (!list) return;
-    list.innerHTML = students.map(s => {
-      const hasPhoto = !!s.photoURL;
-      const nickname = s.nickname ? ` (${escapeHtml(s.nickname)})` : "";
-      return `
-        <div onclick="openPresenceOptions('${s.id}','${escapeHtml(s.firstName || "Aluno")}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:.2s" onmouseover="this.style.borderColor='rgba(245,158,11,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)'">
-          ${hasPhoto
-            ? `<div style="width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid rgba(245,158,11,.5)"><img src="${s.photoURL}" style="width:100%;height:100%;object-fit:cover"></div>`
-            : `<div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#e85d04)">${(s.firstName||'?')[0]}</div>`
-          }
-          <div style="flex:1">
-            <div style="font-weight:800;font-size:15px;color:#fff">${escapeHtml(s.firstName||'')}${nickname}</div>
-            <div style="color:#64748b;font-size:12px">@${escapeHtml(s.username||'')}</div>
-          </div>
-          <span style="color:#64748b;font-size:18px">›</span>
-        </div>`;
-    }).join("");
+    renderPresenceStudentsList();
   }).catch(e => {
     if (loading) loading.style.display = "none";
     console.error(e);
   });
+}
+
+function renderPresenceStudentsList() {
+  const list = document.getElementById("presence-students-list");
+  if (!list) return;
+  const students = bulkPresStudentsCache || [];
+  list.innerHTML = students.map(s => {
+    const hasPhoto = !!s.photoURL;
+    const nickname = s.nickname ? ` (${escapeHtml(s.nickname)})` : "";
+    const selected = !!bulkPresSelected[s.id];
+    const borderColor = bulkPresMode && selected ? '#22c55e' : 'rgba(255,255,255,.08)';
+    const bgColor = bulkPresMode && selected ? 'rgba(34,197,94,.10)' : 'rgba(255,255,255,.04)';
+    const checkboxHtml = bulkPresMode
+      ? `<div style="width:26px;height:26px;border-radius:8px;border:2px solid ${selected?'#22c55e':'rgba(255,255,255,.25)'};background:${selected?'#22c55e':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:900;color:#0b1020;font-size:14px">${selected?'✓':''}</div>`
+      : '';
+    const onclick = bulkPresMode
+      ? `toggleBulkPresStudent('${s.id}','${escapeHtml(s.firstName||'Aluno').replace(/'/g,"\\'")}')`
+      : `openPresenceOptions('${s.id}','${escapeHtml(s.firstName||'Aluno').replace(/'/g,"\\'")}')`;
+    const arrow = bulkPresMode ? '' : `<span style="color:#64748b;font-size:18px">›</span>`;
+    return `
+      <div onclick="${onclick}" style="background:${bgColor};border:1px solid ${borderColor};border-radius:16px;padding:16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:.2s">
+        ${checkboxHtml}
+        ${hasPhoto
+          ? `<div style="width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid rgba(245,158,11,.5)"><img src="${s.photoURL}" style="width:100%;height:100%;object-fit:cover"></div>`
+          : `<div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#e85d04)">${(s.firstName||'?')[0]}</div>`
+        }
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:15px;color:#fff">${escapeHtml(s.firstName||'')}${nickname}</div>
+          <div style="color:#64748b;font-size:12px">@${escapeHtml(s.username||'')}</div>
+        </div>
+        ${arrow}
+      </div>`;
+  }).join("");
+  updateBulkPresCount();
+}
+
+function toggleBulkPresencaMode() {
+  bulkPresMode = !bulkPresMode;
+  if (!bulkPresMode) bulkPresSelected = {};
+  const panel = document.getElementById("bulk-pres-panel");
+  const btn = document.getElementById("btn-bulk-pres-toggle");
+  if (panel) panel.style.display = bulkPresMode ? 'block' : 'none';
+  if (btn) {
+    if (bulkPresMode) {
+      btn.textContent = "✕ Cancelar Modo em Massa";
+      btn.style.background = "rgba(239,68,68,.12)";
+      btn.style.borderColor = "rgba(239,68,68,.3)";
+      btn.style.color = "#f87171";
+    } else {
+      btn.textContent = "⚡ Lançar em Massa";
+      btn.style.background = "rgba(34,197,94,.12)";
+      btn.style.borderColor = "rgba(34,197,94,.3)";
+      btn.style.color = "#22c55e";
+    }
+  }
+  renderPresenceStudentsList();
+}
+
+function toggleBulkPresStudent(id, name) {
+  if (bulkPresSelected[id]) {
+    delete bulkPresSelected[id];
+  } else {
+    bulkPresSelected[id] = { firstName: name };
+  }
+  renderPresenceStudentsList();
+}
+
+function bulkPresSelectAll(selectAll) {
+  if (selectAll) {
+    (bulkPresStudentsCache || []).forEach(s => {
+      bulkPresSelected[s.id] = { firstName: s.firstName || 'Aluno' };
+    });
+  } else {
+    bulkPresSelected = {};
+  }
+  renderPresenceStudentsList();
+}
+
+function updateBulkPresCount() {
+  const el = document.getElementById("bulk-pres-count");
+  if (el) el.textContent = Object.keys(bulkPresSelected).length;
+}
+
+async function saveBulkPresenca() {
+  if (!requireFirebase()) return;
+  const ids = Object.keys(bulkPresSelected);
+  const errEl = document.getElementById("bulk-pres-err");
+  errEl.textContent = "";
+
+  if (ids.length === 0) { errEl.textContent = "Selecione ao menos um aluno"; return; }
+
+  const title = (document.getElementById("bulk-pres-title").value || "").trim();
+  const date = document.getElementById("bulk-pres-date").value;
+  const timeStart = document.getElementById("bulk-pres-time-start").value;
+  const timeEnd = document.getElementById("bulk-pres-time-end").value;
+  const cutsVal = parseInt(document.getElementById("bulk-pres-cuts").value) || 0;
+
+  if (!date) { errEl.textContent = "Selecione a data"; return; }
+  if (!timeStart || !timeEnd) { errEl.textContent = "Informe o período de horário"; return; }
+  if (timeEnd <= timeStart) { errEl.textContent = "Horário fim deve ser após o início"; return; }
+
+  const btn = document.getElementById("btn-save-bulk-pres");
+  btn.disabled = true;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = "⏳ Salvando...";
+
+  try {
+    let okCount = 0;
+    for (const uid of ids) {
+      try {
+        const info = bulkPresSelected[uid] || {};
+        const presData = {
+          userId: uid,
+          userName: info.firstName || '',
+          date,
+          timeStart,
+          timeEnd,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (title) presData.title = title;
+        if (cutsVal > 0) presData.cutsAwarded = cutsVal;
+        await db.collection("attendance").add(presData);
+
+        if (cutsVal > 0) {
+          await db.collection("users").doc(uid).update({
+            cuts: firebase.firestore.FieldValue.increment(cutsVal),
+            cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          await db.collection("notifications").doc(uid).collection("items").add({
+            msg: `🪙 Você recebeu ${cutsVal} moeda${cutsVal > 1 ? 's' : ''} CUTS!`,
+            read: false,
+            at: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          const st = allStudents.find(x => x.id === uid);
+          if (st) st.cuts = (st.cuts || 0) + cutsVal;
+          const cutsEl = document.getElementById("cuts-" + uid);
+          if (cutsEl) {
+            const st2 = allStudents.find(x => x.id === uid);
+            cutsEl.textContent = (st2 && st2.cuts) || cutsVal;
+          }
+        }
+        okCount++;
+      } catch(innerErr) {
+        console.error('[BulkPres] erro em aluno', uid, innerErr);
+      }
+    }
+
+    showToast(cutsVal > 0
+      ? `✅ ${okCount} presença(s) lançada(s) — 🪙 +${cutsVal} CUTS cada`
+      : `✅ ${okCount} presença(s) lançada(s)`);
+
+    // Reset
+    bulkPresSelected = {};
+    document.getElementById("bulk-pres-title").value = "";
+    document.getElementById("bulk-pres-date").value = "";
+    document.getElementById("bulk-pres-time-start").value = "";
+    document.getElementById("bulk-pres-time-end").value = "";
+    document.getElementById("bulk-pres-cuts").value = "0";
+    renderPresenceStudentsList();
+  } catch(e) {
+    console.error('[BulkPres]', e);
+    showToast("❌ Erro ao salvar presenças");
+  }
+  btn.disabled = false;
+  btn.innerHTML = originalText;
+  updateBulkPresCount();
 }
 
 function openPresenceOptions(userId, name) {
@@ -6035,6 +6231,43 @@ async function manualDailyLogin(studentId, dayIndex) {
   } catch(e) {
     console.error('[DailyLogin] Erro ao confirmar manualmente:', e);
     showToast('❌ Erro ao confirmar');
+  }
+}
+
+async function clearAllDailyLogins() {
+  if (!requireFirebase()) return;
+  if (!confirm('⚠️ Apagar TODAS as confirmações de login da semana atual de TODOS os alunos?\n\nEles começarão do zero. Esta ação não pode ser desfeita.')) return;
+
+  var listEl = document.getElementById('dl-students-list');
+  try {
+    var currentCycle = getDailyCycleKeyProf();
+    var weekKeys = getWeekCycleKeysProf(currentCycle);
+
+    var snap = await db.collection('dailyLogins')
+      .where('cycleKey', 'in', weekKeys)
+      .get();
+
+    if (snap.empty) {
+      showToast('ℹ️ Nada para limpar');
+      return;
+    }
+
+    // Firestore batch suporta até 500 operações
+    var docs = [];
+    snap.forEach(function(d) { docs.push(d.ref); });
+
+    while (docs.length > 0) {
+      var chunk = docs.splice(0, 450);
+      var batch = db.batch();
+      chunk.forEach(function(ref) { batch.delete(ref); });
+      await batch.commit();
+    }
+
+    showToast('🧹 Confirmações da semana apagadas!');
+    loadDailyLoginStudents();
+  } catch(e) {
+    console.error('[DailyLogin] Erro ao limpar tudo:', e);
+    showToast('❌ Erro ao limpar');
   }
 }
 
