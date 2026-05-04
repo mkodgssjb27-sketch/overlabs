@@ -742,32 +742,53 @@ input,select{font-family:inherit;outline:none}
   <div class="ap-msg" id="alert-popup-msg"></div>
 </div>
 
-<!-- Permission Dialog -->
-<div id="perm-dialog" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:9990;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:32px;max-width:360px;width:100%;text-align:center">
-    <div style="font-size:48px;margin-bottom:16px">📍🔔</div>
-    <h3 style="font-size:20px;font-weight:800;color:#fff;margin-bottom:12px">Permissões do App</h3>
-    <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:24px">Para a melhor experiência, o OVER LABS precisa de acesso à:</p>
-    <div style="text-align:left;margin-bottom:24px">
-      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
-        <span style="font-size:24px">📍</span>
-        <div>
-          <div style="font-weight:700;color:#e2e8f0;font-size:14px">Localização</div>
-          <div style="color:#64748b;font-size:12px">Permita o aplicativo a acessar sua localização</div>
+<!-- Permission Gate (blocking) -->
+<div id="perm-gate" style="display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;z-index:99999;align-items:center;justify-content:center;padding:20px;flex-direction:column">
+  <div style="background:#1a1a2e;border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:28px 24px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="font-size:54px;margin-bottom:12px">🛡️</div>
+    <h3 style="font-size:22px;font-weight:900;color:#fff;margin:0 0 8px 0">Permissões obrigatórias</h3>
+    <p style="color:#94a3b8;font-size:13px;line-height:1.55;margin:0 0 20px 0">
+      Para usar o <b>OVER LABS</b>, é necessário ativar <b>Notificações</b> e <b>Localização</b>.
+      Sem isso, você não receberá avisos do professor nem poderá usar o app.
+    </p>
+    <div style="text-align:left;margin-bottom:20px">
+      <div id="pg-card-notif" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px">🔔</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;color:#e2e8f0;font-size:14px">Notificações</div>
+          <div id="pg-status-notif" style="color:#f87171;font-size:12px;font-weight:700">⏳ Pendente</div>
         </div>
+        <button id="pg-btn-notif" onclick="requestNotifPerm()" style="padding:9px 14px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:12px;border:none;cursor:pointer;white-space:nowrap">Ativar</button>
       </div>
-      <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
-        <span style="font-size:24px">🔔</span>
-        <div>
-          <div style="font-weight:700;color:#e2e8f0;font-size:14px">Notificações</div>
-          <div style="color:#64748b;font-size:12px">Para receber alertas importantes do professor</div>
+      <div id="pg-card-geo" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px">📍</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;color:#e2e8f0;font-size:14px">Localização</div>
+          <div id="pg-status-geo" style="color:#f87171;font-size:12px;font-weight:700">⏳ Pendente</div>
         </div>
+        <button id="pg-btn-geo" onclick="requestGeoPerm()" style="padding:9px 14px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;font-weight:800;font-size:12px;border:none;cursor:pointer;white-space:nowrap">Ativar</button>
       </div>
     </div>
-    <button onclick="acceptPermissions()" style="width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:16px;border:none;cursor:pointer;margin-bottom:10px">Permitir</button>
-    <button onclick="dismissPermissions()" style="background:none;border:none;color:#64748b;font-size:13px;cursor:pointer">Agora não</button>
+    <div id="pg-help" style="display:none;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:12px;margin-bottom:14px;text-align:left">
+      <div style="color:#fca5a5;font-size:12px;font-weight:700;margin-bottom:4px">⚠️ Permissão bloqueada</div>
+      <div style="color:#94a3b8;font-size:11px;line-height:1.5">Você bloqueou a permissão. Acesse as configurações do navegador/celular &gt; Site/App OVER LABS &gt; Permissões e ative <b>Notificações</b> e <b>Localização</b>. Depois toque em "Verificar novamente".</div>
+    </div>
+    <button id="pg-btn-recheck" onclick="refreshPermGate(true)" style="width:100%;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);color:#e2e8f0;font-weight:700;font-size:13px;border:1px solid rgba(255,255,255,.1);cursor:pointer;margin-bottom:8px">🔄 Verificar novamente</button>
+    <button onclick="exitAppPermDenied()" style="width:100%;padding:11px;border-radius:12px;background:none;color:#64748b;font-weight:700;font-size:12px;border:none;cursor:pointer">Sair do aplicativo</button>
   </div>
 </div>
+<script>
+// Verifica permissões assim que possível e revalida ao voltar para a aba.
+document.addEventListener("DOMContentLoaded", function() {
+  if (typeof refreshPermGate === "function") refreshPermGate(false);
+});
+document.addEventListener("visibilitychange", function() {
+  if (!document.hidden && typeof refreshPermGate === "function") refreshPermGate(false);
+});
+window.addEventListener("focus", function() {
+  if (typeof refreshPermGate === "function") refreshPermGate(false);
+});
+</script>
 
 <!-- Loja CUTS — Iframe Overlay -->
 <div id="loja-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#0a0a0f">
@@ -3722,26 +3743,163 @@ function loadUserCustomization() {
 }
 
 // ── Permissões e Geolocalização ──
+// Gate bloqueante: exige Notificações + Localização para usar o app.
+// Roda na primeira abertura E sempre que faltar alguma permissão (mesmo após cadastro).
+
+let _permGeoGranted = false; // memoriza pois Permissions API pode não suportar geo em todos
+let _permGateReady = false;
+
 function showPermissionDialog() {
-  if (localStorage.getItem("carolampra_perms_asked")) {
-    if (localStorage.getItem("carolampra_perms_granted")) startLocationTracking();
+  // Mantido apenas como compat: o gate é mostrado automaticamente na carga.
+  refreshPermGate(false);
+}
+
+async function getNotifPermStatus() {
+  if (!("Notification" in window)) return "unsupported";
+  return Notification.permission; // 'default' | 'granted' | 'denied'
+}
+
+async function getGeoPermStatus() {
+  if (!("geolocation" in navigator)) return "unsupported";
+  if (_permGeoGranted) return "granted";
+  // Tenta Permissions API
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      const res = await navigator.permissions.query({ name: "geolocation" });
+      if (res.state === "granted") { _permGeoGranted = true; return "granted"; }
+      if (res.state === "denied") return "denied";
+      return "default"; // 'prompt'
+    }
+  } catch(e) {}
+  return "default";
+}
+
+async function refreshPermGate(userTriggered) {
+  const gate = document.getElementById("perm-gate");
+  if (!gate) return;
+  const notif = await getNotifPermStatus();
+  const geo = await getGeoPermStatus();
+
+  const sN = document.getElementById("pg-status-notif");
+  const sG = document.getElementById("pg-status-geo");
+  const bN = document.getElementById("pg-btn-notif");
+  const bG = document.getElementById("pg-btn-geo");
+  const help = document.getElementById("pg-help");
+
+  function paint(el, btn, st) {
+    if (!el || !btn) return;
+    if (st === "granted") {
+      el.textContent = "✅ Ativada";
+      el.style.color = "#22c55e";
+      btn.textContent = "OK";
+      btn.disabled = true;
+      btn.style.opacity = ".55";
+      btn.style.cursor = "default";
+    } else if (st === "denied") {
+      el.textContent = "🚫 Bloqueada";
+      el.style.color = "#f87171";
+      btn.textContent = "Abrir ajustes";
+      btn.disabled = false;
+      btn.style.opacity = "1";
+      btn.style.cursor = "pointer";
+    } else if (st === "unsupported") {
+      el.textContent = "⚠️ Não suportado";
+      el.style.color = "#fbbf24";
+      btn.disabled = true;
+      btn.style.opacity = ".55";
+      btn.style.cursor = "default";
+    } else {
+      el.textContent = "⏳ Pendente";
+      el.style.color = "#fbbf24";
+      btn.textContent = "Ativar";
+      btn.disabled = false;
+      btn.style.opacity = "1";
+      btn.style.cursor = "pointer";
+    }
+  }
+  paint(sN, bN, notif);
+  paint(sG, bG, geo);
+
+  if (help) help.style.display = (notif === "denied" || geo === "denied") ? "block" : "none";
+
+  const okN = (notif === "granted" || notif === "unsupported");
+  const okG = (geo === "granted" || geo === "unsupported");
+
+  if (okN && okG) {
+    // Marca histórico para fluxo legado (carona)
+    try { localStorage.setItem("carolampra_perms_asked", "1"); } catch(e) {}
+    try { localStorage.setItem("carolampra_perms_granted", "1"); } catch(e) {}
+    gate.style.display = "none";
+    if (notif === "granted") { try { registerFCMToken(); } catch(e) {} }
+    if (geo === "granted") { try { startLocationTracking(); } catch(e) {} }
+  } else {
+    gate.style.display = "flex";
+  }
+  _permGateReady = true;
+}
+
+async function requestNotifPerm() {
+  if (!("Notification" in window)) { refreshPermGate(true); return; }
+  const cur = Notification.permission;
+  if (cur === "denied") {
+    // Não há como reabrir o prompt — instruir o usuário.
+    alert("As notificações estão BLOQUEADAS no seu navegador/celular.\n\nAbra as configurações do site/app e ative as notificações manualmente, depois toque em \"Verificar novamente\".");
+    refreshPermGate(true);
     return;
   }
-  const dialog = document.getElementById("perm-dialog");
-  if (dialog) dialog.style.display = "flex";
+  try {
+    await Notification.requestPermission();
+  } catch(e) {}
+  refreshPermGate(true);
+}
+
+async function requestGeoPerm() {
+  if (!("geolocation" in navigator)) { refreshPermGate(true); return; }
+  const cur = await getGeoPermStatus();
+  if (cur === "denied") {
+    alert("A localização está BLOQUEADA no seu navegador/celular.\n\nAbra as configurações do site/app e ative a localização manualmente, depois toque em \"Verificar novamente\".");
+    refreshPermGate(true);
+    return;
+  }
+  // Dispara o prompt nativo do navegador
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      _permGeoGranted = true;
+      try { updateLocationInFirestore(pos.coords.latitude, pos.coords.longitude); } catch(e) {}
+      refreshPermGate(true);
+    },
+    function(err) {
+      // err.code === 1 → PERMISSION_DENIED
+      refreshPermGate(true);
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function exitAppPermDenied() {
+  const ok = confirm(
+    "Sem as permissões de Notificação e Localização, o aplicativo não pode ser utilizado.\n\nDeseja realmente sair?\n\nAo reabrir o app, as permissões serão solicitadas novamente."
+  );
+  if (!ok) return;
+  // Tenta fechar a janela. Funciona em PWA instalado / janelas abertas via script.
+  try { window.close(); } catch(e) {}
+  // Fallback: substitui o conteúdo do gate com instrução para fechar manualmente
+  setTimeout(function() {
+    const gate = document.getElementById("perm-gate");
+    if (gate) {
+      gate.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:14px;line-height:1.6;padding:30px;max-width:360px"><div style="font-size:54px;margin-bottom:16px">👋</div><h3 style="color:#fff;font-size:20px;font-weight:900;margin:0 0 12px 0">Aplicativo encerrado</h3><p style="margin:0 0 20px 0">Feche esta janela/aba e reabra o OVER LABS quando quiser ativar as permissões.</p><button onclick="location.reload()" style="padding:12px 22px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:13px;border:none;cursor:pointer">Tentar novamente</button></div>';
+    }
+  }, 200);
 }
 
 function acceptPermissions() {
-  localStorage.setItem("carolampra_perms_asked", "1");
-  localStorage.setItem("carolampra_perms_granted", "1");
-  document.getElementById("perm-dialog").style.display = "none";
-  requestNotifPermission();
-  startLocationTracking();
+  // Compat — não usado pelo gate novo, mas mantido para chamadas antigas.
+  refreshPermGate(true);
 }
 
 function dismissPermissions() {
-  localStorage.setItem("carolampra_perms_asked", "1");
-  document.getElementById("perm-dialog").style.display = "none";
+  // Compat — gate não permite dismissar, então força recheck.
+  refreshPermGate(true);
 }
 
 let geoWatchId = null;
