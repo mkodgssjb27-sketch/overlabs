@@ -222,8 +222,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <div class="mc-title">Torneios</div>
         <div class="mc-desc">Gerenciar torneios e inscrições</div>
       </div>
-      <div class="menu-card" onclick="showScreen('teacher-editor');loadEditorItems()" style="position:relative">
-        <span class="mc-badge">BETA</span>
+      <div class="menu-card" onclick="showScreen('teacher-editor');loadEditorItems()">
         <span class="mc-icon">🛒</span>
         <div class="mc-title">Editor de Artes</div>
         <div class="mc-desc">Criar itens para Loja CUTS</div>
@@ -745,6 +744,10 @@ input,select,textarea{font-family:inherit;outline:none}
     </div>
     <div id="students-loading" class="loading"><div class="spin"></div>Carregando...</div>
     <div id="students-empty" class="empty" style="display:none"><div class="icon">👥</div><p>Nenhum aluno cadastrado</p></div>
+    <div style="position:relative;margin-bottom:12px">
+      <input type="text" id="students-search" oninput="setStudentsSearch(this.value)" placeholder="🔎 Buscar aluno por nome, apelido ou @usuário" class="inp" style="padding-right:36px">
+      <button id="students-search-clear" onclick="clearStudentsSearch()" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.08);border:none;color:#94a3b8;width:28px;height:28px;border-radius:8px;cursor:pointer;font-weight:900;font-size:14px">✕</button>
+    </div>
     <div id="students-arena-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap"></div>
     <div id="students-list"></div>
   </div>
@@ -2818,6 +2821,24 @@ let unsubStudents = null;
 let allStudents = [];
 let studentMap = null;
 let studentsArenaFilter = 'all'; // 'all' | 'cajueiro' | 'grussai' | 'none'
+let studentsSearchQuery = '';
+
+function _normSearch(s) {
+  return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function setStudentsSearch(v) {
+  studentsSearchQuery = v || '';
+  const clr = document.getElementById('students-search-clear');
+  if (clr) clr.style.display = studentsSearchQuery ? 'flex' : 'none';
+  renderStudents(allStudents);
+}
+
+function clearStudentsSearch() {
+  const inp = document.getElementById('students-search');
+  if (inp) inp.value = '';
+  setStudentsSearch('');
+}
 
 // Helper compartilhado: renderiza abas de filtro de arena
 function renderArenaFilterTabs(containerId, currentValue, onChange) {
@@ -2883,7 +2904,27 @@ function renderStudents(students) {
   if (!list) return;
   // Aplica filtro de arena
   renderArenaFilterTabs('students-arena-tabs', studentsArenaFilter, 'setStudentsArenaFilter');
-  const filtered = filterByArena(students, studentsArenaFilter);
+  let filtered = filterByArena(students, studentsArenaFilter);
+  // Filtro de busca por nome/apelido/username
+  const q = _normSearch(studentsSearchQuery).trim();
+  if (q) {
+    filtered = filtered.filter(s => {
+      return _normSearch(s.firstName).includes(q)
+        || _normSearch(s.nickname).includes(q)
+        || _normSearch(s.username).includes(q)
+        || _normSearch(s.lastName).includes(q);
+    });
+  }
+  // Ordena alfabeticamente (firstName, fallback username)
+  filtered = filtered.slice().sort((a, b) => {
+    const na = _normSearch(a.firstName || a.username || '');
+    const nb = _normSearch(b.firstName || b.username || '');
+    return na.localeCompare(nb, 'pt-BR');
+  });
+  if (filtered.length === 0 && students.length > 0) {
+    list.innerHTML = '<div class="empty" style="padding:30px"><div class="icon">🔎</div><p>Nenhum aluno encontrado</p></div>';
+    return;
+  }
   list.innerHTML = filtered.map(s => {
     const blocked = s.blocked === true;
     const hasLoc = s.location && s.location.lat && s.location.lng;
