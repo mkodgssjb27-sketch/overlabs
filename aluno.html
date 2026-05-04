@@ -1714,11 +1714,14 @@ function renderFeed(items) {
     if (item.type === 'feed_post') {
       const uid = 'fp-' + item.id;
       const postTitle = item.title ? escapeHtml(item.title) : 'Novo Post';
-      const preview = item.text.length > 80 ? escapeHtml(item.text.substring(0, 80)) + '...' : escapeHtml(item.text);
-      const full = escapeHtml(item.text).replace(/\n/g, '<br>');
+      const txt = item.text || '';
+      const preview = txt.length > 80 ? escapeHtml(txt.substring(0, 80)) + '...' : escapeHtml(txt);
+      const full = escapeHtml(txt).replace(/\n/g, '<br>');
       const hasImage = !!item.imageData;
-      const needsExpand = item.text.length > 80 || hasImage;
-      const isExpanded = !!_expandedPosts[item.id];
+      const needsExpand = txt.length > 80 || hasImage;
+      // Auto-expandir quando não houver texto nem título (post só de imagem)
+      const imageOnly = hasImage && !txt && !item.title;
+      const isExpanded = imageOnly || !!_expandedPosts[item.id];
       return '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:16px;padding:16px;margin-bottom:10px">'
         + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
         + '<span style="font-size:22px">📝</span>'
@@ -1730,9 +1733,9 @@ function renderFeed(items) {
         + (needsExpand ? '<button onclick="toggleFeedPost(\'' + item.id + '\',true)" style="margin-left:32px;margin-top:8px;background:none;border:none;color:#6366f1;font-weight:700;font-size:12px;cursor:pointer;padding:0">Mostrar mais ▾</button>' : '')
         + '</div>'
         + '<div id="' + uid + '-full" style="' + (isExpanded ? '' : 'display:none') + '">'
-        + '<p style="color:#cbd5e1;font-size:13px;margin-left:32px">' + full + '</p>'
+        + (txt ? '<p style="color:#cbd5e1;font-size:13px;margin-left:32px">' + full + '</p>' : '')
         + (hasImage ? '<img onclick="openImgLightbox(this.src)" src="' + item.imageData + '" style="cursor:pointer;width:calc(100% - 32px);border-radius:12px;margin-top:10px;margin-left:32px;max-height:400px;object-fit:cover" loading="lazy">' : '')
-        + '<button onclick="toggleFeedPost(\'' + item.id + '\',false)" style="margin-left:32px;margin-top:8px;background:none;border:none;color:#6366f1;font-weight:700;font-size:12px;cursor:pointer;padding:0">Mostrar menos ▴</button>'
+        + (imageOnly ? '' : '<button onclick="toggleFeedPost(\'' + item.id + '\',false)" style="margin-left:32px;margin-top:8px;background:none;border:none;color:#6366f1;font-weight:700;font-size:12px;cursor:pointer;padding:0">Mostrar menos ▴</button>')
         + '</div>'
         + '</div>';
     }
