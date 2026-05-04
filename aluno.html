@@ -677,9 +677,13 @@ input,select{font-family:inherit;outline:none}
   <div class="app-wrap">
     <div class="s-header" style="display:flex;align-items:center;gap:14px">
       <button onclick="if(unsubRanking){unsubRanking();unsubRanking=null}showScreen('student-home')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
-      <div class="s-htitle" style="flex:1;font-size:16px">🏆 Ranking</div>
+      <div class="s-htitle" id="ranking-htitle" style="flex:1;font-size:16px">🏆 Ranking</div>
     </div>
     <div class="s-content" style="padding-top:20px">
+      <div id="ranking-arena-tabs" style="display:none;gap:8px;margin-bottom:14px">
+        <button id="rk-tab-cajueiro" onclick="switchStudentRankingArena('cajueiro')" style="flex:1;padding:10px;border-radius:10px;font-weight:800;font-size:12px;border:1px solid rgba(34,197,94,.4);cursor:pointer;background:rgba(34,197,94,.15);color:#22c55e">🌳 Cajueiro</button>
+        <button id="rk-tab-grussai" onclick="switchStudentRankingArena('grussai')" style="flex:1;padding:10px;border-radius:10px;font-weight:800;font-size:12px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:rgba(255,255,255,.04);color:#94a3b8">🏖️ Grussaí</button>
+      </div>
       <div id="ranking-podium"></div>
       <div id="ranking-list"></div>
       <div class="loading" id="ranking-loading"><div class="spin"></div>Carregando ranking...</div>
@@ -2605,10 +2609,38 @@ function loadStudentPatchNotes() {
 // ── Ranking ──
 var _rankingOrderCache = null; // cache da ordem personalizada
 var _rankingUsersCache = []; // cache dos users para o profile card
+var _studentRankingArena = 'cajueiro'; // arena visualizada no app aluno
+
+function switchStudentRankingArena(arena) {
+  _studentRankingArena = arena;
+  // visual das abas
+  var tabs = { cajueiro: { id: 'rk-tab-cajueiro', c: '#22c55e', bg: 'rgba(34,197,94,.15)', bd: 'rgba(34,197,94,.4)' },
+               grussai:  { id: 'rk-tab-grussai',  c: '#38bdf8', bg: 'rgba(56,189,248,.15)', bd: 'rgba(56,189,248,.4)' } };
+  Object.keys(tabs).forEach(function(k) {
+    var el = document.getElementById(tabs[k].id);
+    if (!el) return;
+    if (k === arena) {
+      el.style.background = tabs[k].bg;
+      el.style.borderColor = tabs[k].bd;
+      el.style.color = tabs[k].c;
+    } else {
+      el.style.background = 'rgba(255,255,255,.04)';
+      el.style.borderColor = 'rgba(255,255,255,.1)';
+      el.style.color = '#94a3b8';
+    }
+  });
+  var titleEl = document.getElementById('ranking-htitle');
+  if (titleEl) titleEl.textContent = arena === 'grussai' ? '🏆 Ranking Arena Grussaí' : '🏆 Ranking Arena Cajueiro';
+  _rankingOrderCache = null; // invalidar cache (ordem é por arena)
+  loadRanking();
+}
+
 function loadRanking() {
   const podiumEl = document.getElementById("ranking-podium");
   const listEl = document.getElementById("ranking-list");
   const loadingEl = document.getElementById("ranking-loading");
+  const tabsEl = document.getElementById("ranking-arena-tabs");
+  const titleEl = document.getElementById("ranking-htitle");
   if (loadingEl) loadingEl.style.display = "block";
   if (podiumEl) podiumEl.innerHTML = "";
   if (listEl) listEl.innerHTML = "";
@@ -2616,58 +2648,80 @@ function loadRanking() {
   if (unsubRanking) { unsubRanking(); unsubRanking = null; }
   if (!firebaseOk) return;
 
-  // Buscar ordem personalizada uma vez (e cachear)
-  var orderPromise = _rankingOrderCache !== null
-    ? Promise.resolve(_rankingOrderCache)
-    : db.collection('ranking_config').doc('custom_order').get().then(function(doc) {
-        _rankingOrderCache = doc.exists ? (doc.data().order || []) : [];
-        return _rankingOrderCache;
-      }).catch(function() { _rankingOrderCache = []; return []; });
+  // Determinar arena do aluno (busca atualizada do Firestore)
+  var arenaPromise = (currentUser && currentUser.id)
+    ? db.collection('users').doc(currentUser.id).get().then(function(d) {
+        return d.exists ? (d.data().arena || 'cajueiro') : 'cajueiro';
+      }).catch(function() { return 'cajueiro'; })
+    : Promise.resolve('cajueiro');
 
-  // Buscar lista de ocultos
-  var hiddenPromise = db.collection('ranking_config').doc('hidden_users').get().then(function(doc) {
-    return doc.exists ? (doc.data().ids || []) : [];
-  }).catch(function() { return []; });
+  arenaPromise.then(function(myArena) {
+    // Se for "both", mostrar abas (default cajueiro a menos que já tenha trocado)
+    if (myArena === 'both') {
+      if (tabsEl) tabsEl.style.display = 'flex';
+    } else {
+      if (tabsEl) tabsEl.style.display = 'none';
+      _studentRankingArena = myArena;
+    }
+    if (titleEl) {
+      titleEl.textContent = _studentRankingArena === 'grussai' ? '🏆 Ranking Arena Grussaí' : (myArena === 'cajueiro' ? '🏆 Ranking' : '🏆 Ranking Arena Cajueiro');
+    }
 
-  unsubRanking = db.collection("users").onSnapshot(snap => {
-    const allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .filter(u => u.username && u.username !== "teste");
+    var arenaSel = _studentRankingArena;
 
-    Promise.all([orderPromise, hiddenPromise]).then(function(results) {
-      var savedOrder = results[0];
-      var hiddenIds = results[1];
-      var hiddenSet = new Set(hiddenIds);
-      var users = allUsers.filter(function(u) { return !hiddenSet.has(u.id); });
-      // Ordenar com CUTS + ordem manual em empate
-      if (savedOrder.length > 0) {
-        var orderMap = {};
-        savedOrder.forEach(function(uid, idx) { orderMap[uid] = idx; });
-        users.sort(function(a, b) {
-          var ca = a.cuts || 0, cb = b.cuts || 0;
-          if (ca !== cb) return cb - ca;
-          var ia = orderMap.hasOwnProperty(a.id) ? orderMap[a.id] : 9999;
-          var ib = orderMap.hasOwnProperty(b.id) ? orderMap[b.id] : 9999;
-          if (ia !== 9999 || ib !== 9999) return ia - ib;
-          if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
-          var ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
-          var tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
-          return ta - tb;
+    // Buscar ordem personalizada da arena
+    var orderPromise = db.collection('ranking_config').doc('custom_order_' + arenaSel).get()
+      .then(function(doc) { return doc.exists ? (doc.data().order || []) : []; })
+      .catch(function() { return []; });
+
+    // Buscar lista de ocultos da arena
+    var hiddenPromise = db.collection('ranking_config').doc('hidden_users_' + arenaSel).get()
+      .then(function(doc) { return doc.exists ? (doc.data().ids || []) : []; })
+      .catch(function() { return []; });
+
+    unsubRanking = db.collection("users").onSnapshot(function(snap) {
+      const allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .filter(u => u.username && u.username !== "teste")
+        .filter(function(u) {
+          var a = u.arena || 'cajueiro';
+          return a === arenaSel || a === 'both';
         });
-      } else {
-        users.sort(function(a, b) {
-          var ca = a.cuts || 0, cb = b.cuts || 0;
-          if (cb !== ca) return cb - ca;
-          if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
-          var ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
-          var tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
-          return ta - tb;
-        });
-      }
-      _rankingUsersCache = users;
-      if (loadingEl) loadingEl.style.display = "none";
-      renderRanking(users, podiumEl, listEl);
-    });
-  }, () => { if (loadingEl) loadingEl.style.display = "none"; });
+
+      Promise.all([orderPromise, hiddenPromise]).then(function(results) {
+        var savedOrder = results[0];
+        var hiddenIds = results[1];
+        var hiddenSet = new Set(hiddenIds);
+        var users = allUsers.filter(function(u) { return !hiddenSet.has(u.id); });
+        if (savedOrder.length > 0) {
+          var orderMap = {};
+          savedOrder.forEach(function(uid, idx) { orderMap[uid] = idx; });
+          users.sort(function(a, b) {
+            var ca = a.cuts || 0, cb = b.cuts || 0;
+            if (ca !== cb) return cb - ca;
+            var ia = orderMap.hasOwnProperty(a.id) ? orderMap[a.id] : 9999;
+            var ib = orderMap.hasOwnProperty(b.id) ? orderMap[b.id] : 9999;
+            if (ia !== 9999 || ib !== 9999) return ia - ib;
+            if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
+            var ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
+            var tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
+            return ta - tb;
+          });
+        } else {
+          users.sort(function(a, b) {
+            var ca = a.cuts || 0, cb = b.cuts || 0;
+            if (cb !== ca) return cb - ca;
+            if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
+            var ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
+            var tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
+            return ta - tb;
+          });
+        }
+        _rankingUsersCache = users;
+        if (loadingEl) loadingEl.style.display = "none";
+        renderRanking(users, podiumEl, listEl);
+      });
+    }, function() { if (loadingEl) loadingEl.style.display = "none"; });
+  });
 }
 
 function renderRanking(users, podiumEl, listEl) {

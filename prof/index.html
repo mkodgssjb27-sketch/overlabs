@@ -796,6 +796,16 @@ input,select,textarea{font-family:inherit;outline:none}
         <label class="lbl">TELEFONE (WHATSAPP)</label>
         <input type="tel" class="inp" id="es-phone" placeholder="(99) 9 9999-9999">
       </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">🏟️ ARENA</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <button type="button" id="es-arena-cajueiro" onclick="setEditArena('cajueiro')" style="padding:12px 8px;border-radius:12px;font-weight:700;font-size:13px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:rgba(255,255,255,.04);color:#94a3b8">🌳 Cajueiro</button>
+          <button type="button" id="es-arena-grussai" onclick="setEditArena('grussai')" style="padding:12px 8px;border-radius:12px;font-weight:700;font-size:13px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:rgba(255,255,255,.04);color:#94a3b8">🏖️ Grussaí</button>
+          <button type="button" id="es-arena-both" onclick="setEditArena('both')" style="padding:12px 8px;border-radius:12px;font-weight:700;font-size:13px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:rgba(255,255,255,.04);color:#94a3b8">🤝 Ambas</button>
+        </div>
+        <input type="hidden" id="es-arena" value="cajueiro">
+        <div style="font-size:11px;color:#64748b;margin-top:6px">Define em qual ranking o aluno aparece</div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
         <div>
           <label class="lbl">USUÁRIO</label>
@@ -1475,8 +1485,13 @@ input,select,textarea{font-family:inherit;outline:none}
     </div>
   </div>
   <div class="t-content">
+    <!-- Abas de arena -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button id="rank-tab-cajueiro" onclick="setRankingArena('cajueiro')" style="flex:1;padding:12px;border-radius:12px;font-weight:800;font-size:13px;border:1px solid rgba(34,197,94,.4);cursor:pointer;background:rgba(34,197,94,.15);color:#22c55e">🌳 Arena Cajueiro</button>
+      <button id="rank-tab-grussai" onclick="setRankingArena('grussai')" style="flex:1;padding:12px;border-radius:12px;font-weight:800;font-size:13px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:rgba(255,255,255,.04);color:#94a3b8">🏖️ Arena Grussaí</button>
+    </div>
     <div class="t-form" style="margin-bottom:20px">
-      <div class="section-title">🏆 Ranking Atual</div>
+      <div class="section-title" id="ranking-stats-title">🏆 Ranking Atual — Arena Cajueiro</div>
       <div id="ranking-stats-current"><div class="loading"><div class="spin"></div>Carregando...</div></div>
     </div>
     <div class="t-form" style="margin-bottom:20px">
@@ -2675,6 +2690,13 @@ function renderStudents(students) {
     const locTime = hasLoc && s.location.updatedAt ? fmtTs(s.location.updatedAt) : "";
     const hasPhoto = !!s.photoURL;
     const nickname = s.nickname ? ` (${escapeHtml(s.nickname)})` : "";
+    const arena = s.arena || 'cajueiro';
+    const arenaInfo = arena === 'grussai'
+      ? { label: '🏖️ Grussaí', color: '#38bdf8', bg: 'rgba(56,189,248,.12)', bd: 'rgba(56,189,248,.25)' }
+      : arena === 'both'
+        ? { label: '🤝 Ambas', color: '#a78bfa', bg: 'rgba(139,92,246,.12)', bd: 'rgba(139,92,246,.25)' }
+        : { label: '🌳 Cajueiro', color: '#22c55e', bg: 'rgba(34,197,94,.12)', bd: 'rgba(34,197,94,.25)' };
+    const arenaBadge = `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:${arenaInfo.bg};border:1px solid ${arenaInfo.bd};color:${arenaInfo.color};margin-left:6px">${arenaInfo.label}</span>`;
     return `
       <div style="background:rgba(255,255,255,.04);border:1px solid ${blocked?'rgba(239,68,68,.3)':'rgba(255,255,255,.08)'};border-radius:16px;padding:18px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
@@ -2684,7 +2706,7 @@ function renderStudents(students) {
           }
           <div style="flex:1">
             <div style="font-weight:800;font-size:15px;color:${blocked?'#f87171':'#fff'}">${escapeHtml(s.firstName||'')}${nickname} ${blocked?'<span style="font-size:11px;color:#f87171">(BLOQUEADO)</span>':''}</div>
-            <div style="color:#64748b;font-size:12px">@${escapeHtml(s.username||'')}${s.birthdate ? ' · 🎂 '+s.birthdate : ''}</div>
+            <div style="color:#64748b;font-size:12px">@${escapeHtml(s.username||'')}${s.birthdate ? ' · 🎂 '+s.birthdate : ''}${arenaBadge}</div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
@@ -3405,6 +3427,28 @@ async function sendMessageToStudent() {
 
 let editingStudentId = null;
 
+function setEditArena(value) {
+  document.getElementById("es-arena").value = value;
+  const map = {
+    cajueiro: { id: 'es-arena-cajueiro', color: '#22c55e', bg: 'rgba(34,197,94,.15)', bd: 'rgba(34,197,94,.4)' },
+    grussai:  { id: 'es-arena-grussai',  color: '#38bdf8', bg: 'rgba(56,189,248,.15)', bd: 'rgba(56,189,248,.4)' },
+    both:     { id: 'es-arena-both',     color: '#a78bfa', bg: 'rgba(139,92,246,.15)', bd: 'rgba(139,92,246,.4)' }
+  };
+  ['cajueiro','grussai','both'].forEach(k => {
+    const el = document.getElementById(map[k].id);
+    if (!el) return;
+    if (k === value) {
+      el.style.background = map[k].bg;
+      el.style.borderColor = map[k].bd;
+      el.style.color = map[k].color;
+    } else {
+      el.style.background = 'rgba(255,255,255,.04)';
+      el.style.borderColor = 'rgba(255,255,255,.1)';
+      el.style.color = '#94a3b8';
+    }
+  });
+}
+
 function openEditStudent(userId) {
   const student = allStudents.find(s => s.id === userId);
   if (!student) return;
@@ -3417,6 +3461,7 @@ function openEditStudent(userId) {
   document.getElementById("es-phone").value = student.phone || "";
   document.getElementById("es-username").value = student.username || "";
   document.getElementById("es-password").value = student.password || "";
+  setEditArena(student.arena || 'cajueiro');
 
   const photoEl = document.getElementById("es-photo");
   const initialEl = document.getElementById("es-photo-initial");
@@ -3437,11 +3482,12 @@ async function saveStudentProfile() {
   const address = document.getElementById("es-address").value.trim();
   const phone = document.getElementById("es-phone").value.trim();
   const password = document.getElementById("es-password").value;
+  const arena = document.getElementById("es-arena").value || 'cajueiro';
 
   const btn = document.getElementById("btn-save-student");
   btn.disabled = true; btn.textContent = "Salvando...";
   try {
-    const updates = { fullName, nickname, birthdate, address, phone };
+    const updates = { fullName, nickname, birthdate, address, phone, arena };
     if (fullName) updates.firstName = fullName.split(" ")[0];
     if (password && password.length >= 4) updates.password = password;
     await db.collection("users").doc(editingStudentId).update(updates);
@@ -5060,6 +5106,36 @@ function showGameLogDetail(el) {
 // ── ESTATÍSTICAS DO RANKING ──
 let rankingUsers = []; // estado atual do ranking para reordenação
 let rankingHiddenSet = new Set(); // IDs ocultos do pódio
+let rankingArena = 'cajueiro'; // 'cajueiro' | 'grussai'
+
+function rankingArenaLabel(a) {
+  return a === 'grussai' ? 'Arena Grussaí' : 'Arena Cajueiro';
+}
+function rankingOrderDocId() { return 'custom_order_' + rankingArena; }
+function rankingHiddenDocId() { return 'hidden_users_' + rankingArena; }
+
+function setRankingArena(a) {
+  rankingArena = a;
+  // tabs visual
+  const tabs = { cajueiro: 'rank-tab-cajueiro', grussai: 'rank-tab-grussai' };
+  const colors = { cajueiro: { c: '#22c55e', bg: 'rgba(34,197,94,.15)', bd: 'rgba(34,197,94,.4)' }, grussai: { c: '#38bdf8', bg: 'rgba(56,189,248,.15)', bd: 'rgba(56,189,248,.4)' } };
+  Object.keys(tabs).forEach(k => {
+    const el = document.getElementById(tabs[k]);
+    if (!el) return;
+    if (k === a) {
+      el.style.background = colors[k].bg;
+      el.style.borderColor = colors[k].bd;
+      el.style.color = colors[k].c;
+    } else {
+      el.style.background = 'rgba(255,255,255,.04)';
+      el.style.borderColor = 'rgba(255,255,255,.1)';
+      el.style.color = '#94a3b8';
+    }
+  });
+  const titleEl = document.getElementById('ranking-stats-title');
+  if (titleEl) titleEl.textContent = '🏆 Ranking Atual — ' + rankingArenaLabel(a);
+  loadCurrentRanking();
+}
 
 async function loadCurrentRanking() {
   if (!firebaseOk) return;
@@ -5067,15 +5143,19 @@ async function loadCurrentRanking() {
   container.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
 
   try {
-    // Carregar lista de ocultos
+    // Carregar lista de ocultos (por arena)
     try {
-      const hidDoc = await db.collection('ranking_config').doc('hidden_users').get();
+      const hidDoc = await db.collection('ranking_config').doc(rankingHiddenDocId()).get();
       rankingHiddenSet = new Set(hidDoc.exists ? (hidDoc.data().ids || []) : []);
     } catch(e) { rankingHiddenSet = new Set(); }
 
     const snap = await db.collection('users').get();
     const users = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .filter(u => u.username && u.username !== 'teste');
+      .filter(u => u.username && u.username !== 'teste')
+      .filter(u => {
+        const a = u.arena || 'cajueiro';
+        return a === rankingArena || a === 'both';
+      });
 
     // Ordenação padrão por CUTS
     users.sort((a, b) => {
@@ -5087,9 +5167,9 @@ async function loadCurrentRanking() {
       return ta - tb;
     });
 
-    // Aplicar ordem personalizada SOMENTE dentro do mesmo grupo de CUTS
+    // Aplicar ordem personalizada (por arena)
     try {
-      const orderDoc = await db.collection('ranking_config').doc('custom_order').get();
+      const orderDoc = await db.collection('ranking_config').doc(rankingOrderDocId()).get();
       if (orderDoc.exists) {
         const savedOrder = orderDoc.data().order || [];
         if (savedOrder.length > 0) {
@@ -5097,12 +5177,10 @@ async function loadCurrentRanking() {
           savedOrder.forEach((uid, idx) => { orderMap[uid] = idx; });
           users.sort((a, b) => {
             const ca = a.cuts || 0, cb = b.cuts || 0;
-            if (ca !== cb) return cb - ca; // CUTS diferentes = moedas decidem
-            // Mesmo CUTS: ordem manual do professor
+            if (ca !== cb) return cb - ca;
             const ia = orderMap.hasOwnProperty(a.id) ? orderMap[a.id] : 9999;
             const ib = orderMap.hasOwnProperty(b.id) ? orderMap[b.id] : 9999;
             if (ia !== 9999 || ib !== 9999) return ia - ib;
-            // Nenhum tem ordem manual: desempate padrão
             if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
             const ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
             const tb = b.cutsUpdatedAt ? (b.cutsUpdatedAt.toDate ? b.cutsUpdatedAt.toDate() : new Date(b.cutsUpdatedAt)) : new Date(0);
@@ -5115,7 +5193,7 @@ async function loadCurrentRanking() {
     rankingUsers = users;
 
     if (!users.length) {
-      container.innerHTML = '<div class="empty"><div class="icon">🏆</div><p>Nenhum aluno cadastrado</p></div>';
+      container.innerHTML = '<div class="empty"><div class="icon">🏆</div><p>Nenhum aluno em ' + rankingArenaLabel(rankingArena) + '</p></div>';
       return;
     }
 
@@ -5139,6 +5217,7 @@ async function saveRankingSnapshot(users) {
       rank: i + 1
     }));
     await db.collection('ranking_snapshots').add({
+      arena: rankingArena,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       positions: top
     });
@@ -5213,11 +5292,12 @@ async function saveRankingOrder() {
   if (!firebaseOk) return;
   try {
     const order = rankingUsers.map(u => u.id);
-    await db.collection('ranking_config').doc('custom_order').set({
+    await db.collection('ranking_config').doc(rankingOrderDocId()).set({
       order: order,
+      arena: rankingArena,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    console.log('[Ranking] Ordem personalizada salva');
+    console.log('[Ranking] Ordem personalizada salva (' + rankingArena + ')');
   } catch(e) {
     console.error('[Ranking] Erro ao salvar ordem:', e);
     showToast('Erro ao salvar ordem');
@@ -5225,9 +5305,9 @@ async function saveRankingOrder() {
 }
 
 async function resetRankingOrder() {
-  if (!confirm('Resetar a ordem do ranking para a automática (por CUTS)?')) return;
+  if (!confirm('Resetar a ordem do ranking ' + rankingArenaLabel(rankingArena) + ' para a automática (por CUTS)?')) return;
   try {
-    await db.collection('ranking_config').doc('custom_order').delete();
+    await db.collection('ranking_config').doc(rankingOrderDocId()).delete();
     showToast('Ordem resetada');
     await loadCurrentRanking();
   } catch(e) {
@@ -5245,8 +5325,9 @@ async function toggleRankingHide(uid) {
   }
   renderRankingList();
   try {
-    await db.collection('ranking_config').doc('hidden_users').set({
+    await db.collection('ranking_config').doc(rankingHiddenDocId()).set({
       ids: Array.from(rankingHiddenSet),
+      arena: rankingArena,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch(e) {
