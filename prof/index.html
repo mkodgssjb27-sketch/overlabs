@@ -1534,7 +1534,11 @@ input,select,textarea{font-family:inherit;outline:none}
       <button id="rank-tab-grussai" onclick="setRankingArena('grussai')" style="flex:1;padding:12px;border-radius:12px;font-weight:800;font-size:13px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:rgba(255,255,255,.04);color:#94a3b8">🏖️ Arena Grussaí</button>
     </div>
     <div class="t-form" style="margin-bottom:20px">
-      <div class="section-title" id="ranking-stats-title">🏆 Ranking Atual — Arena Cajueiro</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+        <div class="section-title" id="ranking-stats-title" style="margin:0">🏆 Ranking Atual — Arena Cajueiro</div>
+        <button onclick="manualResetMonthlyRanking()" style="padding:8px 14px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800;font-size:12px;border:none;cursor:pointer">🔄 Zerar Ranking do Mês</button>
+      </div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:10px">As moedas CUTS totais de cada aluno <b>não</b> serão afetadas. Apenas a competição mensal será reiniciada.</div>
       <div id="ranking-stats-current"><div class="loading"><div class="spin"></div>Carregando...</div></div>
     </div>
     <div class="t-form" style="margin-bottom:20px">
@@ -2249,6 +2253,7 @@ async function autoDistributeCutsReward(ride) {
     if (!needsPay || payList.length === 0) return;
 
     const inc = firebase.firestore.FieldValue.increment(reward);
+    const incMonthly = firebase.firestore.FieldValue.increment(reward);
     const ts = firebase.firestore.FieldValue.serverTimestamp();
     const ids = payList.map(p => p.userId).filter(Boolean);
     const CHUNK = 100;
@@ -3044,7 +3049,7 @@ async function saveCuts() {
   try {
     let updateData;
     if (cutsModalMode === "add") {
-      updateData = { cuts: firebase.firestore.FieldValue.increment(val), cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+      updateData = { cuts: firebase.firestore.FieldValue.increment(val), monthlyCuts: firebase.firestore.FieldValue.increment(val), cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() };
     } else if (cutsModalMode === "remove") {
       updateData = { cuts: firebase.firestore.FieldValue.increment(-val), cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() };
     } else {
@@ -3224,6 +3229,7 @@ async function applyBulkCuts() {
   const ids = Array.from(bulkCutsSelected);
   const delta = bulkCutsMode === "add" ? qty : -qty;
   const inc = firebase.firestore.FieldValue.increment(delta);
+  const incMonthly = bulkCutsMode === "add" ? firebase.firestore.FieldValue.increment(qty) : null;
   const ts = firebase.firestore.FieldValue.serverTimestamp();
   let success = 0, errors = 0;
 
@@ -4380,6 +4386,7 @@ async function saveBulkPresenca() {
         if (cutsVal > 0) {
           await db.collection("users").doc(uid).update({
             cuts: firebase.firestore.FieldValue.increment(cutsVal),
+            monthlyCuts: firebase.firestore.FieldValue.increment(cutsVal),
             cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
           await db.collection("notifications").doc(uid).collection("items").add({
@@ -4504,6 +4511,7 @@ async function savePresenca() {
     if (cutsVal > 0) {
       await db.collection("users").doc(presenceStudentId).update({
         cuts: firebase.firestore.FieldValue.increment(cutsVal),
+        monthlyCuts: firebase.firestore.FieldValue.increment(cutsVal),
         cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       // Notificar aluno no sininho
@@ -5347,6 +5355,75 @@ let rankingUsers = []; // estado atual do ranking para reordenação
 let rankingHiddenSet = new Set(); // IDs ocultos do pódio
 let rankingArena = 'cajueiro'; // 'cajueiro' | 'grussai'
 
+// Verifica se virou o mês e zera monthlyCuts de todos os alunos.
+async function checkMonthlyRankingResetProf() {
+  if (!firebaseOk) return;
+  try {
+    const now = new Date();
+    const currentKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    const ref = db.collection('ranking_config').doc('monthly_reset');
+    let shouldReset = false;
+    await db.runTransaction(async (tx) => {
+      const doc = await tx.get(ref);
+      const savedKey = doc.exists ? (doc.data().monthKey || '') : '';
+      if (savedKey !== currentKey) {
+        shouldReset = true;
+        tx.set(ref, {
+          monthKey: currentKey,
+          resetAt: firebase.firestore.FieldValue.serverTimestamp(),
+          resetBy: 'auto'
+        });
+      }
+    });
+    if (shouldReset) {
+      console.log('[Ranking] Novo mês detectado (' + currentKey + '). Zerando monthlyCuts...');
+      await zeroAllMonthlyCuts();
+    }
+  } catch (e) { console.warn('[Ranking] checkMonthlyRankingResetProf falhou:', e); }
+}
+
+async function zeroAllMonthlyCuts() {
+  const snap = await db.collection('users').get();
+  const ids = snap.docs.map(d => d.id);
+  const CHUNK = 400;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const batch = db.batch();
+    ids.slice(i, i + CHUNK).forEach(uid => {
+      batch.update(db.collection('users').doc(uid), { monthlyCuts: 0 });
+    });
+    await batch.commit();
+  }
+  console.log('[Ranking] monthlyCuts zerado para ' + ids.length + ' alunos.');
+}
+
+async function manualResetMonthlyRanking() {
+  if (!firebaseOk) return;
+  const ok = confirm(
+    '⚠️ Zerar o ranking mensal de TODOS os alunos?\n\n' +
+    '• As moedas CUTS totais de cada aluno NÃO serão removidas.\n' +
+    '• Apenas a competição mensal será reiniciada (monthlyCuts = 0).\n\n' +
+    'Confirma?'
+  );
+  if (!ok) return;
+  try {
+    showToast('Zerando ranking...');
+    const now = new Date();
+    const currentKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    await zeroAllMonthlyCuts();
+    await db.collection('ranking_config').doc('monthly_reset').set({
+      monthKey: currentKey,
+      resetAt: firebase.firestore.FieldValue.serverTimestamp(),
+      resetBy: 'manual'
+    });
+    showToast('✅ Ranking mensal zerado!');
+    loadCurrentRanking();
+  } catch (e) {
+    console.error('[Ranking] Erro no reset manual:', e);
+    showToast('❌ Erro ao zerar ranking');
+  }
+}
+
+
 function rankingArenaLabel(a) {
   return a === 'grussai' ? 'Arena Grussaí' : 'Arena Cajueiro';
 }
@@ -5378,6 +5455,8 @@ function setRankingArena(a) {
 
 async function loadCurrentRanking() {
   if (!firebaseOk) return;
+  // Auto-reset mensal (dia 1 do mês)
+  await checkMonthlyRankingResetProf();
   const container = document.getElementById('ranking-stats-current');
   container.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
 
@@ -5396,9 +5475,10 @@ async function loadCurrentRanking() {
         return a === rankingArena || a === 'both';
       });
 
-    // Ordenação padrão por CUTS
+    // Ordenação padrão por monthlyCuts (competição do mês)
+    users.forEach(u => { u._rankCuts = u.monthlyCuts || 0; });
     users.sort((a, b) => {
-      const ca = a.cuts || 0, cb = b.cuts || 0;
+      const ca = a._rankCuts, cb = b._rankCuts;
       if (cb !== ca) return cb - ca;
       if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
       const ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
@@ -5415,7 +5495,7 @@ async function loadCurrentRanking() {
           const orderMap = {};
           savedOrder.forEach((uid, idx) => { orderMap[uid] = idx; });
           users.sort((a, b) => {
-            const ca = a.cuts || 0, cb = b.cuts || 0;
+            const ca = a._rankCuts, cb = b._rankCuts;
             if (ca !== cb) return cb - ca;
             const ia = orderMap.hasOwnProperty(a.id) ? orderMap[a.id] : 9999;
             const ib = orderMap.hasOwnProperty(b.id) ? orderMap[b.id] : 9999;
@@ -5452,7 +5532,7 @@ async function saveRankingSnapshot(users) {
     const top = visible.slice(0, 10).map((u, i) => ({
       userId: u.id,
       firstName: u.firstName || '',
-      cuts: u.cuts || 0,
+      cuts: u._rankCuts != null ? u._rankCuts : (u.monthlyCuts || 0),
       rank: i + 1
     }));
     await db.collection('ranking_snapshots').add({
@@ -5489,7 +5569,7 @@ function renderRankingList() {
       '<span style="font-weight:900;font-size:14px;color:' + c + ';min-width:28px;text-align:center">' + (medal || pos + 'º') + '</span>' +
       '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">' + photo + '</div>' +
       '<div style="flex:1;font-weight:700;font-size:13px;color:#e2e8f0">' + escapeHtml(u.firstName || '—') + '</div>' +
-      '<span style="font-weight:900;font-size:14px;color:#f59e0b">🪙 ' + (u.cuts || 0) + '</span>' +
+      '<span style="font-weight:900;font-size:14px;color:#f59e0b">🪙 ' + (u._rankCuts || 0) + '</span>' +
       hideBtn +
     '</div>';
   });
@@ -5502,7 +5582,7 @@ function renderRankingList() {
       html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:4px;border-radius:12px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);opacity:.6">' +
         '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">' + photo + '</div>' +
         '<div style="flex:1;font-weight:700;font-size:13px;color:#94a3b8">' + escapeHtml(u.firstName || '—') + '</div>' +
-        '<span style="font-weight:900;font-size:14px;color:#64748b">🪙 ' + (u.cuts || 0) + '</span>' +
+        '<span style="font-weight:900;font-size:14px;color:#64748b">🪙 ' + (u._rankCuts || 0) + '</span>' +
         '<button onclick="toggleRankingHide(\'' + u.id + '\')" style="background:rgba(34,197,94,.12);border:none;color:#22c55e;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:700;line-height:1" title="Mostrar no pódio">Mostrar</button>' +
       '</div>';
     });

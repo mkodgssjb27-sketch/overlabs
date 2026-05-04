@@ -1606,6 +1606,7 @@ async function confirmDailyLogin() {
       if (rewardCoins > 0 && !alreadyAwardedForDay) {
         await db.collection('users').doc(currentUser.id).update({
           cuts: firebase.firestore.FieldValue.increment(rewardCoins),
+          monthlyCuts: firebase.firestore.FieldValue.increment(rewardCoins),
           cutsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         await db.collection('dailyLoginRewards').add({
@@ -2856,6 +2857,44 @@ function switchStudentRankingArena(arena) {
   loadRanking();
 }
 
+// Verifica se virou o mês e zera monthlyCuts de todos os alunos.
+// Usa transação em ranking_config/monthly_reset para evitar resets concorrentes.
+async function checkMonthlyRankingReset() {
+  if (!firebaseOk) return;
+  try {
+    var now = new Date();
+    var currentKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    var ref = db.collection('ranking_config').doc('monthly_reset');
+    var shouldReset = false;
+    await db.runTransaction(async function(tx) {
+      var doc = await tx.get(ref);
+      var savedKey = doc.exists ? (doc.data().monthKey || '') : '';
+      if (savedKey !== currentKey) {
+        shouldReset = true;
+        tx.set(ref, {
+          monthKey: currentKey,
+          resetAt: firebase.firestore.FieldValue.serverTimestamp(),
+          resetBy: 'auto'
+        });
+      }
+    });
+    if (shouldReset) {
+      console.log('[Ranking] Novo mês detectado (' + currentKey + '). Zerando monthlyCuts...');
+      var snap = await db.collection('users').get();
+      var ids = snap.docs.map(function(d) { return d.id; });
+      var CHUNK = 400;
+      for (var i = 0; i < ids.length; i += CHUNK) {
+        var batch = db.batch();
+        ids.slice(i, i + CHUNK).forEach(function(uid) {
+          batch.update(db.collection('users').doc(uid), { monthlyCuts: 0 });
+        });
+        await batch.commit();
+      }
+      console.log('[Ranking] Reset mensal concluído para ' + ids.length + ' alunos.');
+    }
+  } catch (e) { console.warn('[Ranking] checkMonthlyRankingReset falhou:', e); }
+}
+
 function loadRanking() {
   const podiumEl = document.getElementById("ranking-podium");
   const listEl = document.getElementById("ranking-list");
@@ -2868,6 +2907,8 @@ function loadRanking() {
 
   if (unsubRanking) { unsubRanking(); unsubRanking = null; }
   if (!firebaseOk) return;
+  // Auto-reset mensal (dia 1 do mês). Roda em background, listener atualiza display.
+  checkMonthlyRankingReset();
 
   // Determinar arena do aluno (busca atualizada do Firestore)
   var arenaPromise = (currentUser && currentUser.id)
@@ -2913,11 +2954,13 @@ function loadRanking() {
         var hiddenIds = results[1];
         var hiddenSet = new Set(hiddenIds);
         var users = allUsers.filter(function(u) { return !hiddenSet.has(u.id); });
+        // Ranking de competição mensal: usa monthlyCuts (zera todo dia 1)
+        users.forEach(function(u) { u._rankCuts = u.monthlyCuts || 0; });
         if (savedOrder.length > 0) {
           var orderMap = {};
           savedOrder.forEach(function(uid, idx) { orderMap[uid] = idx; });
           users.sort(function(a, b) {
-            var ca = a.cuts || 0, cb = b.cuts || 0;
+            var ca = a._rankCuts, cb = b._rankCuts;
             if (ca !== cb) return cb - ca;
             var ia = orderMap.hasOwnProperty(a.id) ? orderMap[a.id] : 9999;
             var ib = orderMap.hasOwnProperty(b.id) ? orderMap[b.id] : 9999;
@@ -2929,7 +2972,7 @@ function loadRanking() {
           });
         } else {
           users.sort(function(a, b) {
-            var ca = a.cuts || 0, cb = b.cuts || 0;
+            var ca = a._rankCuts, cb = b._rankCuts;
             if (cb !== ca) return cb - ca;
             if (ca === 0) return (a.firstName || '').localeCompare(b.firstName || '', 'pt-BR');
             var ta = a.cutsUpdatedAt ? (a.cutsUpdatedAt.toDate ? a.cutsUpdatedAt.toDate() : new Date(a.cutsUpdatedAt)) : new Date(0);
@@ -2973,7 +3016,7 @@ function renderRanking(users, podiumEl, listEl) {
           <div style="font-size:24px;margin-bottom:4px">${medals[p.pos]}</div>
           <div style="width:52px;height:52px;border-radius:50%;border:3px solid ${c};overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);margin-bottom:6px">${photo}</div>
           <div style="font-weight:800;font-size:13px;color:#fff;text-align:center;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.firstName || "—"}</div>
-          <div style="font-weight:900;font-size:15px;color:${c};margin-top:2px">🪙 ${p.cuts || 0}</div>
+          <div style="font-weight:900;font-size:15px;color:${c};margin-top:2px">🪙 ${p._rankCuts || 0}</div>
           <div style="width:100%;height:${h}px;border-radius:14px 14px 0 0;background:${bgGrad[p.pos]};border:1px solid ${c}33;margin-top:8px;display:flex;align-items:center;justify-content:center">
             <span style="font-size:28px;font-weight:900;color:${c};opacity:.5">${p.pos}º</span>
           </div>
@@ -2999,7 +3042,7 @@ function renderRanking(users, podiumEl, listEl) {
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:14px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.firstName || "—"}${isMe ? ' <span style="font-size:10px;color:#f59e0b;font-weight:800">(você)</span>' : ''}</div>
           </div>
-          <div style="font-weight:800;font-size:14px;color:#f59e0b">🪙 ${u.cuts || 0}</div>
+          <div style="font-weight:800;font-size:14px;color:#f59e0b">🪙 ${u._rankCuts || 0}</div>
         </div>`;
       }).join("");
   }
@@ -4162,7 +4205,8 @@ window.addEventListener('message', async function(event) {
   try {
     if (!currentUser || !firebaseOk) return;
     await db.collection('users').doc(currentUser.id).update({
-      cuts: firebase.firestore.FieldValue.increment(reward)
+      cuts: firebase.firestore.FieldValue.increment(reward),
+      monthlyCuts: firebase.firestore.FieldValue.increment(reward)
     });
     // Registrar no log de atividades
     db.collection('activity_log').add({
