@@ -5110,9 +5110,20 @@ async function loadTorneiosIntoInscForm(currentValue) {
   const sel = document.getElementById("insc-torneio");
   if (!sel || !firebaseOk) return;
   try {
-    const snap = await db.collection("torneios").orderBy("createdAt", "desc").get();
+    let docs;
+    try {
+      const snap = await db.collection("torneios").orderBy("createdAt", "desc").get();
+      docs = snap.docs;
+    } catch(err) {
+      const snap = await db.collection("torneios").get();
+      docs = snap.docs.slice().sort((a,b)=>{
+        const da=a.data().createdAt, dbb=b.data().createdAt;
+        const ta=da&&da.toMillis?da.toMillis():0, tb=dbb&&dbb.toMillis?dbb.toMillis():0;
+        return tb-ta;
+      });
+    }
     const opts = ['<option value="">— Nenhum —</option>'];
-    snap.docs.forEach(d => {
+    docs.forEach(d => {
       const t = d.data();
       const sel2 = (currentValue && currentValue === d.id) ? ' selected' : '';
       opts.push(`<option value="${d.id}"${sel2}>${escapeHtml(t.title || 'Torneio')}</option>`);
@@ -5159,9 +5170,8 @@ function loadTorneios() {
   const empty = document.getElementById("torneios-empty");
   if (loading) loading.style.display = "flex";
   if (list) list.innerHTML = "";
-  db.collection("torneios").orderBy("createdAt", "desc").get().then(snap => {
+  function render(items){
     if (loading) loading.style.display = "none";
-    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (empty) empty.style.display = items.length === 0 ? "block" : "none";
     if (!list) return;
     list.innerHTML = items.map(t => `
@@ -5169,9 +5179,20 @@ function loadTorneios() {
         <div style="font-weight:800;font-size:15px;color:#fff;margin-bottom:6px">🏆 ${escapeHtml(t.title || '')}</div>
         <div style="color:#64748b;font-size:12px">📅 ${_tornFmtDate(t.startDate)} → ${_tornFmtDate(t.endDate)}</div>
       </div>`).join("");
+  }
+  db.collection("torneios").orderBy("createdAt", "desc").get().then(snap => {
+    render(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   }).catch(e => {
-    if (loading) loading.style.display = "none";
-    console.error(e);
+    console.warn("[Torneios] orderBy falhou, fallback", e);
+    db.collection("torneios").get().then(snap => {
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      items.sort((a,b)=>{
+        const ta=a.createdAt&&a.createdAt.toMillis?a.createdAt.toMillis():0;
+        const tb=b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():0;
+        return tb-ta;
+      });
+      render(items);
+    }).catch(err => { if (loading) loading.style.display="none"; console.error(err); });
   });
 }
 
@@ -5269,8 +5290,20 @@ async function editInscricaoTorneio(id) {
     const insDoc = await db.collection("inscricoes").doc(id).get();
     if (!insDoc.exists) { showToast("Não encontrada"); return; }
     const current = insDoc.data().tournamentId || "";
-    const tornsSnap = await db.collection("torneios").orderBy("createdAt", "desc").get();
-    const torns = tornsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    let torns = [];
+    try {
+      const tornsSnap = await db.collection("torneios").orderBy("createdAt", "desc").get();
+      torns = tornsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(err) {
+      console.warn("[Torneios] orderBy falhou, fallback", err);
+      const tornsSnap = await db.collection("torneios").get();
+      torns = tornsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      torns.sort((a,b)=>{
+        const ta=a.createdAt&&a.createdAt.toMillis?a.createdAt.toMillis():0;
+        const tb=b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():0;
+        return tb-ta;
+      });
+    }
     if (torns.length === 0) {
       showToast("Crie um torneio primeiro");
       return;
@@ -5278,7 +5311,7 @@ async function editInscricaoTorneio(id) {
     let msg = "Digite o número do torneio (0 = nenhum):\n\n0. — Nenhum —\n";
     torns.forEach((t,i)=>{
       const cur = (t.id === current) ? " ← atual" : "";
-      msg += `${i+1}. ${t.title}${cur}\n`;
+      msg += `${i+1}. ${t.title || '(sem título)'}${cur}\n`;
     });
     const ans = prompt(msg, "0");
     if (ans === null) return;
@@ -5288,7 +5321,10 @@ async function editInscricaoTorneio(id) {
     await db.collection("inscricoes").doc(id).update({ tournamentId: newTid });
     showToast("✅ Atualizado");
     openInscricaoDetail(id);
-  } catch(e) { showToast("Erro"); console.error(e); }
+  } catch(e) {
+    showToast("Erro ao listar torneios");
+    console.error("[editInscricaoTorneio]", e);
+  }
 }
 
 async function toggleInscricao(id, open) {
