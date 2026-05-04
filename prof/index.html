@@ -247,6 +247,11 @@ input,select,textarea{font-family:inherit;outline:none}
         <div class="mc-title">Games</div>
         <div class="mc-desc">Jogos e recompensas</div>
       </div>
+      <div class="menu-card" onclick="openBulkCutsScreen()" style="border-color:rgba(245,158,11,.25)">
+        <span class="mc-icon">🪙</span>
+        <div class="mc-title">CUTS em Massa</div>
+        <div class="mc-desc">Distribuir moedas para vários alunos</div>
+      </div>
     </div>
   </div>
 </div>
@@ -665,6 +670,43 @@ input,select,textarea{font-family:inherit;outline:none}
     <div id="students-loading" class="loading"><div class="spin"></div>Carregando...</div>
     <div id="students-empty" class="empty" style="display:none"><div class="icon">👥</div><p>Nenhum aluno cadastrado</p></div>
     <div id="students-list"></div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — CUTS EM MASSA ════════════════════════════════════ -->
+<div class="screen" id="screen-teacher-bulk-cuts">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">🪙 CUTS em Massa</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:700px">
+    <div class="t-form" style="margin-bottom:14px">
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button type="button" onclick="setBulkCutsMode('add')" id="bulk-cuts-tab-add" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(34,197,94,.15);color:#22c55e">+ Adicionar</button>
+        <button type="button" onclick="setBulkCutsMode('remove')" id="bulk-cuts-tab-remove" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">− Remover</button>
+      </div>
+      <label class="lbl" id="bulk-cuts-label">QUANTIDADE A ADICIONAR</label>
+      <input type="number" min="1" class="inp" id="bulk-cuts-qty" placeholder="Ex: 10" style="color-scheme:dark">
+      <p class="err-txt" id="bulk-cuts-err"></p>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <input type="text" class="inp" id="bulk-cuts-search" placeholder="🔎 Buscar aluno por nome ou @apelido" oninput="renderBulkCutsList()" style="flex:1">
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:8px;color:#e2e8f0;font-weight:700;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="bulk-cuts-select-all" onchange="toggleBulkCutsSelectAll(this.checked)">
+        Selecionar todos visíveis
+      </label>
+      <span style="color:#94a3b8;font-size:12px"><span id="bulk-cuts-count" style="color:#f59e0b;font-weight:900">0</span> selecionado(s)</span>
+    </div>
+    <div id="bulk-cuts-list"></div>
+
+    <div style="position:sticky;bottom:0;background:linear-gradient(to top,#0f172a 75%,transparent);padding:14px 0 4px;margin-top:14px">
+      <button onclick="applyBulkCuts()" id="btn-apply-bulk-cuts" class="btn-main">🪙 Aplicar a alunos selecionados</button>
+    </div>
   </div>
 </div>
 
@@ -2703,7 +2745,193 @@ async function saveCuts() {
   }
 }
 
-// ── INVENTÁRIO DO ALUNO ──
+// ── CUTS EM MASSA ──
+let bulkCutsMode = "add";
+let bulkCutsSelected = new Set();
+let bulkCutsUnsub = null;
+
+function openBulkCutsScreen() {
+  bulkCutsMode = "add";
+  bulkCutsSelected = new Set();
+  document.getElementById("bulk-cuts-qty").value = "";
+  document.getElementById("bulk-cuts-search").value = "";
+  document.getElementById("bulk-cuts-select-all").checked = false;
+  setErr("bulk-cuts-err","");
+  setBulkCutsMode("add");
+  showScreen("teacher-bulk-cuts");
+  // Garante lista de alunos carregada
+  if (!firebaseOk) { document.getElementById("bulk-cuts-list").innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Firebase não está disponível</p></div>'; return; }
+  if (allStudents && allStudents.length) {
+    renderBulkCutsList();
+  } else {
+    document.getElementById("bulk-cuts-list").innerHTML = '<div class="loading"><div class="spin"></div>Carregando alunos...</div>';
+  }
+  // Listener próprio para a tela (independente de loadStudents)
+  if (bulkCutsUnsub) bulkCutsUnsub();
+  bulkCutsUnsub = db.collection("users").orderBy("firstName").onSnapshot(snap => {
+    allStudents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderBulkCutsList();
+  }, err => console.warn("[BulkCUTS]", err));
+}
+
+function setBulkCutsMode(mode) {
+  bulkCutsMode = mode;
+  const tabAdd = document.getElementById("bulk-cuts-tab-add");
+  const tabRem = document.getElementById("bulk-cuts-tab-remove");
+  const lbl = document.getElementById("bulk-cuts-label");
+  if (mode === "add") {
+    tabAdd.style.background = "rgba(34,197,94,.15)"; tabAdd.style.color = "#22c55e";
+    tabRem.style.background = "rgba(255,255,255,.06)"; tabRem.style.color = "#94a3b8";
+    lbl.textContent = "QUANTIDADE A ADICIONAR";
+  } else {
+    tabRem.style.background = "rgba(239,68,68,.15)"; tabRem.style.color = "#ef4444";
+    tabAdd.style.background = "rgba(255,255,255,.06)"; tabAdd.style.color = "#94a3b8";
+    lbl.textContent = "QUANTIDADE A REMOVER";
+  }
+}
+
+function getBulkCutsFiltered() {
+  const q = (document.getElementById("bulk-cuts-search").value || "").trim().toLowerCase();
+  const list = (allStudents || []).filter(s => !s.blocked);
+  if (!q) return list;
+  return list.filter(s => {
+    const name = ((s.firstName||"") + " " + (s.lastName||"")).toLowerCase();
+    const nick = (s.nickname || "").toLowerCase();
+    return name.includes(q) || nick.includes(q);
+  });
+}
+
+function renderBulkCutsList() {
+  const cont = document.getElementById("bulk-cuts-list");
+  if (!cont) return;
+  const list = getBulkCutsFiltered();
+  if (list.length === 0) {
+    cont.innerHTML = '<div class="empty"><div class="icon">👥</div><p>Nenhum aluno encontrado</p></div>';
+  } else {
+    cont.innerHTML = list.map(s => {
+      const checked = bulkCutsSelected.has(s.id) ? "checked" : "";
+      const initial = (s.firstName||"?").charAt(0).toUpperCase();
+      const nick = s.nickname ? `<span style="color:#64748b;font-size:12px">@${escapeHtml(s.nickname)}</span>` : "";
+      const photo = s.photoURL
+        ? `<img src="${s.photoURL}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
+        : `<div class="avatar" style="background:linear-gradient(135deg,#f59e0b,#e85d04);width:38px;height:38px">${initial}</div>`;
+      return `
+        <label style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px 14px;margin-bottom:8px;cursor:pointer">
+          <input type="checkbox" data-uid="${s.id}" onchange="toggleBulkCutsStudent('${s.id}', this.checked)" ${checked} style="width:18px;height:18px;accent-color:#f59e0b">
+          ${photo}
+          <div style="flex:1;min-width:0">
+            <div style="color:#e2e8f0;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(s.firstName||"")} ${escapeHtml(s.lastName||"")}</div>
+            ${nick}
+          </div>
+          <div style="color:#f59e0b;font-weight:900;font-size:13px;white-space:nowrap">🪙 ${s.cuts||0}</div>
+        </label>`;
+    }).join("");
+  }
+  // Atualiza contador e checkbox "selecionar todos"
+  document.getElementById("bulk-cuts-count").textContent = bulkCutsSelected.size;
+  const allChk = document.getElementById("bulk-cuts-select-all");
+  if (allChk) {
+    const visibleIds = list.map(s => s.id);
+    allChk.checked = visibleIds.length > 0 && visibleIds.every(id => bulkCutsSelected.has(id));
+  }
+}
+
+function toggleBulkCutsStudent(id, checked) {
+  if (checked) bulkCutsSelected.add(id); else bulkCutsSelected.delete(id);
+  document.getElementById("bulk-cuts-count").textContent = bulkCutsSelected.size;
+  const visibleIds = getBulkCutsFiltered().map(s => s.id);
+  const allChk = document.getElementById("bulk-cuts-select-all");
+  if (allChk) allChk.checked = visibleIds.length > 0 && visibleIds.every(x => bulkCutsSelected.has(x));
+}
+
+function toggleBulkCutsSelectAll(checked) {
+  const visibleIds = getBulkCutsFiltered().map(s => s.id);
+  if (checked) visibleIds.forEach(id => bulkCutsSelected.add(id));
+  else visibleIds.forEach(id => bulkCutsSelected.delete(id));
+  renderBulkCutsList();
+}
+
+async function applyBulkCuts() {
+  if (!requireFirebase()) return;
+  const qty = parseInt(document.getElementById("bulk-cuts-qty").value);
+  if (isNaN(qty) || qty <= 0) { setErr("bulk-cuts-err","Informe uma quantidade válida (> 0)"); return; }
+  if (bulkCutsSelected.size === 0) { setErr("bulk-cuts-err","Selecione ao menos um aluno"); return; }
+  setErr("bulk-cuts-err","");
+
+  const verb = bulkCutsMode === "add" ? "adicionar" : "remover";
+  const ok = confirm(`Confirma ${verb} ${qty} CUTS para ${bulkCutsSelected.size} aluno(s)?`);
+  if (!ok) return;
+
+  const btn = document.getElementById("btn-apply-bulk-cuts");
+  btn.disabled = true; btn.textContent = "Aplicando...";
+
+  const ids = Array.from(bulkCutsSelected);
+  const delta = bulkCutsMode === "add" ? qty : -qty;
+  const inc = firebase.firestore.FieldValue.increment(delta);
+  const ts = firebase.firestore.FieldValue.serverTimestamp();
+  let success = 0, errors = 0;
+
+  // Lote de no máx 400 ops por batch (cada aluno consome 1 update + 1 notification + 1 log = 3 ops)
+  const CHUNK = 100;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const slice = ids.slice(i, i + CHUNK);
+    try {
+      const batch = db.batch();
+      slice.forEach(uid => {
+        batch.update(db.collection("users").doc(uid), { cuts: inc, cutsUpdatedAt: ts });
+        if (bulkCutsMode === "add") {
+          batch.set(db.collection("notifications").doc(uid).collection("items").doc(), {
+            msg: `🪙 Você recebeu ${qty} moeda${qty>1?'s':''} CUTS!`,
+            read: false,
+            at: ts
+          });
+        }
+        const s = allStudents.find(x => x.id === uid);
+        batch.set(db.collection("activity_log").doc(), {
+          userId: uid,
+          userName: s ? s.firstName : '',
+          action: 'cuts_alterado',
+          detail: (bulkCutsMode === "add" ? "Adicionou" : "Removeu") + ` ${qty} CUTS (em massa)`,
+          timestamp: ts,
+          extra: { mode: bulkCutsMode, valor: qty, porProfessor: true, bulk: true }
+        });
+      });
+      await batch.commit();
+      success += slice.length;
+    } catch(e) {
+      console.error("[BulkCUTS]", e);
+      errors += slice.length;
+    }
+  }
+
+  // Corrigir saldos negativos (caso remoção tenha excedido)
+  if (bulkCutsMode === "remove") {
+    try {
+      const fixes = await Promise.all(ids.map(uid => db.collection("users").doc(uid).get()));
+      const fixBatch = db.batch();
+      let needsFix = false;
+      fixes.forEach(doc => {
+        if (doc.exists && (doc.data().cuts || 0) < 0) {
+          fixBatch.update(doc.ref, { cuts: 0 });
+          needsFix = true;
+        }
+      });
+      if (needsFix) await fixBatch.commit();
+    } catch(e) { console.warn("[BulkCUTS fix]", e); }
+  }
+
+  btn.disabled = false; btn.textContent = "🪙 Aplicar a alunos selecionados";
+  if (errors === 0) {
+    showToast(`✅ ${verb.charAt(0).toUpperCase()+verb.slice(1)}: ${qty} CUTS para ${success} aluno(s)`);
+    bulkCutsSelected.clear();
+    document.getElementById("bulk-cuts-qty").value = "";
+    renderBulkCutsList();
+  } else {
+    showToast(`⚠️ ${success} ok, ${errors} falharam`);
+  }
+}
+
+
 let invModalUserId = null;
 let invModalUnsub = null;
 
