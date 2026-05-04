@@ -66,8 +66,8 @@ function handleFileSelect(input) {
   }
 
   // Validar tamanho (max 10MB)
-  if (file.size > 8 * 1024 * 1024) {
-    showToast("❌ Arquivo muito grande (máx. 8MB)");
+  if (file.size > 10 * 1024 * 1024) {
+    showToast("❌ Arquivo muito grande (máx. 10MB)");
     input.value = "";
     return;
   }
@@ -398,7 +398,7 @@ function updateUploadUI() {
   } else {
     zone.classList.remove("has-file");
     zone.querySelector(".uz-text").textContent = "Clique para enviar imagem ou GIF";
-    zone.querySelector(".uz-hint").textContent = "PNG, GIF, JPG, WebP (máx. 8MB)";
+    zone.querySelector(".uz-hint").textContent = "PNG, GIF, JPG, WebP (máx. 10MB)";
     preview.classList.remove("show");
     previewImg.src = "";
   }

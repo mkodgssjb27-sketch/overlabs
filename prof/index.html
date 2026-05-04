@@ -1632,7 +1632,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <div id="editor-upload-content">
           <span style="font-size:40px;display:block;margin-bottom:8px">📁</span>
           <span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span>
-          <div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 5MB)</div>
+          <div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 10MB)</div>
         </div>
       </div>
       <input type="file" id="editor-file-input" accept="image/png,image/gif,image/jpeg,image/webp" style="display:none" onchange="editorHandleFile(this)">
@@ -5942,8 +5942,8 @@ function editorHandleFile(input) {
     input.value = "";
     return;
   }
-  if (file.size > 5 * 1024 * 1024) {
-    showToast("❌ Arquivo muito grande (máx. 5MB)");
+  if (file.size > 10 * 1024 * 1024) {
+    showToast("❌ Arquivo muito grande (máx. 10MB)");
     input.value = "";
     return;
   }
@@ -6230,7 +6230,7 @@ function editorResetForm() {
     el.style.background = 'rgba(255,255,255,.04)';
     el.style.boxShadow = 'none';
   });
-  document.getElementById("editor-upload-content").innerHTML = '<span style="font-size:40px;display:block;margin-bottom:8px">📁</span><span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span><div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 5MB)</div>';
+  document.getElementById("editor-upload-content").innerHTML = '<span style="font-size:40px;display:block;margin-bottom:8px">📁</span><span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span><div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 10MB)</div>';
   document.getElementById("editor-upload-zone").style.borderColor = "rgba(255,255,255,.15)";
   document.getElementById("editor-upload-zone").style.borderStyle = "dashed";
   document.getElementById("editor-img-preview").style.display = "none";
