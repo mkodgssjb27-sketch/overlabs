@@ -338,6 +338,11 @@ input,select,textarea{font-family:inherit;outline:none}
         <input type="range" min="1" max="15" value="4" id="r-seats" oninput="updateSeats(this.value)" style="width:100%;accent-color:#f59e0b;margin:8px 0">
         <div class="seats-row" id="seats-icons"></div>
       </div>
+      <div style="margin-bottom:22px">
+        <label class="lbl">🪙 RECOMPENSA EM CUTS (por aluno confirmado)</label>
+        <input type="number" min="0" class="inp" id="r-cuts-reward" placeholder="0 = sem recompensa" value="0" style="color-scheme:dark">
+        <p style="font-size:12px;color:#64748b;margin-top:6px">Os alunos confirmados receberão essas moedas automaticamente quando a carona expirar.</p>
+      </div>
       <div style="margin-bottom:22px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
         <label class="toggle-wrap">
           <input type="checkbox" id="r-visible" checked>
@@ -408,6 +413,11 @@ input,select,textarea{font-family:inherit;outline:none}
       <div style="margin-bottom:26px">
         <label class="lbl">VAGAS DISPONÍVEIS: <span id="e-seats-val" style="color:#f59e0b;font-size:17px;font-weight:900">4</span></label>
         <input type="range" min="1" max="15" value="4" id="e-seats" oninput="document.getElementById('e-seats-val').textContent=this.value" style="width:100%;accent-color:#f59e0b;margin:8px 0">
+      </div>
+      <div style="margin-bottom:22px">
+        <label class="lbl">🪙 RECOMPENSA EM CUTS (por aluno confirmado)</label>
+        <input type="number" min="0" class="inp" id="e-cuts-reward" placeholder="0 = sem recompensa" value="0" style="color-scheme:dark">
+        <p style="font-size:12px;color:#64748b;margin-top:6px">Os alunos confirmados receberão essas moedas automaticamente quando a carona expirar.</p>
       </div>
       <div style="margin-bottom:22px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
         <label class="toggle-wrap">
@@ -1760,6 +1770,8 @@ function startTeacherListener() {
       allRides.forEach(r => autoFixWaitlist(r));
       // Auto-publish: caronas programadas cuja hora chegou
       allRides.forEach(r => autoPublishScheduled(r));
+      // Auto-distribuir CUTS quando a carona expira
+      allRides.forEach(r => autoDistributeCutsReward(r));
     }, err => {
       console.error(err);
       showToast("Erro ao carregar caronas");
@@ -1860,6 +1872,7 @@ function resetRideForm() {
   document.getElementById("r-time").value = "";
   document.getElementById("r-seats").value = 4;
   document.getElementById("r-visible").checked = true;
+  document.getElementById("r-cuts-reward").value = 0;
   document.getElementById("r-schedule").checked = false;
   document.getElementById("r-sched-date").value = "";
   document.getElementById("r-sched-time").value = "";
@@ -1880,6 +1893,7 @@ async function createRide() {
   const time  = document.getElementById("r-time").value;
   const seats = Number(document.getElementById("r-seats").value);
   const visible = document.getElementById("r-visible").checked;
+  const cutsReward = Math.max(0, parseInt(document.getElementById("r-cuts-reward").value) || 0);
   const scheduled = document.getElementById("r-schedule").checked;
   const sDate = document.getElementById("r-sched-date").value;
   const sTime = document.getElementById("r-sched-time").value;
@@ -1899,6 +1913,7 @@ async function createRide() {
     const data = {
       title, date, time, seats,
       visible: scheduled ? false : visible,
+      cutsReward,
       booked: [], waitlist: [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -1999,7 +2014,77 @@ async function autoPublishScheduled(ride) {
 // Verifica caronas programadas a cada 30s mesmo sem mudança no snapshot
 setInterval(() => {
   if (Array.isArray(allRides)) allRides.forEach(r => autoPublishScheduled(r));
+  if (Array.isArray(allRides)) allRides.forEach(r => autoDistributeCutsReward(r));
 }, 30000);
+
+// ── Auto-distribuir recompensa em CUTS quando a carona expira ──
+const _autoCutsRunning = {};
+async function autoDistributeCutsReward(ride) {
+  if (!ride || !ride.id) return;
+  const reward = Number(ride.cutsReward) || 0;
+  if (reward <= 0) return;
+  if (ride.cutsRewardDistributed) return;
+  if (!isPast(ride.date, ride.time)) return;
+  const booked = ride.booked || [];
+  if (booked.length === 0) {
+    // Sem confirmados: marca como distribuído para não checar novamente
+    try { await db.collection("rides").doc(ride.id).update({ cutsRewardDistributed: true, cutsRewardDistributedAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch(e){}
+    return;
+  }
+  if (_autoCutsRunning[ride.id]) return;
+  _autoCutsRunning[ride.id] = true;
+  try {
+    const rideRef = db.collection("rides").doc(ride.id);
+    // Transação para garantir distribuição única
+    let needsPay = false;
+    let payList = [];
+    let title = ride.title;
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) return;
+      const d = doc.data();
+      if (d.cutsRewardDistributed) return;
+      const r = Number(d.cutsReward) || 0;
+      if (r <= 0) return;
+      if (!isPast(d.date, d.time)) return;
+      payList = (d.booked || []).slice();
+      title = d.title;
+      tx.update(rideRef, {
+        cutsRewardDistributed: true,
+        cutsRewardDistributedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      needsPay = true;
+    });
+    if (!needsPay || payList.length === 0) return;
+
+    const inc = firebase.firestore.FieldValue.increment(reward);
+    const ts = firebase.firestore.FieldValue.serverTimestamp();
+    const ids = payList.map(p => p.userId).filter(Boolean);
+    const CHUNK = 100;
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const slice = ids.slice(i, i + CHUNK);
+      const batch = db.batch();
+      slice.forEach(uid => {
+        batch.update(db.collection("users").doc(uid), { cuts: inc, cutsUpdatedAt: ts });
+        batch.set(db.collection("notifications").doc(uid).collection("items").doc(), {
+          msg: `🪙 Você ganhou ${reward} moeda${reward>1?'s':''} CUTS pela carona "${title}"!`,
+          read: false,
+          at: ts
+        });
+        batch.set(db.collection("activity_log").doc(), {
+          userId: uid,
+          action: 'cuts_recompensa_carona',
+          detail: `Recebeu ${reward} CUTS pela carona "${title}"`,
+          timestamp: ts,
+          extra: { rideId: ride.id, valor: reward, auto: true }
+        });
+      });
+      try { await batch.commit(); } catch(e) { console.warn("[CutsReward batch]", e); }
+    }
+    console.log(`[CutsReward] Distribuídas ${reward} CUTS para ${ids.length} aluno(s) - "${title}"`);
+  } catch(e) { console.warn("[CutsReward]", e); }
+  finally { delete _autoCutsRunning[ride.id]; }
+}
 
 // ── Detalhe da Carona ──
 function openTeacherDetail(rideId) {
@@ -2246,6 +2331,7 @@ function openEditRide() {
   document.getElementById("e-time").value = ride.time;
   document.getElementById("e-seats").value = ride.seats;
   document.getElementById("e-seats-val").textContent = ride.seats;
+  document.getElementById("e-cuts-reward").value = ride.cutsReward || 0;
   const isScheduled = ride.published === false && ride.scheduledAt;
   if (isScheduled) {
     document.getElementById("e-visible").checked = ride.scheduledVisible !== false;
@@ -2306,6 +2392,7 @@ async function saveEditRide() {
   const time  = document.getElementById("e-time").value;
   const seats = Number(document.getElementById("e-seats").value);
   const visible = document.getElementById("e-visible").checked;
+  const cutsReward = Math.max(0, parseInt(document.getElementById("e-cuts-reward").value) || 0);
 
   const rideCurrent = allRides.find(r => r.id === currentDetailRideId);
   const isScheduled = rideCurrent && rideCurrent.published === false && rideCurrent.scheduledAt;
@@ -2358,7 +2445,7 @@ async function saveEditRide() {
         demoted = qtdRebaixar;
       }
 
-      const updateData = { title, date, time, seats, booked, waitlist: wl };
+      const updateData = { title, date, time, seats, booked, waitlist: wl, cutsReward };
       if (isScheduled) {
         updateData.scheduledAt = `${sDate}T${sTime}`;
         updateData.scheduledVisible = visible;
