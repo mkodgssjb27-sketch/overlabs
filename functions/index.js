@@ -1,4 +1,5 @@
 const { onDocumentCreated, onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
@@ -133,6 +134,43 @@ exports.autoPromoteWaitlist = onDocumentWritten(
 
     if (promotedUsers.length > 0) {
       console.log(`[AutoPromote] ${promotedUsers.length} aluno(s) promovido(s) na carona "${rideTitle}" (ride ${event.params.rideId})`);
+    }
+  }
+);
+
+// ══════════════════════════════════════════════════════════════════
+// ═══ Login Diário — Reset semanal automático ═════════════════════
+// ══════════════════════════════════════════════════════════════════
+// Toda segunda-feira 11:58 (horário de Brasília), apaga todas as
+// confirmações de login para que o ciclo da nova semana (que começa
+// segunda 12:00) comece zerado para todos os alunos.
+
+exports.resetDailyLoginsWeekly = onSchedule(
+  {
+    schedule: "58 11 * * 1",
+    timeZone: "America/Sao_Paulo",
+    region: "us-central1",
+  },
+  async () => {
+    const db = getFirestore();
+    console.log("[ResetDailyLogins] Iniciando reset semanal...");
+    try {
+      let total = 0;
+      // Apagar em lotes para escalar com volume grande
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const snap = await db.collection("dailyLogins").limit(450).get();
+        if (snap.empty) break;
+        const batch = db.batch();
+        snap.docs.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+        total += snap.size;
+        if (snap.size < 450) break;
+      }
+      console.log(`[ResetDailyLogins] ${total} confirmação(ões) apagada(s).`);
+    } catch (err) {
+      console.error("[ResetDailyLogins] Erro:", err);
+      throw err;
     }
   }
 );
