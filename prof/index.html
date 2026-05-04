@@ -845,7 +845,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <input class="inp" id="fp-title" placeholder="Título do post (opcional)">
       </div>
       <div style="margin-bottom:16px">
-        <label class="lbl">DESCRIÇÃO</label>
+        <label class="lbl">DESCRIÇÃO (opcional)</label>
         <textarea class="inp" id="fp-text" rows="4" placeholder="Escreva algo para seus alunos..." style="resize:vertical;min-height:80px"></textarea>
       </div>
       <div style="margin-bottom:16px">
@@ -3667,7 +3667,7 @@ async function publishFeedPost() {
   if (!firebaseOk) return;
   var text = document.getElementById('fp-text').value.trim();
   var title = document.getElementById('fp-title').value.trim();
-  if (!text) { showToast('Escreva algo para publicar'); return; }
+  if (!text && !title && !_fpImageData) { showToast('Adicione título, descrição ou imagem'); return; }
 
   var btn = document.getElementById('btn-publish-post');
   btn.disabled = true; btn.textContent = 'Publicando...';
