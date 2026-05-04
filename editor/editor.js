@@ -41,10 +41,21 @@ function handleFileSelect(input) {
   const file = input.files[0];
   if (!file) return;
 
-  // Validar tipo
+  // Vídeo? abre editor de vídeo→GIF
+  if (file.type && file.type.startsWith("video/")) {
+    if (file.size > 200 * 1024 * 1024) {
+      showToast("❌ Vídeo muito grande (máx. 200MB)");
+      input.value = "";
+      return;
+    }
+    openVideoEditor(file);
+    return;
+  }
+
+  // Validar tipo (imagens)
   const allowed = ["image/png", "image/gif", "image/jpeg", "image/webp"];
   if (!allowed.includes(file.type)) {
-    showToast("❌ Formato não suportado. Use PNG, GIF, JPG ou WebP.");
+    showToast("❌ Formato não suportado. Use imagem ou vídeo.");
     input.value = "";
     return;
   }
@@ -66,6 +77,304 @@ function handleFileSelect(input) {
     updatePreview();
   };
   reader.readAsDataURL(file);
+}
+
+/* ═══════════════════════════════════════════
+   EDITOR DE VÍDEO → GIF
+   ═══════════════════════════════════════════ */
+const VID_GIF_MAX_BYTES = 5 * 1024 * 1024; // 5MB
+const VID_GIF_MAX_DURATION = 10;            // 10s recorte
+let vidEditorState = {
+  file: null,
+  url: null,
+  duration: 0,
+  trimStart: 0,
+  trimEnd: 0,
+  speed: 1,
+  dragging: null // 'start' | 'end' | null
+};
+
+function openVideoEditor(file) {
+  // limpa state anterior
+  if (vidEditorState.url) { try { URL.revokeObjectURL(vidEditorState.url); } catch(_){} }
+  vidEditorState = { file, url: URL.createObjectURL(file), duration: 0, trimStart: 0, trimEnd: 0, speed: 1, dragging: null };
+
+  const modal = document.getElementById("vid-modal");
+  const video = document.getElementById("vid-preview");
+  const info = document.getElementById("vid-info");
+  const speed = document.getElementById("vid-speed");
+  const speedVal = document.getElementById("vid-speed-val");
+  const progress = document.getElementById("vid-progress-wrap");
+
+  modal.style.display = "flex";
+  progress.style.display = "none";
+  document.getElementById("vid-progress-fill").style.width = "0%";
+  speed.value = 1;
+  speedVal.textContent = "1.0x";
+  info.textContent = "Carregando vídeo...";
+
+  video.src = vidEditorState.url;
+  video.loop = false;
+  video.muted = true;
+
+  video.addEventListener("loadedmetadata", function onMeta() {
+    video.removeEventListener("loadedmetadata", onMeta);
+    let dur = video.duration;
+    if (!isFinite(dur) || dur <= 0) {
+      // fallback: tenta seek pra obter duration
+      video.currentTime = 1e6;
+      video.addEventListener("seeked", function onSk() {
+        video.removeEventListener("seeked", onSk);
+        dur = video.duration;
+        _vidInitTimeline(dur);
+      }, { once:true });
+    } else {
+      _vidInitTimeline(dur);
+    }
+  }, { once:true });
+
+  video.addEventListener("error", () => {
+    showToast("❌ Não foi possível ler o vídeo. Tente outro formato (MP4/WebM).");
+    closeVideoEditor(true);
+  }, { once:true });
+
+  // speed
+  speed.oninput = function() {
+    vidEditorState.speed = parseFloat(speed.value) || 1;
+    speedVal.textContent = vidEditorState.speed.toFixed(1) + "x";
+    video.playbackRate = vidEditorState.speed;
+  };
+
+  _vidBindTimeline();
+  _vidStartLoopPreview();
+}
+
+function _vidInitTimeline(dur) {
+  const video = document.getElementById("vid-preview");
+  vidEditorState.duration = dur;
+  vidEditorState.trimStart = 0;
+  vidEditorState.trimEnd = Math.min(dur, VID_GIF_MAX_DURATION);
+  document.getElementById("vid-info").textContent =
+    `Duração: ${dur.toFixed(1)}s · O GIF terá no máximo ${VID_GIF_MAX_DURATION}s`;
+  try { video.currentTime = 0; video.play().catch(()=>{}); } catch(_) {}
+  _vidUpdateTimelineUI();
+}
+
+function _vidUpdateTimelineUI() {
+  const dur = vidEditorState.duration || 1;
+  const pctS = (vidEditorState.trimStart / dur) * 100;
+  const pctE = (vidEditorState.trimEnd / dur) * 100;
+  document.getElementById("vid-handle-start").style.left = pctS + "%";
+  document.getElementById("vid-handle-end").style.left = pctE + "%";
+  const sel = document.getElementById("vid-timeline-selected");
+  sel.style.left = pctS + "%";
+  sel.style.width = (pctE - pctS) + "%";
+  document.getElementById("vid-trim-start").textContent = vidEditorState.trimStart.toFixed(1) + "s";
+  document.getElementById("vid-trim-end").textContent = vidEditorState.trimEnd.toFixed(1) + "s";
+  document.getElementById("vid-trim-duration").textContent =
+    (vidEditorState.trimEnd - vidEditorState.trimStart).toFixed(1) + "s";
+}
+
+function _vidBindTimeline() {
+  const tl = document.getElementById("vid-timeline");
+  const hs = document.getElementById("vid-handle-start");
+  const he = document.getElementById("vid-handle-end");
+
+  const startDrag = (which) => (e) => {
+    e.preventDefault();
+    vidEditorState.dragging = which;
+  };
+  hs.onpointerdown = startDrag("start");
+  he.onpointerdown = startDrag("end");
+
+  tl.onpointermove = (e) => {
+    if (!vidEditorState.dragging) return;
+    const rect = tl.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, (e.clientX - rect.left)));
+    const pct = x / rect.width;
+    const t = pct * vidEditorState.duration;
+    if (vidEditorState.dragging === "start") {
+      vidEditorState.trimStart = Math.min(t, vidEditorState.trimEnd - 0.1);
+      // limite máximo 10s do trim
+      if (vidEditorState.trimEnd - vidEditorState.trimStart > VID_GIF_MAX_DURATION) {
+        vidEditorState.trimEnd = vidEditorState.trimStart + VID_GIF_MAX_DURATION;
+      }
+    } else {
+      vidEditorState.trimEnd = Math.max(t, vidEditorState.trimStart + 0.1);
+      if (vidEditorState.trimEnd - vidEditorState.trimStart > VID_GIF_MAX_DURATION) {
+        vidEditorState.trimStart = vidEditorState.trimEnd - VID_GIF_MAX_DURATION;
+      }
+    }
+    _vidUpdateTimelineUI();
+  };
+  const endDrag = () => { vidEditorState.dragging = null; };
+  document.addEventListener("pointerup", endDrag);
+  document.addEventListener("pointercancel", endDrag);
+}
+
+let _vidLoopTimer = null;
+function _vidStartLoopPreview() {
+  const video = document.getElementById("vid-preview");
+  if (_vidLoopTimer) clearInterval(_vidLoopTimer);
+  _vidLoopTimer = setInterval(() => {
+    if (!document.getElementById("vid-modal") || document.getElementById("vid-modal").style.display === "none") {
+      clearInterval(_vidLoopTimer); _vidLoopTimer = null; return;
+    }
+    if (!video.duration) return;
+    // playhead
+    const dur = vidEditorState.duration || video.duration;
+    const pct = (video.currentTime / dur) * 100;
+    const ph = document.getElementById("vid-timeline-playhead");
+    if (ph) ph.style.left = pct + "%";
+    // loop dentro do trim
+    if (video.currentTime >= vidEditorState.trimEnd || video.currentTime < vidEditorState.trimStart) {
+      try { video.currentTime = vidEditorState.trimStart; video.play().catch(()=>{}); } catch(_) {}
+    }
+  }, 100);
+}
+
+function closeVideoEditor(reset) {
+  document.getElementById("vid-modal").style.display = "none";
+  const video = document.getElementById("vid-preview");
+  try { video.pause(); video.removeAttribute("src"); video.load(); } catch(_) {}
+  if (_vidLoopTimer) { clearInterval(_vidLoopTimer); _vidLoopTimer = null; }
+  if (reset) {
+    if (vidEditorState.url) { try { URL.revokeObjectURL(vidEditorState.url); } catch(_){} }
+    vidEditorState = { file:null, url:null, duration:0, trimStart:0, trimEnd:0, speed:1, dragging:null };
+    document.getElementById("file-input").value = "";
+  }
+}
+
+async function convertVideoToGif() {
+  if (typeof GIF === "undefined") { showToast("❌ Biblioteca GIF não carregada"); return; }
+  const video = document.getElementById("vid-preview");
+  const btn = document.getElementById("vid-btn-convert");
+  const progressWrap = document.getElementById("vid-progress-wrap");
+  const progressFill = document.getElementById("vid-progress-fill");
+  const progressLabel = document.getElementById("vid-progress-label");
+
+  const trimDur = Math.min(VID_GIF_MAX_DURATION, vidEditorState.trimEnd - vidEditorState.trimStart);
+  if (trimDur <= 0.1) { showToast("⚠️ Recorte muito curto"); return; }
+
+  btn.disabled = true;
+  progressWrap.style.display = "block";
+  progressFill.style.width = "0%";
+
+  // Tentativas adaptativas para ficar <= 5MB
+  const attempts = [
+    { width: 360, fps: 14 },
+    { width: 320, fps: 12 },
+    { width: 280, fps: 10 },
+    { width: 240, fps: 10 },
+    { width: 200, fps: 8 }
+  ];
+
+  let blob = null;
+  for (let i = 0; i < attempts.length; i++) {
+    const cfg = attempts[i];
+    progressLabel.textContent = `Convertendo (tentativa ${i+1}/${attempts.length}) — ${cfg.width}px @ ${cfg.fps}fps · 0%`;
+    try {
+      blob = await _vidEncodeGif(video, cfg.width, cfg.fps, trimDur, (p) => {
+        progressFill.style.width = (p * 100).toFixed(1) + "%";
+        progressLabel.textContent = `Convertendo (tentativa ${i+1}/${attempts.length}) — ${cfg.width}px @ ${cfg.fps}fps · ${(p*100).toFixed(0)}%`;
+      });
+    } catch (e) {
+      console.error("[VidGif] erro:", e);
+      showToast("❌ Falha ao gerar GIF");
+      btn.disabled = false;
+      progressWrap.style.display = "none";
+      return;
+    }
+    if (blob.size <= VID_GIF_MAX_BYTES) break;
+    progressLabel.textContent = `GIF ficou ${(blob.size/1024/1024).toFixed(2)}MB — reduzindo...`;
+  }
+
+  if (!blob) {
+    showToast("❌ Não foi possível gerar GIF");
+    btn.disabled = false;
+    progressWrap.style.display = "none";
+    return;
+  }
+  if (blob.size > VID_GIF_MAX_BYTES) {
+    showToast(`⚠️ GIF resultou em ${(blob.size/1024/1024).toFixed(2)}MB (acima de 5MB). Tente recorte menor.`);
+    btn.disabled = false;
+    progressWrap.style.display = "none";
+    return;
+  }
+
+  // Substitui o file por um File GIF
+  const gifFile = new File([blob], `video_${Date.now()}.gif`, { type: "image/gif" });
+  selectedFile = gifFile;
+  selectedFileUrl = URL.createObjectURL(blob);
+
+  showToast(`✅ GIF gerado (${(blob.size/1024/1024).toFixed(2)}MB)`);
+  closeVideoEditor(false);
+  updateUploadUI();
+  updatePreview();
+}
+
+function _vidEncodeGif(video, targetWidth, fps, trimDur, onProgress) {
+  return new Promise((resolve, reject) => {
+    const speed = vidEditorState.speed || 1;
+    const startT = vidEditorState.trimStart;
+    const endT = startT + trimDur;
+    // duração resultante é trimDur/speed; manter cap em 10s
+    const outDur = Math.min(VID_GIF_MAX_DURATION, trimDur / speed);
+    const totalFrames = Math.max(2, Math.round(outDur * fps));
+    const frameDelay = Math.round(1000 / fps); // ms entre frames no GIF
+
+    // Dimensões mantendo aspect ratio
+    const vw = video.videoWidth || 640;
+    const vh = video.videoHeight || 360;
+    const w = Math.min(targetWidth, vw);
+    const h = Math.round((w / vw) * vh);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+
+    const gif = new GIF({
+      workers: 2,
+      quality: 10,
+      width: w,
+      height: h,
+      workerScript: "https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.1/dist/gif.worker.js"
+    });
+
+    gif.on("progress", p => { try { onProgress && onProgress(0.5 + p * 0.5); } catch(_){} });
+    gif.on("finished", blob => resolve(blob));
+
+    let i = 0;
+    const wasLooping = video.loop;
+    const wasMuted = video.muted;
+    video.loop = false;
+    video.muted = true;
+    video.pause();
+
+    function captureNext() {
+      if (i >= totalFrames) {
+        try { onProgress && onProgress(0.5); } catch(_){}
+        gif.render();
+        video.loop = wasLooping;
+        video.muted = wasMuted;
+        return;
+      }
+      const t = startT + (i / (totalFrames - 1)) * trimDur;
+      const onSeeked = () => {
+        video.removeEventListener("seeked", onSeeked);
+        try { ctx.drawImage(video, 0, 0, w, h); } catch (e) { reject(e); return; }
+        gif.addFrame(ctx, { copy: true, delay: frameDelay });
+        i++;
+        try { onProgress && onProgress((i / totalFrames) * 0.5); } catch(_){}
+        captureNext();
+      };
+      video.addEventListener("seeked", onSeeked);
+      try { video.currentTime = Math.min(endT, Math.max(startT, t)); }
+      catch(e) { reject(e); }
+    }
+    captureNext();
+  });
 }
 
 function updateUploadUI() {

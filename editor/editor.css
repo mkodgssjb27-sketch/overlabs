@@ -122,3 +122,39 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0a0a0
 .empty small{color:#64748b;font-size:13px;display:block;margin-top:4px}
 .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,.95);color:#fff;padding:12px 22px;border-radius:14px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
+
+/* ═══════════════════════════════════════════
+   Editor de Vídeo → GIF
+   ═══════════════════════════════════════════ */
+.vid-modal { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:1000; display:flex; align-items:center; justify-content:center; padding:16px; }
+.vid-modal-card { background:#0f172a; border:1px solid rgba(255,255,255,.1); border-radius:18px; max-width:560px; width:100%; max-height:92vh; overflow:hidden; display:flex; flex-direction:column; }
+.vid-modal-header { display:flex; justify-content:space-between; align-items:center; padding:18px 20px; border-bottom:1px solid rgba(255,255,255,.08); }
+.vid-modal-title { font-weight:800; color:#fff; font-size:16px; }
+.vid-modal-close { background:rgba(255,255,255,.08); border:none; color:#fff; width:32px; height:32px; border-radius:8px; font-size:14px; cursor:pointer; }
+.vid-modal-body { padding:18px 20px; overflow-y:auto; }
+.vid-preview-wrap { background:#000; border-radius:12px; overflow:hidden; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; margin-bottom:8px; }
+.vid-preview-wrap video { max-width:100%; max-height:100%; }
+.vid-info { color:#94a3b8; font-size:12px; margin-bottom:14px; text-align:center; }
+.vid-section { margin-bottom:18px; }
+.vid-section .lbl { display:block; font-size:11px; color:#94a3b8; font-weight:800; letter-spacing:.5px; margin-bottom:8px; }
+.vid-timeline { position:relative; height:36px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; cursor:pointer; user-select:none; touch-action:none; }
+.vid-timeline-bar { position:absolute; inset:0; background:repeating-linear-gradient(90deg,transparent 0,transparent 24px,rgba(255,255,255,.04) 24px,rgba(255,255,255,.04) 25px); border-radius:10px; }
+.vid-timeline-selected { position:absolute; top:0; bottom:0; background:rgba(167,139,250,.18); border-top:2px solid #a78bfa; border-bottom:2px solid #a78bfa; pointer-events:none; }
+.vid-timeline-playhead { position:absolute; top:-3px; bottom:-3px; width:2px; background:#fff; pointer-events:none; box-shadow:0 0 6px rgba(255,255,255,.6); }
+.vid-handle { position:absolute; top:-4px; bottom:-4px; width:12px; background:#a78bfa; border-radius:4px; cursor:ew-resize; box-shadow:0 0 10px rgba(167,139,250,.5); transform:translateX(-50%); }
+.vid-handle::before { content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:2px; height:14px; background:#fff; border-radius:2px; box-shadow:4px 0 0 #fff,-4px 0 0 #fff; opacity:.6; }
+.vid-trim-labels { display:flex; justify-content:space-between; margin-top:8px; font-size:12px; color:#64748b; font-weight:700; }
+.vid-range { width:100%; -webkit-appearance:none; appearance:none; background:transparent; height:24px; }
+.vid-range::-webkit-slider-runnable-track { height:6px; background:rgba(255,255,255,.08); border-radius:6px; }
+.vid-range::-webkit-slider-thumb { -webkit-appearance:none; height:18px; width:18px; border-radius:50%; background:#a78bfa; margin-top:-6px; cursor:pointer; box-shadow:0 0 8px rgba(167,139,250,.5); }
+.vid-range::-moz-range-track { height:6px; background:rgba(255,255,255,.08); border-radius:6px; }
+.vid-range::-moz-range-thumb { height:18px; width:18px; border-radius:50%; background:#a78bfa; border:none; cursor:pointer; box-shadow:0 0 8px rgba(167,139,250,.5); }
+.vid-speed-labels { display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-top:2px; }
+.vid-progress-wrap { margin-bottom:14px; }
+.vid-progress-label { font-size:12px; color:#a78bfa; font-weight:700; margin-bottom:6px; }
+.vid-progress-bar { height:8px; background:rgba(255,255,255,.06); border-radius:4px; overflow:hidden; }
+.vid-progress-fill { height:100%; width:0%; background:linear-gradient(90deg,#a78bfa,#22c55e); transition:width .2s; }
+.vid-actions { display:flex; gap:10px; }
+.vid-btn-cancel { flex:1; padding:12px; border-radius:12px; background:rgba(255,255,255,.06); color:#94a3b8; font-weight:800; border:none; cursor:pointer; }
+.vid-btn-convert { flex:2; padding:12px; border-radius:12px; background:linear-gradient(135deg,#a78bfa,#7c3aed); color:#fff; font-weight:800; border:none; cursor:pointer; }
+.vid-btn-convert:disabled { opacity:.5; cursor:not-allowed; }

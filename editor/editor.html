@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.1/dist/gif.js"></script>
 
 <link rel="stylesheet" href="editor.css">
 </head>
@@ -33,9 +34,9 @@
       <!-- Upload -->
       <div class="upload-zone" id="upload-zone">
         <span class="uz-icon">📁</span>
-        <div class="uz-text">Clique para enviar imagem ou GIF</div>
-        <div class="uz-hint">PNG, GIF, JPG, WebP (máx. 10MB)</div>
-        <input type="file" id="file-input" accept="image/png,image/gif,image/jpeg,image/webp" onchange="handleFileSelect(this)">
+        <div class="uz-text">Clique para enviar imagem, GIF ou vídeo</div>
+        <div class="uz-hint">PNG, GIF, JPG, WebP, MP4, WebM, MOV (vídeo até 10s vira GIF)</div>
+        <input type="file" id="file-input" accept="image/png,image/gif,image/jpeg,image/webp,video/*" onchange="handleFileSelect(this)">
       </div>
 
       <!-- Preview da imagem upload -->
@@ -143,6 +144,57 @@
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<!-- ═══ MODAL: Editor de Vídeo → GIF ═══ -->
+<div class="vid-modal" id="vid-modal" style="display:none">
+  <div class="vid-modal-card">
+    <div class="vid-modal-header">
+      <div class="vid-modal-title">🎬 Editor de Vídeo → GIF</div>
+      <button class="vid-modal-close" onclick="closeVideoEditor(true)">✕</button>
+    </div>
+    <div class="vid-modal-body">
+      <div class="vid-preview-wrap">
+        <video id="vid-preview" playsinline muted></video>
+      </div>
+      <div class="vid-info" id="vid-info">Carregando vídeo...</div>
+
+      <!-- Timeline trim -->
+      <div class="vid-section">
+        <label class="lbl">RECORTE (LOOP) — máx. 10 segundos</label>
+        <div class="vid-timeline" id="vid-timeline">
+          <div class="vid-timeline-bar"></div>
+          <div class="vid-timeline-selected" id="vid-timeline-selected"></div>
+          <div class="vid-timeline-playhead" id="vid-timeline-playhead"></div>
+          <div class="vid-handle vid-handle-start" id="vid-handle-start"></div>
+          <div class="vid-handle vid-handle-end" id="vid-handle-end"></div>
+        </div>
+        <div class="vid-trim-labels">
+          <span id="vid-trim-start">0,0s</span>
+          <span id="vid-trim-duration" style="color:#a78bfa;font-weight:800">0,0s</span>
+          <span id="vid-trim-end">0,0s</span>
+        </div>
+      </div>
+
+      <!-- Speed -->
+      <div class="vid-section">
+        <label class="lbl">VELOCIDADE — <span id="vid-speed-val" style="color:#a78bfa">1.0x</span></label>
+        <input type="range" id="vid-speed" min="0.1" max="2" step="0.1" value="1" class="vid-range">
+        <div class="vid-speed-labels"><span>0.1x</span><span>1x</span><span>2x</span></div>
+      </div>
+
+      <!-- Progress -->
+      <div class="vid-progress-wrap" id="vid-progress-wrap" style="display:none">
+        <div class="vid-progress-label" id="vid-progress-label">Convertendo... 0%</div>
+        <div class="vid-progress-bar"><div class="vid-progress-fill" id="vid-progress-fill"></div></div>
+      </div>
+
+      <div class="vid-actions">
+        <button class="vid-btn-cancel" onclick="closeVideoEditor(true)">Cancelar</button>
+        <button class="vid-btn-convert" id="vid-btn-convert" onclick="convertVideoToGif()">🎞️ Converter para GIF</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="editor.js"></script>
 </body>
