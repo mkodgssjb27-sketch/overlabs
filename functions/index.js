@@ -1,4 +1,4 @@
-const { onDocumentCreated, onDocumentWritten } = require("firebase-functions/v2/firestore");
+﻿const { onDocumentCreated, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
@@ -64,7 +64,7 @@ exports.sendPushNotification = onDocumentCreated(
 );
 
 // ══════════════════════════════════════════════════════════════════
-// ═══ Auto-promoção da lista de espera em caronas ═════════════════
+// ═══ Auto-promoção da lista de espera em Reservas ═════════════════
 // ══════════════════════════════════════════════════════════════════
 // Sempre que um doc em "rides" for escrito e houver vagas livres
 // + pessoas na fila de espera, promove automaticamente.
@@ -118,12 +118,12 @@ exports.autoPromoteWaitlist = onDocumentWritten(
           type: "waitlist_promotion",
           icon: "🎉",
           text: "Vaga confirmada!",
-          detail: `Uma vaga abriu na carona "${rideTitle}" e você foi confirmado automaticamente!`,
+          detail: `Uma vaga abriu na Reserva "${rideTitle}" e você foi confirmado automaticamente!`,
           targetUserId: pu.userId,
           createdAt: FieldValue.serverTimestamp()
         });
         await db.collection("notifications").doc(pu.userId).collection("items").add({
-          msg: `🎉 Uma vaga abriu na carona "${rideTitle}" e você foi confirmado automaticamente!`,
+          msg: `🎉 Uma vaga abriu na Reserva "${rideTitle}" e você foi confirmado automaticamente!`,
           read: false,
           at: FieldValue.serverTimestamp()
         });
@@ -133,7 +133,7 @@ exports.autoPromoteWaitlist = onDocumentWritten(
     }
 
     if (promotedUsers.length > 0) {
-      console.log(`[AutoPromote] ${promotedUsers.length} aluno(s) promovido(s) na carona "${rideTitle}" (ride ${event.params.rideId})`);
+      console.log(`[AutoPromote] ${promotedUsers.length} aluno(s) promovido(s) na Reserva "${rideTitle}" (ride ${event.params.rideId})`);
     }
   }
 );

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -179,7 +179,7 @@ input,select,textarea{font-family:inherit;outline:none}
   <div class="t-content">
     <!-- Stats resumo -->
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-val" id="stat-rides" style="color:#f59e0b">0</div><div class="stat-lbl">Caronas</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-rides" style="color:#f59e0b">0</div><div class="stat-lbl">Reservas</div></div>
       <div class="stat-card"><div class="stat-val" id="stat-conf" style="color:#22c55e">0</div><div class="stat-lbl">Confirmados</div></div>
       <div class="stat-card"><div class="stat-val" id="stat-wait" style="color:#f97316">0</div><div class="stat-lbl">Na Fila</div></div>
     </div>
@@ -189,7 +189,7 @@ input,select,textarea{font-family:inherit;outline:none}
     <div class="menu-grid">
       <div class="menu-card" onclick="showScreen('teacher-rides')">
         <span class="mc-icon">🚗</span>
-        <div class="mc-title">Caronas</div>
+        <div class="mc-title">Reservas</div>
         <div class="mc-desc">Gerenciar, criar e editar</div>
       </div>
       <div class="menu-card" onclick="showScreen('teacher-alerts')">
@@ -273,69 +273,69 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
 </div>
 
-<!-- ══ PROFESSOR — CARONAS (lista) ════════════════════════════════ -->
+<!-- ══ PROFESSOR — Reservas (lista) ════════════════════════════════ -->
 <div class="screen" id="screen-teacher-rides">
   <div class="top-bar">
     <div class="top-bar-brand">
       <button onclick="showScreen('teacher-dashboard')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
-      <h1 style="font-size:16px">Caronas</h1>
+      <h1 style="font-size:16px">Reservas</h1>
     </div>
     <div class="top-bar-actions" style="display:flex;gap:8px">
       <button onclick="renderRidesHistory();showScreen('teacher-rides-history')" style="padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.08);color:#94a3b8;font-weight:700;font-size:13px">📋 Histórico</button>
-      <button onclick="showScreen('teacher-create');resetRideForm()" style="padding:10px 20px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:13px">+ Nova Carona</button>
+      <button onclick="showScreen('teacher-create');resetRideForm()" style="padding:10px 20px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;font-weight:800;font-size:13px">+ Nova Reserva</button>
     </div>
   </div>
   <div class="t-content">
-    <!-- Info sobre caronas (editável) -->
+    <!-- Info sobre Reservas (editável) -->
     <div style="margin-bottom:14px">
       <button onclick="openRidesInfoEditor()" style="padding:8px 14px;border-radius:10px;background:rgba(59,130,246,.12);border:none;color:#60a5fa;font-weight:700;font-size:12px;cursor:pointer">ℹ️ Editar Texto Informativo</button>
     </div>
     <div id="t-rides-loading" class="loading"><div class="spin"></div>Carregando...</div>
-    <div id="t-rides-empty" class="empty" style="display:none"><div class="icon">🚗</div><p>Nenhuma carona criada</p><small>Clique em "+ Nova Carona" para começar</small></div>
+    <div id="t-rides-empty" class="empty" style="display:none"><div class="icon">🚗</div><p>Nenhuma Reserva criada</p><small>Clique em "+ Nova Reserva" para começar</small></div>
     <div id="t-rides-list"></div>
   </div>
 </div>
 
-<!-- Modal editar info caronas -->
+<!-- Modal editar info Reservas -->
 <div id="rides-info-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px">
   <div style="width:100%;max-width:420px;background:#151929;border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:28px 24px;position:relative">
     <button onclick="closeRidesInfoModal()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.08);border:none;color:#94a3b8;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer">✕</button>
-    <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:16px">ℹ️ Texto Informativo das Caronas</div>
+    <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:16px">ℹ️ Texto Informativo das Reservas</div>
     <div style="margin-bottom:14px">
       <label class="lbl">TEXTO QUE O ALUNO VERÁ</label>
-      <textarea class="inp" id="rides-info-text" rows="6" placeholder="Explique como funciona as caronas..." style="resize:vertical;-webkit-user-select:text;user-select:text"></textarea>
+      <textarea class="inp" id="rides-info-text" rows="6" placeholder="Explique como funciona as Reservas..." style="resize:vertical;-webkit-user-select:text;user-select:text"></textarea>
     </div>
     <button onclick="saveRidesInfo()" class="btn-main">💾 Salvar</button>
   </div>
 </div>
 
-<!-- ══ PROFESSOR — HISTÓRICO DE CARONAS ═══════════════════════════ -->
+<!-- ══ PROFESSOR — HISTÓRICO DE Reservas ═══════════════════════════ -->
 <div class="screen" id="screen-teacher-rides-history">
   <div class="top-bar">
     <div class="top-bar-brand">
       <button onclick="showScreen('teacher-rides')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
-      <h1 style="font-size:16px">Histórico de Caronas</h1>
+      <h1 style="font-size:16px">Histórico de Reservas</h1>
     </div>
   </div>
   <div class="t-content">
-    <div id="rides-history-empty" class="empty" style="display:none"><div class="icon">📋</div><p>Nenhuma carona passada</p><small>Caronas finalizadas aparecerão aqui</small></div>
+    <div id="rides-history-empty" class="empty" style="display:none"><div class="icon">📋</div><p>Nenhuma Reserva passada</p><small>Reservas finalizadas aparecerão aqui</small></div>
     <div id="rides-history-list"></div>
   </div>
 </div>
 
-<!-- ══ PROFESSOR — CRIAR CARONA ════════════════════════════════════ -->
+<!-- ══ PROFESSOR — CRIAR Reserva ════════════════════════════════════ -->
 <div class="screen" id="screen-teacher-create">
   <div class="top-bar">
     <div class="top-bar-brand">
       <button onclick="showScreen('teacher-rides')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
-      <div><div class="t-title" style="font-size:16px">Nova Carona</div></div>
+      <div><div class="t-title" style="font-size:16px">Nova Reserva</div></div>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
       <div style="margin-bottom:18px">
-        <label class="lbl">TÍTULO DA CARONA</label>
-        <input class="inp" id="r-title" placeholder="Ex: Carona para a faculdade — Sexta" oninput="clearErr('r-title-err')">
+        <label class="lbl">TÍTULO DA Reserva</label>
+        <input class="inp" id="r-title" placeholder="Ex: Reserva para a faculdade — Sexta" oninput="clearErr('r-title-err')">
         <p class="err-txt" id="r-title-err"></p>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
@@ -358,7 +358,7 @@ input,select,textarea{font-family:inherit;outline:none}
       <div style="margin-bottom:22px">
         <label class="lbl">🪙 RECOMPENSA EM CUTS (por aluno confirmado)</label>
         <input type="number" min="0" class="inp" id="r-cuts-reward" placeholder="0 = sem recompensa" value="0" style="color-scheme:dark">
-        <p style="font-size:12px;color:#64748b;margin-top:6px">Os alunos confirmados receberão essas moedas automaticamente quando a carona expirar.</p>
+        <p style="font-size:12px;color:#64748b;margin-top:6px">Os alunos confirmados receberão essas moedas automaticamente quando a Reserva expirar.</p>
       </div>
       <div style="margin-bottom:22px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
         <label class="toggle-wrap">
@@ -380,7 +380,7 @@ input,select,textarea{font-family:inherit;outline:none}
           </label>
           <div>
             <div style="font-weight:700;font-size:14px;color:#e2e8f0">⏱ Programar publicação</div>
-            <div style="font-size:12px;color:#64748b;margin-top:2px">A carona ficará oculta até a data/hora definida</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px">A Reserva ficará oculta até a data/hora definida</div>
           </div>
         </div>
         <div id="r-sched-fields" style="display:none;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
@@ -395,23 +395,23 @@ input,select,textarea{font-family:inherit;outline:none}
           <p class="err-txt" id="r-sched-err" style="grid-column:1/-1"></p>
         </div>
       </div>
-      <button onclick="createRide()" class="btn-main">✓ Criar Carona</button>
+      <button onclick="createRide()" class="btn-main">✓ Criar Reserva</button>
     </div>
   </div>
 </div>
 
-<!-- ══ PROFESSOR — EDITAR CARONA ══════════════════════════════════ -->
+<!-- ══ PROFESSOR — EDITAR Reserva ══════════════════════════════════ -->
 <div class="screen" id="screen-teacher-edit">
   <div class="top-bar">
     <div class="top-bar-brand">
       <button onclick="openTeacherDetail(currentDetailRideId)" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
-      <div><div class="t-title" style="font-size:16px">Editar Carona</div></div>
+      <div><div class="t-title" style="font-size:16px">Editar Reserva</div></div>
     </div>
   </div>
   <div class="t-content" style="max-width:560px">
     <div class="t-form">
       <div style="margin-bottom:18px">
-        <label class="lbl">TÍTULO DA CARONA</label>
+        <label class="lbl">TÍTULO DA Reserva</label>
         <input class="inp" id="e-title" oninput="clearErr('e-title-err')">
         <p class="err-txt" id="e-title-err"></p>
       </div>
@@ -434,7 +434,7 @@ input,select,textarea{font-family:inherit;outline:none}
       <div style="margin-bottom:22px">
         <label class="lbl">🪙 RECOMPENSA EM CUTS (por aluno confirmado)</label>
         <input type="number" min="0" class="inp" id="e-cuts-reward" placeholder="0 = sem recompensa" value="0" style="color-scheme:dark">
-        <p style="font-size:12px;color:#64748b;margin-top:6px">Os alunos confirmados receberão essas moedas automaticamente quando a carona expirar.</p>
+        <p style="font-size:12px;color:#64748b;margin-top:6px">Os alunos confirmados receberão essas moedas automaticamente quando a Reserva expirar.</p>
       </div>
       <div style="margin-bottom:22px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
         <label class="toggle-wrap">
@@ -444,10 +444,10 @@ input,select,textarea{font-family:inherit;outline:none}
         </label>
         <div>
           <div style="font-weight:700;font-size:14px;color:#e2e8f0">👁 Visível para alunos</div>
-          <div style="font-size:12px;color:#64748b;margin-top:2px">Se desligado, a carona desaparecerá para os alunos</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Se desligado, a Reserva desaparecerá para os alunos</div>
         </div>
       </div>
-      <div id="e-vis-warn" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;color:#f87171;font-size:13px;font-weight:700">⚠️ Atenção: a carona ficará OCULTA para todos os alunos!</div>
+      <div id="e-vis-warn" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;color:#f87171;font-size:13px;font-weight:700">⚠️ Atenção: a Reserva ficará OCULTA para todos os alunos!</div>
       <div id="e-schedule-block" style="display:none;margin-bottom:18px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:14px;padding:16px">
         <div style="font-weight:800;font-size:13px;color:#38bdf8;margin-bottom:10px">⏱ PUBLICAÇÃO PROGRAMADA</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
@@ -468,7 +468,7 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
 </div>
 
-<!-- ══ PROFESSOR — DETALHE DA CARONA ═══════════════════════════════ -->
+<!-- ══ PROFESSOR — DETALHE DA Reserva ═══════════════════════════════ -->
 <div class="screen" id="screen-teacher-detail">
   <div class="top-bar" style="justify-content:space-between">
     <div class="top-bar-brand">
@@ -1086,8 +1086,56 @@ input,select,textarea{font-family:inherit;outline:none}
         <label class="lbl">TÍTULO DA INSCRIÇÃO</label>
         <input class="inp" id="insc-title" placeholder="Ex: Torneio de Vôlei — Abril 2026">
       </div>
+      <div style="margin-bottom:18px">
+        <label class="lbl">DESCRIÇÃO / TIPO DO TORNEIO</label>
+        <textarea class="inp" id="insc-desc" rows="3" placeholder="Ex: Torneio amador de duplas masculinas, categoria livre" style="resize:vertical;font-family:inherit"></textarea>
+      </div>
+      <div style="margin-bottom:18px">
+        <label class="lbl">TIPO DE EQUIPE</label>
+        <select class="inp" id="insc-team-size">
+          <option value="2">Dupla (2 jogadores)</option>
+          <option value="3">Trio (3 jogadores)</option>
+          <option value="4">Quarteto (4 jogadores)</option>
+          <option value="5">Quinteto (5 jogadores)</option>
+          <option value="6">Sexteto (6 jogadores)</option>
+        </select>
+      </div>
+      <div style="margin-bottom:18px">
+        <label class="lbl">LIMITE DE INSCRIÇÕES</label>
+        <input type="number" min="1" class="inp" id="insc-max" placeholder="Ex: 16 (deixe vazio para sem limite)">
+      </div>
+      <div style="margin-bottom:18px">
+        <label class="lbl">DATA LIMITE PARA INSCRIÇÃO</label>
+        <input type="datetime-local" class="inp" id="insc-deadline">
+      </div>
+      <div style="margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;padding:14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)">
+        <div>
+          <div style="font-weight:800;color:#fff;font-size:14px">Inscrição visível</div>
+          <div style="font-size:12px;color:#64748b">Se desativada, não aparece para os alunos</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:50px;height:28px">
+          <input type="checkbox" id="insc-visible" checked style="opacity:0;width:0;height:0">
+          <span id="insc-visible-slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#22c55e;border-radius:28px;transition:.3s"></span>
+          <span id="insc-visible-knob" style="position:absolute;height:22px;width:22px;left:25px;bottom:3px;background:#fff;border-radius:50%;transition:.3s"></span>
+        </label>
+      </div>
       <p class="err-txt" id="insc-err" style="margin-bottom:12px"></p>
       <button onclick="criarInscricao()" class="btn-main" id="btn-criar-insc">✅ Criar Inscrição</button>
+      <script>
+        (function(){
+          var cb = document.getElementById('insc-visible');
+          var slider = document.getElementById('insc-visible-slider');
+          var knob = document.getElementById('insc-visible-knob');
+          if (!cb) return;
+          function update(){
+            if (cb.checked) { slider.style.background = '#22c55e'; knob.style.left = '25px'; }
+            else { slider.style.background = '#475569'; knob.style.left = '3px'; }
+          }
+          cb.addEventListener('change', update);
+          slider.addEventListener('click', function(){ cb.checked = !cb.checked; update(); });
+          update();
+        })();
+      </script>
     </div>
   </div>
 </div>
@@ -1507,7 +1555,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <button onclick="logFilterAction('todos')" class="log-action-btn active" data-logaction="todos" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">Todos</button>
         <button onclick="logFilterAction('compra_loja')" class="log-action-btn" data-logaction="compra_loja" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🛒 Compras</button>
         <button onclick="logFilterAction('perfil')" class="log-action-btn" data-logaction="perfil" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">👤 Perfil</button>
-        <button onclick="logFilterAction('carona')" class="log-action-btn" data-logaction="carona" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🚗 Caronas</button>
+        <button onclick="logFilterAction('Reserva')" class="log-action-btn" data-logaction="Reserva" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🚗 Reservas</button>
         <button onclick="logFilterAction('presente')" class="log-action-btn" data-logaction="presente" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🎁 Presentes</button>
         <button onclick="logFilterAction('novo_usuario')" class="log-action-btn" data-logaction="novo_usuario" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🆕 Novos</button>
         <button onclick="logFilterAction('navegacao')" class="log-action-btn" data-logaction="navegacao" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">📍 Navegação</button>
@@ -1966,13 +2014,13 @@ function startTeacherListener() {
       }
       // Auto-fix: promover da fila de espera se houver vagas
       allRides.forEach(r => autoFixWaitlist(r));
-      // Auto-publish: caronas programadas cuja hora chegou
+      // Auto-publish: Reservas programadas cuja hora chegou
       allRides.forEach(r => autoPublishScheduled(r));
-      // Auto-distribuir CUTS quando a carona expira
+      // Auto-distribuir CUTS quando a Reserva expira
       allRides.forEach(r => autoDistributeCutsReward(r));
     }, err => {
       console.error(err);
-      showToast("Erro ao carregar caronas");
+      showToast("Erro ao carregar Reservas");
     });
 }
 
@@ -2021,7 +2069,7 @@ function renderTeacherRides(rides) {
   list.innerHTML = html;
 }
 
-// ── Histórico de Caronas ──
+// ── Histórico de Reservas ──
 function renderRidesHistory() {
   const past = allRides.filter(r => isPast(r.date, r.time)).sort((a,b) => (b.date+b.time).localeCompare(a.date+a.time));
   const list = document.getElementById("rides-history-list");
@@ -2063,7 +2111,7 @@ function renderRidesHistory() {
   }).join("");
 }
 
-// ── Criar Carona ──
+// ── Criar Reserva ──
 function resetRideForm() {
   document.getElementById("r-title").value = "";
   document.getElementById("r-date").value = "";
@@ -2131,13 +2179,13 @@ async function createRide() {
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
-    showToast(scheduled ? "✅ Carona programada!" : "✅ Carona criada!");
+    showToast(scheduled ? "✅ Reserva programada!" : "✅ Reserva criada!");
     showScreen("teacher-rides");
   } catch(e) {
-    showToast("Erro ao criar carona");
+    showToast("Erro ao criar Reserva");
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = "✓ Criar Carona";
+  btn.disabled = false; btn.textContent = "✓ Criar Reserva";
 }
 
 // ── Auto-fix: promover fila de espera quando há vagas livres ──
@@ -2159,13 +2207,13 @@ async function autoFixWaitlist(ride) {
       if (free <= 0 || cw.length === 0) return;
       const qty = Math.min(free, cw.length);
       tx.update(rideRef, { booked: [...cb, ...cw.slice(0, qty)], waitlist: cw.slice(qty) });
-      console.log("[AutoFix] Promovidos", qty, "aluno(s) na carona", d.title);
+      console.log("[AutoFix] Promovidos", qty, "aluno(s) na Reserva", d.title);
     });
   } catch(e) { console.warn("[AutoFix]", e); }
   finally { delete _autoFixRunning[ride.id]; }
 }
 
-// ── Auto-publish: caronas programadas cuja hora chegou ──
+// ── Auto-publish: Reservas programadas cuja hora chegou ──
 const _autoPublishRunning = {};
 async function autoPublishScheduled(ride) {
   if (!ride || !ride.id) return;
@@ -2203,19 +2251,19 @@ async function autoPublishScheduled(ride) {
         refId: ride.id,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-      console.log("[AutoPublish] Carona publicada:", snapshot.title);
+      console.log("[AutoPublish] Reserva publicada:", snapshot.title);
     }
   } catch(e) { console.warn("[AutoPublish]", e); }
   finally { delete _autoPublishRunning[ride.id]; }
 }
 
-// Verifica caronas programadas a cada 30s mesmo sem mudança no snapshot
+// Verifica Reservas programadas a cada 30s mesmo sem mudança no snapshot
 setInterval(() => {
   if (Array.isArray(allRides)) allRides.forEach(r => autoPublishScheduled(r));
   if (Array.isArray(allRides)) allRides.forEach(r => autoDistributeCutsReward(r));
 }, 30000);
 
-// ── Auto-distribuir recompensa em CUTS quando a carona expira ──
+// ── Auto-distribuir recompensa em CUTS quando a Reserva expira ──
 const _autoCutsRunning = {};
 async function autoDistributeCutsReward(ride) {
   if (!ride || !ride.id) return;
@@ -2266,14 +2314,14 @@ async function autoDistributeCutsReward(ride) {
       slice.forEach(uid => {
         batch.update(db.collection("users").doc(uid), { cuts: inc, cutsUpdatedAt: ts });
         batch.set(db.collection("notifications").doc(uid).collection("items").doc(), {
-          msg: `🪙 Você ganhou ${reward} moeda${reward>1?'s':''} CUTS pela carona "${title}"!`,
+          msg: `🪙 Você ganhou ${reward} moeda${reward>1?'s':''} CUTS pela Reserva "${title}"!`,
           read: false,
           at: ts
         });
         batch.set(db.collection("activity_log").doc(), {
           userId: uid,
-          action: 'cuts_recompensa_carona',
-          detail: `Recebeu ${reward} CUTS pela carona "${title}"`,
+          action: 'cuts_recompensa_Reserva',
+          detail: `Recebeu ${reward} CUTS pela Reserva "${title}"`,
           timestamp: ts,
           extra: { rideId: ride.id, valor: reward, auto: true }
         });
@@ -2285,7 +2333,7 @@ async function autoDistributeCutsReward(ride) {
   finally { delete _autoCutsRunning[ride.id]; }
 }
 
-// ── Detalhe da Carona ──
+// ── Detalhe da Reserva ──
 function openTeacherDetail(rideId) {
   currentDetailRideId = rideId;
   const ride = allRides.find(r => r.id === rideId);
@@ -2343,7 +2391,7 @@ function renderTeacherDetail(ride) {
   }
 }
 
-// ── Gerenciamento de carona (professor) ──
+// ── Gerenciamento de Reserva (professor) ──
 async function profMoveBooked(index, direction) {
   if (!requireFirebase() || !currentDetailRideId) return;
   const rideRef = db.collection("rides").doc(currentDetailRideId);
@@ -2389,7 +2437,7 @@ async function profPromoteToBooked(userId) {
       rideTitle = data.title;
       const booked = [...(data.booked || [])];
       const waitlist = [...(data.waitlist || [])];
-      if (booked.length >= data.seats) throw "Carona lotada";
+      if (booked.length >= data.seats) throw "Reserva lotada";
       const idx = waitlist.findIndex(w => w.userId === userId);
       if (idx === -1) return;
       const person = waitlist.splice(idx, 1)[0];
@@ -2398,10 +2446,10 @@ async function profPromoteToBooked(userId) {
       promotedUser = person;
       tx.update(rideRef, { booked, waitlist });
     });
-    showToast("✅ Movido para carona");
+    showToast("✅ Movido para Reserva");
     if (promotedUser) {
       await db.collection("notifications").doc(promotedUser.userId).collection("items").add({
-        msg: `🎉 Você foi movido da lista de espera para a carona "${rideTitle}"!`,
+        msg: `🎉 Você foi movido da lista de espera para a Reserva "${rideTitle}"!`,
         read: false,
         at: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -2455,18 +2503,18 @@ async function profRemoveFromWaitlist(userId) {
 }
 
 function deleteRide() {
-  showConfirmModal("Excluir esta carona?", "Esta ação não pode ser desfeita.", async () => {
+  showConfirmModal("Excluir esta Reserva?", "Esta ação não pode ser desfeita.", async () => {
     try {
       const ride = allRides.find(r => r.id === currentDetailRideId);
       await db.collection("rides").doc(currentDetailRideId).delete();
-      showToast("Carona excluída");
+      showToast("Reserva excluída");
       currentDetailRideId = null;
       showScreen("teacher-rides");
     } catch(e) { showToast("Erro ao excluir"); }
   });
 }
 
-// ── Remover aluno de uma carona ──
+// ── Remover aluno de uma Reserva ──
 function removeStudentFromRide(userId) {
   const ride = allRides.find(r => r.id === currentDetailRideId);
   if (!ride) return;
@@ -2479,7 +2527,7 @@ function removeStudentFromRide(userId) {
       let rideTitle = "";
       await db.runTransaction(async tx => {
         const doc = await tx.get(rideRef);
-        if (!doc.exists) throw "Carona não encontrada";
+        if (!doc.exists) throw "Reserva não encontrada";
         const data = doc.data();
         rideTitle = data.title;
         const booked = data.booked || [];
@@ -2501,12 +2549,12 @@ function removeStudentFromRide(userId) {
           type: "waitlist_promotion",
           icon: "🎉",
           text: "Vaga confirmada!",
-          detail: `Uma vaga abriu na carona "${rideTitle}" e você foi confirmado automaticamente!`,
+          detail: `Uma vaga abriu na Reserva "${rideTitle}" e você foi confirmado automaticamente!`,
           targetUserId: promotedUser.userId,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         await db.collection("notifications").doc(promotedUser.userId).collection("items").add({
-          msg: `🎉 Uma vaga abriu na carona "${rideTitle}" e você foi confirmado automaticamente!`,
+          msg: `🎉 Uma vaga abriu na Reserva "${rideTitle}" e você foi confirmado automaticamente!`,
           read: false,
           at: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -2521,7 +2569,7 @@ function removeStudentFromRide(userId) {
   });
 }
 
-// ── Editar Carona ──
+// ── Editar Reserva ──
 function openEditRide() {
   const ride = allRides.find(r => r.id === currentDetailRideId);
   if (!ride) return;
@@ -2576,7 +2624,7 @@ async function publishNow() {
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
-    showToast("🚀 Carona publicada!");
+    showToast("🚀 Reserva publicada!");
     openTeacherDetail(currentDetailRideId);
   } catch(e) {
     console.error(e);
@@ -2618,7 +2666,7 @@ async function saveEditRide() {
 
     await db.runTransaction(async tx => {
       const doc = await tx.get(rideRef);
-      if (!doc.exists) throw "Carona não encontrada";
+      if (!doc.exists) throw "Reserva não encontrada";
       const ride = doc.data();
       let booked = ride.booked || [];
       let wl = ride.waitlist || [];
@@ -2661,12 +2709,12 @@ async function saveEditRide() {
         type: "waitlist_promotion",
         icon: "🎉",
         text: "Vaga confirmada!",
-        detail: `Uma vaga abriu na carona "${title}" e você foi confirmado automaticamente!`,
+        detail: `Uma vaga abriu na Reserva "${title}" e você foi confirmado automaticamente!`,
         targetUserId: pu.userId,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       await db.collection("notifications").doc(pu.userId).collection("items").add({
-        msg: `🎉 Uma vaga abriu na carona "${title}" e você foi confirmado automaticamente!`,
+        msg: `🎉 Uma vaga abriu na Reserva "${title}" e você foi confirmado automaticamente!`,
         read: false,
         at: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -2678,25 +2726,25 @@ async function saveEditRide() {
         type: "waitlist_demotion",
         icon: "⚠️",
         text: "Você voltou para a fila de espera",
-        detail: `O número de vagas da carona "${title}" foi reduzido e você foi movido para a fila de espera.`,
+        detail: `O número de vagas da Reserva "${title}" foi reduzido e você foi movido para a fila de espera.`,
         targetUserId: du.userId,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       await db.collection("notifications").doc(du.userId).collection("items").add({
-        msg: `⚠️ O número de vagas da carona "${title}" foi reduzido e você voltou para a fila de espera.`,
+        msg: `⚠️ O número de vagas da Reserva "${title}" foi reduzido e você voltou para a fila de espera.`,
         read: false,
         at: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
 
     if (promoted > 0 && demoted > 0) {
-      showToast(`✅ Carona atualizada! ${promoted} promovido(s), ${demoted} para fila`);
+      showToast(`✅ Reserva atualizada! ${promoted} promovido(s), ${demoted} para fila`);
     } else if (promoted > 0) {
-      showToast(`✅ Carona atualizada! ${promoted} aluno(s) saiu(ram) da fila de espera`);
+      showToast(`✅ Reserva atualizada! ${promoted} aluno(s) saiu(ram) da fila de espera`);
     } else if (demoted > 0) {
-      showToast(`✅ Carona atualizada! ${demoted} aluno(s) movido(s) para a fila de espera`);
+      showToast(`✅ Reserva atualizada! ${demoted} aluno(s) movido(s) para a fila de espera`);
     } else {
-      showToast("✅ Carona atualizada!");
+      showToast("✅ Reserva atualizada!");
     }
     openTeacherDetail(currentDetailRideId);
   } catch(e) {
@@ -3016,7 +3064,7 @@ async function deleteStudent(userId, name) {
     await batch.commit();
     // Remove o documento do aluno
     await db.collection('users').doc(userId).delete();
-    // Remove o aluno de todas as caronas (booked e waitlist)
+    // Remove o aluno de todas as Reservas (booked e waitlist)
     const ridesSnap = await db.collection('rides').get();
     for (const rideDoc of ridesSnap.docs) {
       const data = rideDoc.data();
@@ -3746,7 +3794,7 @@ async function saveStudentProfile() {
     if (password && password.length >= 4) updates.password = password;
     await db.collection("users").doc(editingStudentId).update(updates);
 
-    // Atualizar nome/username nas caronas (booked e waitlist)
+    // Atualizar nome/username nas Reservas (booked e waitlist)
     if (updates.firstName) {
       const newFirst = updates.firstName;
       const ridesSnap = await db.collection("rides").get();
@@ -4766,19 +4814,42 @@ function loadRelatorio() {
 async function criarInscricao() {
   if (!requireFirebase()) return;
   const title = document.getElementById("insc-title").value.trim();
-  if (!title) { document.getElementById("insc-err").textContent = "Informe o título"; return; }
-  document.getElementById("insc-err").textContent = "";
+  const description = document.getElementById("insc-desc").value.trim();
+  const teamSize = parseInt(document.getElementById("insc-team-size").value, 10) || 2;
+  const maxRaw = document.getElementById("insc-max").value.trim();
+  const maxRegistrations = maxRaw ? Math.max(1, parseInt(maxRaw, 10) || 0) : 0;
+  const deadlineRaw = document.getElementById("insc-deadline").value;
+  const visible = document.getElementById("insc-visible").checked;
+
+  const errEl = document.getElementById("insc-err");
+  if (!title) { errEl.textContent = "Informe o título"; return; }
+  if (!description) { errEl.textContent = "Informe a descrição/tipo do torneio"; return; }
+  if (!deadlineRaw) { errEl.textContent = "Informe a data limite para inscrição"; return; }
+  const deadline = new Date(deadlineRaw);
+  if (isNaN(deadline.getTime())) { errEl.textContent = "Data limite inválida"; return; }
+  if (deadline.getTime() <= Date.now()) { errEl.textContent = "A data limite deve ser no futuro"; return; }
+  errEl.textContent = "";
 
   const btn = document.getElementById("btn-criar-insc");
   btn.disabled = true; btn.textContent = "Criando...";
   try {
     await db.collection("inscricoes").add({
       title,
+      description,
+      teamSize,
+      maxRegistrations,
+      deadline: firebase.firestore.Timestamp.fromDate(deadline),
+      visible,
       open: true,
       inscritos: [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     document.getElementById("insc-title").value = "";
+    document.getElementById("insc-desc").value = "";
+    document.getElementById("insc-team-size").value = "2";
+    document.getElementById("insc-max").value = "";
+    document.getElementById("insc-deadline").value = "";
+    document.getElementById("insc-visible").checked = true;
     showToast("✅ Inscrição criada!");
     showScreen("teacher-tournaments");
   } catch(e) {
@@ -4786,6 +4857,22 @@ async function criarInscricao() {
     console.error(e);
   }
   btn.disabled = false; btn.textContent = "✅ Criar Inscrição";
+}
+
+function _inscDeadlinePassed(data) {
+  if (!data.deadline) return false;
+  const ts = data.deadline.toDate ? data.deadline.toDate() : new Date(data.deadline);
+  return ts.getTime() <= Date.now();
+}
+
+function _inscFmtDeadline(data) {
+  if (!data.deadline) return '';
+  const d = data.deadline.toDate ? data.deadline.toDate() : new Date(data.deadline);
+  return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function _inscTeamLabel(n) {
+  return ({ 2:'Dupla', 3:'Trio', 4:'Quarteto', 5:'Quinteto', 6:'Sexteto' })[n] || (n + ' jogadores');
 }
 
 function loadInscricoes() {
@@ -4803,14 +4890,26 @@ function loadInscricoes() {
     if (!list) return;
     list.innerHTML = items.map(insc => {
       const count = (insc.inscritos || []).length;
-      const status = insc.open !== false;
+      const isOpen = insc.open !== false;
+      const isVisible = insc.visible !== false;
+      const expired = _inscDeadlinePassed(insc);
+      let badge, color;
+      if (!isOpen) { badge = 'Fechada'; color = 'rgba(239,68,68,.15);color:#f87171'; }
+      else if (expired) { badge = 'Encerrada'; color = 'rgba(245,158,11,.15);color:#f59e0b'; }
+      else if (!isVisible) { badge = 'Oculta'; color = 'rgba(148,163,184,.15);color:#94a3b8'; }
+      else { badge = 'Aberta'; color = 'rgba(34,197,94,.15);color:#22c55e'; }
+      const teamLbl = insc.teamSize ? _inscTeamLabel(insc.teamSize) : '';
+      const deadlineTxt = _inscFmtDeadline(insc);
+      const maxTxt = insc.maxRegistrations ? `/${insc.maxRegistrations}` : '';
       return `
         <div onclick="openInscricaoDetail('${insc.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;margin-bottom:10px;cursor:pointer;transition:.2s" onmouseover="this.style.borderColor='rgba(245,158,11,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)'">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
             <span style="font-weight:800;font-size:15px;color:#fff">${escapeHtml(insc.title || '')}</span>
-            <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:800;background:${status?'rgba(34,197,94,.15);color:#22c55e':'rgba(239,68,68,.15);color:#f87171'}">${status?'Aberta':'Fechada'}</span>
+            <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:800;background:${color};white-space:nowrap">${badge}</span>
           </div>
-          <div style="color:#64748b;font-size:13px">${count} inscrito${count !== 1 ? 's' : ''}</div>
+          ${teamLbl ? `<div style="color:#a78bfa;font-size:12px;font-weight:700;margin-bottom:4px">👥 ${teamLbl}</div>` : ''}
+          <div style="color:#64748b;font-size:13px">${count}${maxTxt} equipe${count !== 1 ? 's' : ''} inscrita${count !== 1 ? 's' : ''}</div>
+          ${deadlineTxt ? `<div style="color:#64748b;font-size:11px;margin-top:4px">⏰ Até ${deadlineTxt}</div>` : ''}
         </div>`;
     }).join("");
   }).catch(e => {
@@ -4834,30 +4933,51 @@ function openInscricaoDetail(id) {
     document.getElementById("inscricao-detail-title").textContent = "📋 " + (data.title || "Inscrição");
 
     const isOpen = data.open !== false;
+    const isVisible = data.visible !== false;
+    const teamLbl = data.teamSize ? _inscTeamLabel(data.teamSize) : '';
+    const deadlineTxt = _inscFmtDeadline(data);
+    const expired = _inscDeadlinePassed(data);
+    const maxTxt = data.maxRegistrations ? ` / ${data.maxRegistrations}` : '';
+
     if (stats) {
       stats.innerHTML = `
+        ${data.description ? `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:12px;color:#cbd5e1;font-size:13px;line-height:1.5;white-space:pre-wrap">${escapeHtml(data.description)}</div>` : ''}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          ${teamLbl ? `<span style="background:rgba(167,139,250,.12);color:#a78bfa;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700">👥 ${teamLbl}</span>` : ''}
+          ${deadlineTxt ? `<span style="background:rgba(${expired?'245,158,11':'56,189,248'},.12);color:${expired?'#f59e0b':'#38bdf8'};padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700">⏰ ${expired?'Encerrada em':'Até'} ${deadlineTxt}</span>` : ''}
+        </div>
         <div style="display:flex;gap:10px;margin-bottom:14px">
           <div style="flex:1;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:14px;padding:16px;text-align:center">
-            <div style="font-size:28px;font-weight:900;color:#38bdf8">${inscritos.length}</div>
-            <div style="font-size:12px;color:#64748b;font-weight:700">Inscritos</div>
+            <div style="font-size:28px;font-weight:900;color:#38bdf8">${inscritos.length}${maxTxt}</div>
+            <div style="font-size:12px;color:#64748b;font-weight:700">Equipes inscritas</div>
           </div>
           <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-            <button onclick="toggleInscricao('${id}',${!isOpen})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:${isOpen?'rgba(239,68,68,.12);color:#f87171':'rgba(34,197,94,.12);color:#22c55e'}">${isOpen?'🔒 Fechar Inscrição':'🔓 Abrir Inscrição'}</button>
-            <button onclick="deleteInscricao('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(239,68,68,.08);color:#f87171">🗑 Excluir</button>
+            <button onclick="toggleInscricaoVisible('${id}',${!isVisible})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:${isVisible?'rgba(148,163,184,.12);color:#94a3b8':'rgba(34,197,94,.12);color:#22c55e'}">${isVisible?'👁‍🗨 Ocultar':'👁 Exibir'}</button>
+            <button onclick="toggleInscricao('${id}',${!isOpen})" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:${isOpen?'rgba(239,68,68,.12);color:#f87171':'rgba(34,197,94,.12);color:#22c55e'}">${isOpen?'🔒 Fechar':'🔓 Abrir'}</button>
+            <button onclick="deleteInscricao('${id}')" style="flex:1;padding:10px;border-radius:12px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(239,68,68,.08);color:#f87171">🗑 Excluir</button>
           </div>
         </div>`;
     }
 
     if (empty) empty.style.display = inscritos.length === 0 ? "block" : "none";
     if (list) {
-      list.innerHTML = inscritos.map((p, i) => `
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">
-          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0">${i + 1}</div>
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:14px;color:#fff">${escapeHtml(p.fullName || '')}</div>
-            <div style="color:#64748b;font-size:12px">${p.age ? p.age + ' anos' : ''}</div>
+      list.innerHTML = inscritos.map((p, i) => {
+        // Compat: novos registros têm members[]; antigos têm fullName/age
+        const members = Array.isArray(p.members) ? p.members : (p.fullName ? [p.fullName] : []);
+        const membersHtml = members.map((m, mi) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;${mi < members.length - 1 ? 'border-bottom:1px solid rgba(255,255,255,.05)' : ''}">
+            <span style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#94a3b8">${mi + 1}</span>
+            <span style="color:#fff;font-size:13px">${escapeHtml(m || '')}</span>
+          </div>`).join("");
+        return `
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#e85d04);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0">${i + 1}</div>
+            <div style="flex:1;font-weight:800;color:#fff;font-size:14px">Equipe ${i + 1}</div>
           </div>
-        </div>`).join("");
+          <div style="padding-left:8px">${membersHtml}</div>
+        </div>`;
+      }).join("");
     }
 
     showScreen("teacher-inscricao-detail");
@@ -4865,6 +4985,14 @@ function openInscricaoDetail(id) {
     showToast("Erro ao carregar inscrição");
     console.error(e);
   });
+}
+
+async function toggleInscricaoVisible(id, visible) {
+  try {
+    await db.collection("inscricoes").doc(id).update({ visible });
+    showToast(visible ? "✅ Inscrição visível" : "👁‍🗨 Inscrição oculta");
+    openInscricaoDetail(id);
+  } catch(e) { showToast("Erro"); console.error(e); }
 }
 
 async function toggleInscricao(id, open) {
@@ -5263,7 +5391,7 @@ function getFilteredLogCount() {
   if (logCurrentFilter === 'todos') return filtered.length;
   if (logCurrentFilter === 'navegacao') return filtered.filter(function(e) { return e.action === 'navegacao'; }).length;
   if (logCurrentFilter === 'perfil') return filtered.filter(function(e) { return e.action && e.action.startsWith('perfil'); }).length;
-  if (logCurrentFilter === 'carona') return filtered.filter(function(e) { return e.action && e.action.startsWith('carona'); }).length;
+  if (logCurrentFilter === 'Reserva') return filtered.filter(function(e) { return e.action && e.action.startsWith('Reserva'); }).length;
   if (logCurrentFilter === 'presente') return filtered.filter(function(e) { return e.action && e.action.includes('presente'); }).length;
   if (logCurrentFilter === 'novo_usuario') return filtered.filter(function(e) { return e.action === 'novo_usuario'; }).length;
   return filtered.filter(function(e) { return e.action === logCurrentFilter; }).length;
@@ -5297,8 +5425,8 @@ function renderLogEntries() {
       filtered = filtered.filter(e => e.action === 'navegacao');
     } else if (logCurrentFilter === 'perfil') {
       filtered = filtered.filter(e => e.action && e.action.startsWith('perfil'));
-    } else if (logCurrentFilter === 'carona') {
-      filtered = filtered.filter(e => e.action && e.action.startsWith('carona'));
+    } else if (logCurrentFilter === 'Reserva') {
+      filtered = filtered.filter(e => e.action && e.action.startsWith('Reserva'));
     } else if (logCurrentFilter === 'presente') {
       filtered = filtered.filter(e => e.action && e.action.includes('presente'));
     } else if (logCurrentFilter === 'novo_usuario') {
@@ -5319,8 +5447,8 @@ function renderLogEntries() {
     compra_loja: '🛒',
     perfil_dados: '✏️',
     perfil_foto: '📷',
-    carona_reserva: '🚗',
-    carona_cancelamento: '❌',
+    Reserva_reserva: '🚗',
+    Reserva_cancelamento: '❌',
     presente_recebido: '🎁',
     novo_usuario: '🆕',
     cuts_alterado: '🪙',
@@ -5334,8 +5462,8 @@ function renderLogEntries() {
     compra_loja: '#f59e0b',
     perfil_dados: '#38bdf8',
     perfil_foto: '#a78bfa',
-    carona_reserva: '#22c55e',
-    carona_cancelamento: '#f87171',
+    Reserva_reserva: '#22c55e',
+    Reserva_cancelamento: '#f87171',
     presente_recebido: '#f59e0b',
     novo_usuario: '#22c55e',
     cuts_alterado: '#f59e0b',
