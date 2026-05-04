@@ -1053,6 +1053,59 @@ function logActivity(action, detail, extra) {
 }
 
 // ── Auth ──
+// Device fingerprint estável (UUID em localStorage + hash do navegador)
+function getDeviceFingerprintHash() {
+  try {
+    var ua = navigator.userAgent || '';
+    var lang = navigator.language || '';
+    var tz = (Intl.DateTimeFormat && Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+    var screenInfo = (screen.width || 0) + 'x' + (screen.height || 0) + 'x' + (screen.colorDepth || 0);
+    var platform = navigator.platform || '';
+    var cores = navigator.hardwareConcurrency || 0;
+    var mem = navigator.deviceMemory || 0;
+    // Canvas fingerprint
+    var canvasHash = '';
+    try {
+      var c = document.createElement('canvas');
+      c.width = 200; c.height = 50;
+      var ctx = c.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = "14px 'Arial'";
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(0, 0, 200, 50);
+      ctx.fillStyle = '#069';
+      ctx.fillText('OverLabs-fp-🏐', 2, 2);
+      canvasHash = c.toDataURL();
+    } catch(e) {}
+    var raw = ua + '|' + lang + '|' + tz + '|' + screenInfo + '|' + platform + '|' + cores + '|' + mem + '|' + canvasHash;
+    // Hash simples (djb2)
+    var h = 5381;
+    for (var i = 0; i < raw.length; i++) { h = ((h << 5) + h) + raw.charCodeAt(i); h = h & 0xFFFFFFFF; }
+    return 'fp_' + (h >>> 0).toString(36);
+  } catch(e) { return 'fp_unknown'; }
+}
+
+function getDeviceId() {
+  var key = 'carolampra_device_id';
+  var did = null;
+  try { did = localStorage.getItem(key); } catch(e) {}
+  if (!did) {
+    // Combina fingerprint + uuid aleatório
+    var rand = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    did = getDeviceFingerprintHash() + '_' + rand;
+    try { localStorage.setItem(key, did); } catch(e) {}
+  }
+  return did;
+}
+
+function normalizeName(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '').trim();
+}
+
+function normalizePhone(s) {
+  return (s || '').replace(/\D/g, '');
+}
+
 async function studentRegister() {
   if (!requireFirebase()) return;
   const fn = document.getElementById("r-fn").value.trim();
@@ -1075,8 +1128,79 @@ async function studentRegister() {
     const snap = await db.collection("users").where("username","==",un).get();
     if (!snap.empty) { setErr("e-un","Usuário já cadastrado"); btn.disabled=false; btn.textContent="Criar Conta"; return; }
 
+    // ── Anti-duplicação ──
+    const deviceId = getDeviceId();
+    const fingerprint = getDeviceFingerprintHash();
+    const phNorm = normalizePhone(ph);
+    const fnNorm = normalizeName(fn);
+
+    // Checa se já existe alguém com mesmo telefone, deviceId ou fingerprint
+    const allUsersSnap = await db.collection("users").get();
+    let dupReason = '';
+    let dupExisting = null;
+    for (let i = 0; i < allUsersSnap.docs.length; i++) {
+      const d = allUsersSnap.docs[i];
+      const u = d.data();
+      if (u.blocked === true) continue; // contas já bloqueadas não contam
+      if (u.phone && normalizePhone(u.phone) === phNorm && phNorm.length >= 8) {
+        dupReason = 'telefone';
+        dupExisting = { id: d.id, ...u };
+        break;
+      }
+      if (u.deviceId && deviceId && u.deviceId === deviceId) {
+        dupReason = 'dispositivo';
+        dupExisting = { id: d.id, ...u };
+        break;
+      }
+      if (u.deviceFingerprint && fingerprint && u.deviceFingerprint === fingerprint) {
+        dupReason = 'navegador';
+        dupExisting = { id: d.id, ...u };
+        break;
+      }
+    }
+
+    if (dupExisting) {
+      // Bloqueio: não cria conta, mas notifica o professor
+      try {
+        await db.collection('prof_notifications').add({
+          type: 'duplicate_account',
+          title: '⚠️ Tentativa de conta duplicada bloqueada',
+          message:
+            'Tentativa BLOQUEADA por: ' + dupReason + '\n' +
+            'Tentativa: ' + fn + ' (@' + un + ') · ' + ph + '\n' +
+            'Conta existente: ' + (dupExisting.firstName || '') + ' (@' + (dupExisting.username || '') + ')',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          read: false,
+          extra: { deviceId: deviceId, fingerprint: fingerprint, attemptedName: fn, attemptedUsername: un, attemptedPhone: ph, existingUserId: dupExisting.id }
+        });
+      } catch(e) { console.warn('[notif]', e); }
+      document.getElementById("reg-err").textContent = '⚠️ Já existe uma conta vinculada a este ' + dupReason + '. Cada aluno pode ter apenas uma conta. Fale com o professor se precisar de ajuda.';
+      document.getElementById("reg-err").style.display = "block";
+      btn.disabled = false; btn.textContent = "Criar Conta";
+      return;
+    }
+
+    // Aviso suave: nome igual (não bloqueia, mas notifica)
+    let sameNameExisting = null;
+    for (let i = 0; i < allUsersSnap.docs.length; i++) {
+      const u = allUsersSnap.docs[i].data();
+      if (u.blocked === true) continue;
+      if (u.firstName && normalizeName(u.firstName) === fnNorm) {
+        sameNameExisting = { id: allUsersSnap.docs[i].id, ...u };
+        break;
+      }
+    }
+
     const uid = genId();
-    await db.collection("users").doc(uid).set({ username:un, firstName:fn, phone:ph, password:pw, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await db.collection("users").doc(uid).set({
+      username: un,
+      firstName: fn,
+      phone: ph,
+      password: pw,
+      deviceId: deviceId,
+      deviceFingerprint: fingerprint,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
     // Registrar novo usuário no log de atividades
     db.collection('activity_log').add({
@@ -1087,6 +1211,16 @@ async function studentRegister() {
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       extra: { tipo: 'registro' }
     }).catch(function(e) { console.warn('[Log]', e); });
+
+    // Notificar prof — novo registro
+    db.collection('prof_notifications').add({
+      type: 'new_account',
+      title: '🆕 Novo aluno cadastrado',
+      message: fn + ' (@' + un + ') — ' + ph + (sameNameExisting ? '\n⚠️ Já existe outra conta com nome parecido: ' + (sameNameExisting.firstName || '') + ' (@' + (sameNameExisting.username || '') + ')' : ''),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      read: false,
+      extra: { userId: uid, deviceId: deviceId, sameNameUserId: sameNameExisting ? sameNameExisting.id : null }
+    }).catch(function(e) { console.warn('[notif]', e); });
 
     const user = { id:uid, username:un, firstName:fn, phone:ph };
     localStorage.setItem("carolampra_user", JSON.stringify(user));
@@ -1119,6 +1253,16 @@ async function studentLogin() {
     if (storedPw !== pw) { showLoginErr("Senha incorreta"); return; }
 
     if (doc.data().blocked === true) { showLoginErr("Sua conta foi bloqueada. Fale com o professor."); return; }
+
+    // Atualiza deviceId/fingerprint da conta no login (rastreabilidade)
+    try {
+      const did = getDeviceId();
+      const fp = getDeviceFingerprintHash();
+      const upd = {};
+      if (doc.data().deviceId !== did) upd.deviceId = did;
+      if (doc.data().deviceFingerprint !== fp) upd.deviceFingerprint = fp;
+      if (Object.keys(upd).length) db.collection('users').doc(doc.id).update(upd).catch(function(){});
+    } catch(e) {}
 
     // Detectar primeiro login e registrar no log
     if (!doc.data().firstLoginAt) {

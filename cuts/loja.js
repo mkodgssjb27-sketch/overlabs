@@ -516,6 +516,16 @@ async function confirmPurchase() {
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       extra: { itemId: selectedItem.id, itemNome: selectedItem.nome, preco: selectedItem.preco }
     }).catch(function(e) { console.warn('[Log]', e); });
+
+    // Notificar o professor
+    db.collection('prof_notifications').add({
+      type: 'purchase',
+      title: '🛒 Nova compra na loja',
+      message: (currentUser.firstName || 'Aluno') + ' (@' + (currentUser.username || '') + ') comprou "' + selectedItem.nome + '" por ' + selectedItem.preco + ' CUTS',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      read: false,
+      extra: { userId: currentUser.id, itemId: selectedItem.id, itemNome: selectedItem.nome, preco: selectedItem.preco }
+    }).catch(function(e) { console.warn('[notif]', e); });
     closeBuyModal();
 
     // Copiar chunks para o inventário em background (preserva GIF mesmo se removido da loja)
