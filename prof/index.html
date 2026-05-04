@@ -344,6 +344,30 @@ input,select,textarea{font-family:inherit;outline:none}
           <div style="font-size:12px;color:#64748b;margin-top:2px">Aparecerá no app e no feed dos alunos</div>
         </div>
       </div>
+      <div style="margin-bottom:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <label class="toggle-wrap">
+            <input type="checkbox" id="r-schedule" onchange="document.getElementById('r-sched-fields').style.display=this.checked?'grid':'none'">
+            <span class="toggle-track"></span>
+            <span class="toggle-dot"></span>
+          </label>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:#e2e8f0">⏱ Programar publicação</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px">A carona ficará oculta até a data/hora definida</div>
+          </div>
+        </div>
+        <div id="r-sched-fields" style="display:none;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+          <div>
+            <label class="lbl">DATA DA PUBLICAÇÃO</label>
+            <input type="date" class="inp" id="r-sched-date" style="color-scheme:dark">
+          </div>
+          <div>
+            <label class="lbl">HORÁRIO DA PUBLICAÇÃO</label>
+            <input type="time" class="inp" id="r-sched-time" style="color-scheme:dark">
+          </div>
+          <p class="err-txt" id="r-sched-err" style="grid-column:1/-1"></p>
+        </div>
+      </div>
       <button onclick="createRide()" class="btn-main">✓ Criar Carona</button>
     </div>
   </div>
@@ -392,6 +416,21 @@ input,select,textarea{font-family:inherit;outline:none}
         </div>
       </div>
       <div id="e-vis-warn" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;color:#f87171;font-size:13px;font-weight:700">⚠️ Atenção: a carona ficará OCULTA para todos os alunos!</div>
+      <div id="e-schedule-block" style="display:none;margin-bottom:18px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:14px;padding:16px">
+        <div style="font-weight:800;font-size:13px;color:#38bdf8;margin-bottom:10px">⏱ PUBLICAÇÃO PROGRAMADA</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <label class="lbl">DATA DA PUBLICAÇÃO</label>
+            <input type="date" class="inp" id="e-sched-date" style="color-scheme:dark">
+          </div>
+          <div>
+            <label class="lbl">HORÁRIO DA PUBLICAÇÃO</label>
+            <input type="time" class="inp" id="e-sched-time" style="color-scheme:dark">
+          </div>
+        </div>
+        <p class="err-txt" id="e-sched-err"></p>
+        <button type="button" onclick="publishNow()" style="margin-top:12px;background:rgba(34,197,94,.15);color:#22c55e;padding:10px 14px;border-radius:10px;font-weight:700;font-size:13px;border:none;width:100%">🚀 Publicar agora</button>
+      </div>
       <button onclick="saveEditRide()" class="btn-main">💾 Salvar Alterações</button>
     </div>
   </div>
@@ -1677,6 +1716,8 @@ function startTeacherListener() {
       }
       // Auto-fix: promover da fila de espera se houver vagas
       allRides.forEach(r => autoFixWaitlist(r));
+      // Auto-publish: caronas programadas cuja hora chegou
+      allRides.forEach(r => autoPublishScheduled(r));
     }, err => {
       console.error(err);
       showToast("Erro ao carregar caronas");
@@ -1697,15 +1738,24 @@ function renderTeacherRides(rides) {
   function rideCard(r, dim) {
     const booked = r.booked || [], wl = r.waitlist || [];
     const full = booked.length >= r.seats;
+    const isScheduled = r.published === false && r.scheduledAt;
+    let statusBadge;
+    if (isScheduled) {
+      statusBadge = `<span class="badge" style="background:rgba(56,189,248,.15);color:#38bdf8;white-space:nowrap">⏱ PROGRAMADO</span>`;
+    } else {
+      statusBadge = `<span class="badge" style="background:${full?'rgba(248,113,113,.15)':'rgba(34,197,94,.15)'};color:${full?'#f87171':'#22c55e'};white-space:nowrap">
+            ${full ? 'LOTADO' : (r.seats - booked.length) + ' VAGAS'}
+          </span>`;
+    }
+    const schedLine = isScheduled ? `<p class="ride-info" style="color:#38bdf8">⏱ Publica em ${fmtShort(String(r.scheduledAt).split('T')[0])} · ${String(r.scheduledAt).split('T')[1].slice(0,5)}</p>` : '';
     return `
-      <div class="ride-card" onclick="openTeacherDetail('${r.id}')" style="${dim?'opacity:.5':''}">
+      <div class="ride-card" onclick="openTeacherDetail('${r.id}')" style="${dim?'opacity:.5':''}${isScheduled?';border:1px solid rgba(56,189,248,.3)':''}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
           <span class="ride-title">${r.title}</span>
-          <span class="badge" style="background:${full?'rgba(248,113,113,.15)':'rgba(34,197,94,.15)'};color:${full?'#f87171':'#22c55e'};white-space:nowrap">
-            ${full ? 'LOTADO' : (r.seats - booked.length) + ' VAGAS'}
-          </span>
+          ${statusBadge}
         </div>
         <p class="ride-info">📅 ${fmtShort(r.date)} · ⏰ ${r.time}</p>
+        ${schedLine}
         <div class="seg-bar">${Array.from({length:r.seats}).map((_,i)=>`<div class="seg" style="background:${i<booked.length?'#f59e0b':'rgba(255,255,255,.1)'}"></div>`).join('')}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
           <span style="color:#64748b;font-size:12px">${booked.length}/${r.seats} confirmados · ${wl.length} na fila</span>
@@ -1768,8 +1818,12 @@ function resetRideForm() {
   document.getElementById("r-time").value = "";
   document.getElementById("r-seats").value = 4;
   document.getElementById("r-visible").checked = true;
+  document.getElementById("r-schedule").checked = false;
+  document.getElementById("r-sched-date").value = "";
+  document.getElementById("r-sched-time").value = "";
+  document.getElementById("r-sched-fields").style.display = "none";
   updateSeats(4);
-  ["r-title-err","r-date-err","r-time-err"].forEach(id => setErr(id,""));
+  ["r-title-err","r-date-err","r-time-err","r-sched-err"].forEach(id => setErr(id,""));
 }
 
 function updateSeats(n) {
@@ -1784,17 +1838,35 @@ async function createRide() {
   const time  = document.getElementById("r-time").value;
   const seats = Number(document.getElementById("r-seats").value);
   const visible = document.getElementById("r-visible").checked;
+  const scheduled = document.getElementById("r-schedule").checked;
+  const sDate = document.getElementById("r-sched-date").value;
+  const sTime = document.getElementById("r-sched-time").value;
 
   let ok = true;
   if (!title) { setErr("r-title-err","Informe o título"); ok=false; }
   if (!date)  { setErr("r-date-err","Informe a data"); ok=false; }
   if (!time)  { setErr("r-time-err","Informe o horário"); ok=false; }
+  if (scheduled) {
+    if (!sDate || !sTime) { setErr("r-sched-err","Informe data e hora da publicação"); ok=false; }
+    else if (new Date(`${sDate}T${sTime}`) <= new Date()) { setErr("r-sched-err","A publicação deve ser no futuro"); ok=false; }
+  }
   if (!ok) return;
 
   const btn = event.target; btn.disabled = true; btn.textContent = "Criando...";
   try {
-    const docRef = await db.collection("rides").add({ title, date, time, seats, visible, booked: [], waitlist: [], createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    if (visible) {
+    const data = {
+      title, date, time, seats,
+      visible: scheduled ? false : visible,
+      booked: [], waitlist: [],
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (scheduled) {
+      data.scheduledAt = `${sDate}T${sTime}`;
+      data.scheduledVisible = visible;
+      data.published = false;
+    }
+    const docRef = await db.collection("rides").add(data);
+    if (!scheduled && visible) {
       await db.collection("feed").add({
         type: "ride_created",
         icon: "🚗",
@@ -1804,7 +1876,7 @@ async function createRide() {
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
-    showToast("✅ Carona criada!");
+    showToast(scheduled ? "✅ Carona programada!" : "✅ Carona criada!");
     showScreen("teacher-rides");
   } catch(e) {
     showToast("Erro ao criar carona");
@@ -1837,6 +1909,55 @@ async function autoFixWaitlist(ride) {
   } catch(e) { console.warn("[AutoFix]", e); }
   finally { delete _autoFixRunning[ride.id]; }
 }
+
+// ── Auto-publish: caronas programadas cuja hora chegou ──
+const _autoPublishRunning = {};
+async function autoPublishScheduled(ride) {
+  if (!ride || !ride.id) return;
+  if (ride.published !== false || !ride.scheduledAt) return;
+  if (new Date(ride.scheduledAt) > new Date()) return;
+  if (_autoPublishRunning[ride.id]) return;
+  _autoPublishRunning[ride.id] = true;
+  try {
+    const rideRef = db.collection("rides").doc(ride.id);
+    let didPublish = false;
+    let wantVisible = false;
+    let snapshot = null;
+    await db.runTransaction(async tx => {
+      const doc = await tx.get(rideRef);
+      if (!doc.exists) return;
+      const d = doc.data();
+      if (d.published !== false || !d.scheduledAt) return;
+      if (new Date(d.scheduledAt) > new Date()) return;
+      wantVisible = d.scheduledVisible !== false;
+      snapshot = d;
+      tx.update(rideRef, {
+        published: true,
+        visible: wantVisible,
+        scheduledAt: firebase.firestore.FieldValue.delete(),
+        scheduledVisible: firebase.firestore.FieldValue.delete()
+      });
+      didPublish = true;
+    });
+    if (didPublish && wantVisible && snapshot) {
+      await db.collection("feed").add({
+        type: "ride_created",
+        icon: "🚗",
+        text: snapshot.title,
+        detail: `📅 ${snapshot.date} · ⏰ ${snapshot.time} · ${snapshot.seats} vagas`,
+        refId: ride.id,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      console.log("[AutoPublish] Carona publicada:", snapshot.title);
+    }
+  } catch(e) { console.warn("[AutoPublish]", e); }
+  finally { delete _autoPublishRunning[ride.id]; }
+}
+
+// Verifica caronas programadas a cada 30s mesmo sem mudança no snapshot
+setInterval(() => {
+  if (Array.isArray(allRides)) allRides.forEach(r => autoPublishScheduled(r));
+}, 30000);
 
 // ── Detalhe da Carona ──
 function openTeacherDetail(rideId) {
@@ -2083,9 +2204,57 @@ function openEditRide() {
   document.getElementById("e-time").value = ride.time;
   document.getElementById("e-seats").value = ride.seats;
   document.getElementById("e-seats-val").textContent = ride.seats;
-  document.getElementById("e-visible").checked = ride.visible !== false;
-  document.getElementById("e-vis-warn").style.display = ride.visible === false ? "block" : "none";
+  const isScheduled = ride.published === false && ride.scheduledAt;
+  if (isScheduled) {
+    document.getElementById("e-visible").checked = ride.scheduledVisible !== false;
+  } else {
+    document.getElementById("e-visible").checked = ride.visible !== false;
+  }
+  document.getElementById("e-vis-warn").style.display = (!isScheduled && ride.visible === false) ? "block" : "none";
+  // Bloco de programação
+  const block = document.getElementById("e-schedule-block");
+  if (isScheduled) {
+    block.style.display = "block";
+    const [d, t] = String(ride.scheduledAt).split("T");
+    document.getElementById("e-sched-date").value = d || "";
+    document.getElementById("e-sched-time").value = (t || "").slice(0,5);
+  } else {
+    block.style.display = "none";
+    document.getElementById("e-sched-date").value = "";
+    document.getElementById("e-sched-time").value = "";
+  }
+  setErr("e-sched-err","");
   showScreen("teacher-edit");
+}
+
+async function publishNow() {
+  if (!requireFirebase() || !currentDetailRideId) return;
+  const ride = allRides.find(r => r.id === currentDetailRideId);
+  if (!ride) return;
+  const wantVisible = document.getElementById("e-visible").checked;
+  try {
+    await db.collection("rides").doc(currentDetailRideId).update({
+      published: true,
+      visible: wantVisible,
+      scheduledAt: firebase.firestore.FieldValue.delete(),
+      scheduledVisible: firebase.firestore.FieldValue.delete()
+    });
+    if (wantVisible) {
+      await db.collection("feed").add({
+        type: "ride_created",
+        icon: "🚗",
+        text: ride.title,
+        detail: `📅 ${ride.date} · ⏰ ${ride.time} · ${ride.seats} vagas`,
+        refId: currentDetailRideId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    showToast("🚀 Carona publicada!");
+    openTeacherDetail(currentDetailRideId);
+  } catch(e) {
+    console.error(e);
+    showToast("Erro ao publicar");
+  }
 }
 
 async function saveEditRide() {
@@ -2096,10 +2265,19 @@ async function saveEditRide() {
   const seats = Number(document.getElementById("e-seats").value);
   const visible = document.getElementById("e-visible").checked;
 
+  const rideCurrent = allRides.find(r => r.id === currentDetailRideId);
+  const isScheduled = rideCurrent && rideCurrent.published === false && rideCurrent.scheduledAt;
+  const sDate = document.getElementById("e-sched-date").value;
+  const sTime = document.getElementById("e-sched-time").value;
+
   let ok = true;
   if (!title) { setErr("e-title-err","Informe o título"); ok=false; }
   if (!date)  { setErr("e-date-err","Informe a data"); ok=false; }
   if (!time)  { setErr("e-time-err","Informe o horário"); ok=false; }
+  if (isScheduled) {
+    if (!sDate || !sTime) { setErr("e-sched-err","Informe data e hora da publicação"); ok=false; }
+    else if (new Date(`${sDate}T${sTime}`) <= new Date()) { setErr("e-sched-err","A publicação deve ser no futuro (ou clique em \"Publicar agora\")"); ok=false; }
+  }
   if (!ok) return;
 
   const btn = event.target; btn.disabled = true; btn.textContent = "Salvando...";
@@ -2138,7 +2316,15 @@ async function saveEditRide() {
         demoted = qtdRebaixar;
       }
 
-      tx.update(rideRef, { title, date, time, seats, visible, booked, waitlist: wl });
+      const updateData = { title, date, time, seats, booked, waitlist: wl };
+      if (isScheduled) {
+        updateData.scheduledAt = `${sDate}T${sTime}`;
+        updateData.scheduledVisible = visible;
+        updateData.visible = false;
+      } else {
+        updateData.visible = visible;
+      }
+      tx.update(rideRef, updateData);
     });
 
     // Notificar alunos promovidos da fila de espera
