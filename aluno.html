@@ -193,6 +193,15 @@ input,select{font-family:inherit;outline:none}
 </head>
 <body>
 
+<!-- ══ BLOQUEIO: AGUARDANDO DEFINIÇÃO DE ARENA ═════════════════════ -->
+<div id="arena-lock-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#0a0a0f;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center">
+  <div style="font-size:64px;margin-bottom:20px">⏳</div>
+  <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:12px">Aguardando Definição de Arena</div>
+  <div style="font-size:14px;color:#94a3b8;line-height:1.5;max-width:340px;margin-bottom:24px">Sua conta foi criada com sucesso! Agora aguarde o professor definir sua arena (Cajueiro ou Grussaí) para liberar o acesso ao app.</div>
+  <button onclick="checkArenaAndUnlock()" style="padding:14px 28px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff;border:none;font-weight:800;font-size:14px;cursor:pointer">🔄 Verificar Novamente</button>
+  <button onclick="studentLogout()" style="margin-top:14px;padding:10px 24px;border-radius:10px;background:rgba(239,68,68,.12);color:#f87171;border:none;font-weight:700;font-size:13px;cursor:pointer">🚪 Sair</button>
+</div>
+
 <!-- ══ TELA DE INSTALAÇÃO (bloqueia acesso pelo navegador) ══════════ -->
 <div id="install-gate" style="display:none;position:fixed;inset:0;z-index:10000;background:#0a0a0f;align-items:center;justify-content:center;padding:24px;overflow-y:auto">
   <div style="text-align:center;width:100%;max-width:380px">
@@ -497,10 +506,12 @@ input,select{font-family:inherit;outline:none}
       <div id="feed-list"></div>
     </div>
     <div class="s-bottom-nav">
-      <button class="nav-btn active" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
-      <button class="nav-btn" onclick="switchStudentTab('list')"><span>🚗</span><span>Caronas</span></button>
-      <button class="nav-btn" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
-      <button class="nav-btn" onclick="switchStudentTab('tournaments')"><span>🏐</span><span>Torneios</span></button>
+      <button id="nav-home" class="nav-btn active" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
+      <button id="nav-caronas" class="nav-btn" onclick="switchStudentTab('list')"><span>🚗</span><span>Caronas</span></button>
+      <button id="nav-presencas" class="nav-btn" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
+      <button id="nav-mercado" class="nav-btn" onclick="closeSidebar();openLojaOverlay()" style="display:none"><span>🛒</span><span>Mercado</span></button>
+      <button id="nav-ranking" class="nav-btn" onclick="showScreen('student-ranking');loadRanking()" style="display:none"><span>🏆</span><span>Ranking</span></button>
+      <button id="nav-tournaments" class="nav-btn" onclick="switchStudentTab('tournaments')"><span>🏐</span><span>Torneios</span></button>
     </div>
   </div>
 </div>
@@ -538,10 +549,10 @@ input,select{font-family:inherit;outline:none}
     <button onclick="closeSidebar();showScreen('student-personal');loadProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
       <span style="font-size:18px">👤</span> Dados Pessoais
     </button>
-    <button id="btn-loja-cuts" onclick="closeSidebar(); openLojaOverlay()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
+    <button id="btn-loja-cuts" data-arena-cajueiro onclick="closeSidebar(); openLojaOverlay()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
       <span style="font-size:18px">🛒</span> Mercado
     </button>
-    <button onclick="closeSidebar();showScreen('student-ranking');loadRanking()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+    <button id="sb-ranking" data-arena-cajueiro onclick="closeSidebar();showScreen('student-ranking');loadRanking()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
       <span style="font-size:18px">🏆</span> Ranking
     </button>
     <button disabled style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.02);color:#475569;font-weight:700;font-size:14px;cursor:not-allowed;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
@@ -1169,6 +1180,8 @@ function enterStudentApp() {
     unsubUserDoc = db.collection("users").doc(currentUser.id).onSnapshot(doc => {
       if (!doc.exists) return;
       const d = doc.data();
+      // Arena: aplica layout / bloqueio
+      applyArenaLayout(d.arena || null);
       // CUTS
       const cutsVal = d.cuts || 0;
       const cutsEl = document.getElementById("sidebar-cuts");
@@ -1214,6 +1227,49 @@ function enterStudentApp() {
       if (iframe) { iframe.src = 'cuts/loja.html'; _lojaStarted = true; }
     }
   }, 2000);
+}
+
+// ── Arena: aplica layout (nav inferior + sidebar) e bloqueio ──
+function applyArenaLayout(arena) {
+  // arena: 'cajueiro' | 'grussai' | 'both' | null/undefined
+  var lock = document.getElementById('arena-lock-overlay');
+  var validArena = (arena === 'cajueiro' || arena === 'grussai' || arena === 'both');
+  if (!validArena) {
+    if (lock) lock.style.display = 'flex';
+    if (currentUser) currentUser.arena = null;
+    return;
+  }
+  if (lock) lock.style.display = 'none';
+  if (currentUser) currentUser.arena = arena;
+  document.body.setAttribute('data-arena', arena);
+
+  var isGrussai = arena === 'grussai';
+  // Bottom nav
+  var caronas = document.getElementById('nav-caronas');
+  var presencas = document.getElementById('nav-presencas');
+  var mercadoNav = document.getElementById('nav-mercado');
+  var rankingNav = document.getElementById('nav-ranking');
+  if (caronas)  caronas.style.display  = isGrussai ? 'none' : '';
+  if (presencas) presencas.style.display = isGrussai ? 'none' : '';
+  if (mercadoNav) mercadoNav.style.display = isGrussai ? '' : 'none';
+  if (rankingNav) rankingNav.style.display = isGrussai ? '' : 'none';
+  // Sidebar
+  var sbMercado = document.getElementById('btn-loja-cuts');
+  var sbRanking = document.getElementById('sb-ranking');
+  if (sbMercado) sbMercado.style.display = isGrussai ? 'none' : 'flex';
+  if (sbRanking) sbRanking.style.display = isGrussai ? 'none' : 'flex';
+}
+
+async function checkArenaAndUnlock() {
+  if (!firebaseOk || !currentUser) return;
+  var btn = (typeof event !== 'undefined' && event && event.target) ? event.target : null;
+  if (btn) { btn.disabled = true; btn.textContent = '🔄 Verificando...'; }
+  try {
+    var doc = await db.collection('users').doc(currentUser.id).get();
+    var arena = doc.exists ? doc.data().arena : null;
+    applyArenaLayout(arena || null);
+  } catch(e) { console.error('checkArena', e); }
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Verificar Novamente'; }
 }
 
 function studentLogout() {
@@ -1511,7 +1567,9 @@ function startStudentListeners() {
   unsubAlerts = db.collection("alerts")
     .orderBy("createdAt", "desc")
     .onSnapshot(snap => {
-      const alerts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const allAlerts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Filtrar por arena do usuário
+      const alerts = allAlerts.filter(a => feedItemMatchesArena(a));
       
       if (alertsReady) {
         // Detectar novos alertas e mostrar popup
@@ -1562,6 +1620,7 @@ function renderFilteredFeed() {
   const h24 = 24 * 60 * 60 * 1000;
   const items = allFeedItems.filter(item => {
     if (item.hidden === true) return false;
+    if (!feedItemMatchesArena(item)) return false;
     if (item.type === 'personal_msg' || item.type === 'waitlist_promotion') {
       return item.targetUserId === currentUser.id;
     }
@@ -1574,6 +1633,21 @@ function renderFilteredFeed() {
     return true;
   });
   renderFeed(items);
+}
+
+// Verifica se um item do feed/alerta é destinado à arena do usuário atual
+function feedItemMatchesArena(item) {
+  if (!currentUser) return false;
+  var ua = currentUser.arena || '';
+  if (item.targetArenas && Array.isArray(item.targetArenas) && item.targetArenas.length > 0) {
+    if (ua === 'both') return true;
+    return item.targetArenas.indexOf(ua) >= 0;
+  }
+  if (item.targetArena) {
+    if (item.targetArena === 'both' || ua === 'both') return true;
+    return item.targetArena === ua;
+  }
+  return true; // sem targeting = visível para todos (legado)
 }
 
 function renderFeed(items) {

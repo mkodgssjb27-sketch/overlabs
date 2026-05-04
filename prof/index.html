@@ -495,6 +495,13 @@ input,select,textarea{font-family:inherit;outline:none}
       <label class="lbl">MENSAGEM DO ALERTA</label>
       <textarea id="alert-msg" rows="4" placeholder="Ex: Treino cancelado amanhã por causa da chuva..." style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#e2e8f0;font-size:15px;resize:vertical;font-family:inherit"></textarea>
       <p class="err-txt" id="alert-msg-err" style="margin-bottom:12px"></p>
+      <label class="lbl">🏟️ DESTINATÁRIOS</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+        <button type="button" id="alert-arena-cajueiro" onclick="setAlertArena('cajueiro')" style="padding:11px 6px;border-radius:10px;font-weight:700;font-size:12px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:rgba(255,255,255,.04);color:#94a3b8">🌳 Cajueiro</button>
+        <button type="button" id="alert-arena-grussai" onclick="setAlertArena('grussai')" style="padding:11px 6px;border-radius:10px;font-weight:700;font-size:12px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:rgba(255,255,255,.04);color:#94a3b8">🏖️ Grussaí</button>
+        <button type="button" id="alert-arena-both" onclick="setAlertArena('both')" style="padding:11px 6px;border-radius:10px;font-weight:700;font-size:12px;border:1px solid rgba(34,197,94,.4);cursor:pointer;background:rgba(34,197,94,.15);color:#22c55e">🤝 Ambas</button>
+      </div>
+      <input type="hidden" id="alert-arena" value="both">
       <div style="margin-bottom:18px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px">
         <label class="toggle-wrap">
           <input type="checkbox" id="alert-visible" checked>
@@ -566,6 +573,7 @@ input,select,textarea{font-family:inherit;outline:none}
 
     <div class="loading" id="presence-loading"><div class="spin"></div>Carregando...</div>
     <div class="empty" id="presence-empty" style="display:none"><div class="icon">👥</div><p>Nenhum aluno cadastrado</p></div>
+    <div id="presence-arena-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap"></div>
     <div id="presence-students-list"></div>
   </div>
 </div>
@@ -719,6 +727,7 @@ input,select,textarea{font-family:inherit;outline:none}
     </div>
     <div id="students-loading" class="loading"><div class="spin"></div>Carregando...</div>
     <div id="students-empty" class="empty" style="display:none"><div class="icon">👥</div><p>Nenhum aluno cadastrado</p></div>
+    <div id="students-arena-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap"></div>
     <div id="students-list"></div>
   </div>
 </div>
@@ -745,6 +754,7 @@ input,select,textarea{font-family:inherit;outline:none}
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
       <input type="text" class="inp" id="bulk-cuts-search" placeholder="🔎 Buscar aluno por nome ou @apelido" oninput="renderBulkCutsList()" style="flex:1">
     </div>
+    <div id="bulk-cuts-arena-tabs" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <label style="display:flex;align-items:center;gap:8px;color:#e2e8f0;font-weight:700;font-size:13px;cursor:pointer">
         <input type="checkbox" id="bulk-cuts-select-all" onchange="toggleBulkCutsSelectAll(this.checked)">
@@ -803,7 +813,7 @@ input,select,textarea{font-family:inherit;outline:none}
           <button type="button" id="es-arena-grussai" onclick="setEditArena('grussai')" style="padding:12px 8px;border-radius:12px;font-weight:700;font-size:13px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:rgba(255,255,255,.04);color:#94a3b8">🏖️ Grussaí</button>
           <button type="button" id="es-arena-both" onclick="setEditArena('both')" style="padding:12px 8px;border-radius:12px;font-weight:700;font-size:13px;border:1px solid rgba(255,255,255,.1);cursor:pointer;background:rgba(255,255,255,.04);color:#94a3b8">🤝 Ambas</button>
         </div>
-        <input type="hidden" id="es-arena" value="cajueiro">
+        <input type="hidden" id="es-arena" value="">
         <div style="font-size:11px;color:#64748b;margin-top:6px">Define em qual ranking o aluno aparece</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
@@ -873,6 +883,19 @@ input,select,textarea{font-family:inherit;outline:none}
         <div id="fp-preview" style="display:none;margin-top:12px;position:relative">
           <img id="fp-preview-img" style="width:100%;border-radius:12px;max-height:300px;object-fit:cover">
           <button onclick="clearPostImage()" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:14px;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">🏟️ ARENAS DESTINATÁRIAS</label>
+        <div style="display:flex;gap:10px">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:10px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);cursor:pointer">
+            <input type="checkbox" id="fp-arena-cajueiro" checked style="accent-color:#22c55e">
+            <span style="color:#22c55e;font-weight:700;font-size:13px">🌳 Cajueiro</span>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:10px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);cursor:pointer">
+            <input type="checkbox" id="fp-arena-grussai" checked style="accent-color:#38bdf8">
+            <span style="color:#38bdf8;font-weight:700;font-size:13px">🏖️ Grussaí</span>
+          </label>
         </div>
       </div>
       <button onclick="publishFeedPost()" class="btn-main" id="btn-publish-post">📤 Publicar Post</button>
@@ -1312,6 +1335,7 @@ input,select,textarea{font-family:inherit;outline:none}
       <button onclick="loadDailyLoginStudents()" style="padding:8px 16px;border-radius:10px;background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-weight:700;font-size:12px;cursor:pointer">🔄 Atualizar</button>
       <button onclick="clearAllDailyLogins()" style="padding:8px 16px;border-radius:10px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#ef4444;font-weight:700;font-size:12px;cursor:pointer">🧹 Limpar Tudo</button>
     </div>
+    <div id="dl-arena-tabs" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"></div>
     <div id="dl-students-list">
       <div class="loading"><div class="spin"></div>Carregando...</div>
     </div>
@@ -1468,6 +1492,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <button onclick="logFilterAction('navegacao')" class="log-action-btn" data-logaction="navegacao" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">📍 Navegação</button>
         <button onclick="logFilterAction('game')" class="log-action-btn" data-logaction="game" style="padding:7px 12px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🎮 Games</button>
       </div>
+      <div id="log-arena-tabs" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap"></div>
       <div id="log-list"><div class="loading"><div class="spin"></div>Carregando...</div></div>
       <div style="text-align:center;margin-top:12px">
         <button onclick="loadMoreLogs()" id="log-load-more" style="display:none;padding:10px 24px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#94a3b8;font-weight:700;font-size:13px;cursor:pointer">Carregar mais...</button>
@@ -2600,10 +2625,33 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+function setAlertArena(value) {
+  document.getElementById("alert-arena").value = value;
+  const map = {
+    cajueiro: { id: 'alert-arena-cajueiro', color: '#22c55e', bg: 'rgba(34,197,94,.15)', bd: 'rgba(34,197,94,.4)' },
+    grussai:  { id: 'alert-arena-grussai',  color: '#38bdf8', bg: 'rgba(56,189,248,.15)', bd: 'rgba(56,189,248,.4)' },
+    both:     { id: 'alert-arena-both',     color: '#22c55e', bg: 'rgba(34,197,94,.15)',  bd: 'rgba(34,197,94,.4)' }
+  };
+  ['cajueiro','grussai','both'].forEach(k => {
+    const el = document.getElementById(map[k].id);
+    if (!el) return;
+    if (k === value) {
+      el.style.background = map[k].bg;
+      el.style.borderColor = map[k].bd;
+      el.style.color = map[k].color;
+    } else {
+      el.style.background = 'rgba(255,255,255,.04)';
+      el.style.borderColor = 'rgba(255,255,255,.1)';
+      el.style.color = '#94a3b8';
+    }
+  });
+}
+
 async function sendAlert() {
   if (!requireFirebase()) return;
   const msg = document.getElementById("alert-msg").value.trim();
   const visible = document.getElementById("alert-visible").checked;
+  const targetArena = document.getElementById("alert-arena").value || 'both';
   if (!msg) { setErr("alert-msg-err", "Digite uma mensagem"); return; }
 
   const btn = document.getElementById("btn-send-alert");
@@ -2613,6 +2661,7 @@ async function sendAlert() {
     await db.collection("alerts").add({
       message: msg,
       visible,
+      targetArena,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       read: false
     });
@@ -2624,12 +2673,14 @@ async function sendAlert() {
         icon: "🔔",
         text: `Alerta: ${msg}`,
         detail: "",
+        targetArena,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
 
     document.getElementById("alert-msg").value = "";
     document.getElementById("alert-visible").checked = true;
+    setAlertArena('both');
     setErr("alert-msg-err", "");
     showToast("🔔 Alerta enviado!");
   } catch(e) {
@@ -2651,6 +2702,37 @@ async function deleteAlert(id) {
 let unsubStudents = null;
 let allStudents = [];
 let studentMap = null;
+let studentsArenaFilter = 'all'; // 'all' | 'cajueiro' | 'grussai' | 'none'
+
+// Helper compartilhado: renderiza abas de filtro de arena
+function renderArenaFilterTabs(containerId, currentValue, onChange) {
+  const c = document.getElementById(containerId);
+  if (!c) return;
+  const tabs = [
+    { v: 'all',      label: '🌐 Todas',     color: '#94a3b8', activeBg: 'rgba(255,255,255,.10)', activeBd: 'rgba(255,255,255,.25)' },
+    { v: 'cajueiro', label: '🌳 Cajueiro',  color: '#22c55e', activeBg: 'rgba(34,197,94,.15)',  activeBd: 'rgba(34,197,94,.45)' },
+    { v: 'grussai',  label: '🏖️ Grussaí',  color: '#38bdf8', activeBg: 'rgba(56,189,248,.15)', activeBd: 'rgba(56,189,248,.45)' },
+    { v: 'none',     label: '⏳ Sem Arena', color: '#fbbf24', activeBg: 'rgba(251,191,36,.15)', activeBd: 'rgba(251,191,36,.45)' }
+  ];
+  c.innerHTML = tabs.map(t => {
+    const active = t.v === currentValue;
+    return `<button onclick="${onChange}('${t.v}')" style="flex:1;min-width:80px;padding:9px 8px;border-radius:10px;font-weight:700;font-size:11px;border:1px solid ${active?t.activeBd:'rgba(255,255,255,.1)'};cursor:pointer;background:${active?t.activeBg:'rgba(255,255,255,.04)'};color:${active?t.color:'#94a3b8'}">${t.label}</button>`;
+  }).join('');
+}
+
+// Helper: filtra array de usuários por arena selecionada
+function filterByArena(users, filter) {
+  if (filter === 'all') return users;
+  if (filter === 'none') return users.filter(u => !u.arena || (u.arena !== 'cajueiro' && u.arena !== 'grussai' && u.arena !== 'both'));
+  // cajueiro/grussai: incluir 'both'
+  return users.filter(u => u.arena === filter || u.arena === 'both');
+}
+
+function setStudentsArenaFilter(v) {
+  studentsArenaFilter = v;
+  renderArenaFilterTabs('students-arena-tabs', v, 'setStudentsArenaFilter');
+  renderStudents(allStudents);
+}
 
 function fmtTs(ts) {
   if (!ts) return "";
@@ -2684,18 +2766,23 @@ function loadStudents() {
 function renderStudents(students) {
   const list = document.getElementById("students-list");
   if (!list) return;
-  list.innerHTML = students.map(s => {
+  // Aplica filtro de arena
+  renderArenaFilterTabs('students-arena-tabs', studentsArenaFilter, 'setStudentsArenaFilter');
+  const filtered = filterByArena(students, studentsArenaFilter);
+  list.innerHTML = filtered.map(s => {
     const blocked = s.blocked === true;
     const hasLoc = s.location && s.location.lat && s.location.lng;
     const locTime = hasLoc && s.location.updatedAt ? fmtTs(s.location.updatedAt) : "";
     const hasPhoto = !!s.photoURL;
     const nickname = s.nickname ? ` (${escapeHtml(s.nickname)})` : "";
-    const arena = s.arena || 'cajueiro';
+    const arena = s.arena || '';
     const arenaInfo = arena === 'grussai'
       ? { label: '🏖️ Grussaí', color: '#38bdf8', bg: 'rgba(56,189,248,.12)', bd: 'rgba(56,189,248,.25)' }
       : arena === 'both'
         ? { label: '🤝 Ambas', color: '#a78bfa', bg: 'rgba(139,92,246,.12)', bd: 'rgba(139,92,246,.25)' }
-        : { label: '🌳 Cajueiro', color: '#22c55e', bg: 'rgba(34,197,94,.12)', bd: 'rgba(34,197,94,.25)' };
+        : arena === 'cajueiro'
+          ? { label: '🌳 Cajueiro', color: '#22c55e', bg: 'rgba(34,197,94,.12)', bd: 'rgba(34,197,94,.25)' }
+          : { label: '⏳ Sem Arena', color: '#fbbf24', bg: 'rgba(251,191,36,.12)', bd: 'rgba(251,191,36,.35)' };
     const arenaBadge = `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:${arenaInfo.bg};border:1px solid ${arenaInfo.bd};color:${arenaInfo.color};margin-left:6px">${arenaInfo.label}</span>`;
     return `
       <div style="background:rgba(255,255,255,.04);border:1px solid ${blocked?'rgba(239,68,68,.3)':'rgba(255,255,255,.08)'};border-radius:16px;padding:18px;margin-bottom:12px">
@@ -2942,7 +3029,8 @@ function setBulkCutsMode(mode) {
 
 function getBulkCutsFiltered() {
   const q = (document.getElementById("bulk-cuts-search").value || "").trim().toLowerCase();
-  const list = (allStudents || []).filter(s => !s.blocked);
+  let list = (allStudents || []).filter(s => !s.blocked);
+  list = filterByArena(list, bulkCutsArenaFilter);
   if (!q) return list;
   return list.filter(s => {
     const name = ((s.firstName||"") + " " + (s.lastName||"")).toLowerCase();
@@ -2951,9 +3039,17 @@ function getBulkCutsFiltered() {
   });
 }
 
+let bulkCutsArenaFilter = 'all';
+function setBulkCutsArenaFilter(v) {
+  bulkCutsArenaFilter = v;
+  renderArenaFilterTabs('bulk-cuts-arena-tabs', v, 'setBulkCutsArenaFilter');
+  renderBulkCutsList();
+}
+
 function renderBulkCutsList() {
   const cont = document.getElementById("bulk-cuts-list");
   if (!cont) return;
+  renderArenaFilterTabs('bulk-cuts-arena-tabs', bulkCutsArenaFilter, 'setBulkCutsArenaFilter');
   const list = getBulkCutsFiltered();
   if (list.length === 0) {
     cont.innerHTML = '<div class="empty"><div class="icon">👥</div><p>Nenhum aluno encontrado</p></div>';
@@ -3428,7 +3524,7 @@ async function sendMessageToStudent() {
 let editingStudentId = null;
 
 function setEditArena(value) {
-  document.getElementById("es-arena").value = value;
+  document.getElementById("es-arena").value = value || '';
   const map = {
     cajueiro: { id: 'es-arena-cajueiro', color: '#22c55e', bg: 'rgba(34,197,94,.15)', bd: 'rgba(34,197,94,.4)' },
     grussai:  { id: 'es-arena-grussai',  color: '#38bdf8', bg: 'rgba(56,189,248,.15)', bd: 'rgba(56,189,248,.4)' },
@@ -3461,7 +3557,7 @@ function openEditStudent(userId) {
   document.getElementById("es-phone").value = student.phone || "";
   document.getElementById("es-username").value = student.username || "";
   document.getElementById("es-password").value = student.password || "";
-  setEditArena(student.arena || 'cajueiro');
+  setEditArena(student.arena || '');
 
   const photoEl = document.getElementById("es-photo");
   const initialEl = document.getElementById("es-photo-initial");
@@ -3482,12 +3578,13 @@ async function saveStudentProfile() {
   const address = document.getElementById("es-address").value.trim();
   const phone = document.getElementById("es-phone").value.trim();
   const password = document.getElementById("es-password").value;
-  const arena = document.getElementById("es-arena").value || 'cajueiro';
+  const arena = document.getElementById("es-arena").value;
 
   const btn = document.getElementById("btn-save-student");
   btn.disabled = true; btn.textContent = "Salvando...";
   try {
-    const updates = { fullName, nickname, birthdate, address, phone, arena };
+    const updates = { fullName, nickname, birthdate, address, phone };
+    if (arena) updates.arena = arena;
     if (fullName) updates.firstName = fullName.split(" ")[0];
     if (password && password.length >= 4) updates.password = password;
     await db.collection("users").doc(editingStudentId).update(updates);
@@ -3715,6 +3812,14 @@ async function publishFeedPost() {
   var title = document.getElementById('fp-title').value.trim();
   if (!text && !title && !_fpImageData) { showToast('Adicione título, descrição ou imagem'); return; }
 
+  // Arenas destinatárias (multi-select)
+  var aC = document.getElementById('fp-arena-cajueiro').checked;
+  var aG = document.getElementById('fp-arena-grussai').checked;
+  if (!aC && !aG) { showToast('Selecione ao menos uma arena'); return; }
+  var targetArenas = [];
+  if (aC) targetArenas.push('cajueiro');
+  if (aG) targetArenas.push('grussai');
+
   var btn = document.getElementById('btn-publish-post');
   btn.disabled = true; btn.textContent = 'Publicando...';
 
@@ -3723,6 +3828,7 @@ async function publishFeedPost() {
       type: 'feed_post',
       icon: '📝',
       text: text,
+      targetArenas: targetArenas,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
     if (title) postData.title = title;
@@ -3732,6 +3838,8 @@ async function publishFeedPost() {
     showToast('✅ Post publicado!');
     document.getElementById('fp-text').value = '';
     document.getElementById('fp-title').value = '';
+    document.getElementById('fp-arena-cajueiro').checked = true;
+    document.getElementById('fp-arena-grussai').checked = true;
     clearPostImage();
     showScreen('teacher-feed');
     loadFeedManager();
@@ -4010,7 +4118,11 @@ let presenceStudentName = '';
 let bulkPresMode = false;
 let bulkPresSelected = {}; // { userId: { firstName } }
 let bulkPresStudentsCache = [];
-
+let presenceArenaFilter = 'all';
+function setPresenceArenaFilter(v) {
+  presenceArenaFilter = v;
+  renderPresenceStudentsList();
+}
 function loadPresenceStudents() {
   if (!firebaseOk) return;
   const list = document.getElementById("presence-students-list");
@@ -4035,7 +4147,9 @@ function loadPresenceStudents() {
 function renderPresenceStudentsList() {
   const list = document.getElementById("presence-students-list");
   if (!list) return;
-  const students = bulkPresStudentsCache || [];
+  const all = bulkPresStudentsCache || [];
+  renderArenaFilterTabs('presence-arena-tabs', presenceArenaFilter, 'setPresenceArenaFilter');
+  const students = filterByArena(all, presenceArenaFilter);
   list.innerHTML = students.map(s => {
     const hasPhoto = !!s.photoURL;
     const nickname = s.nickname ? ` (${escapeHtml(s.nickname)})` : "";
@@ -4883,6 +4997,8 @@ function installProfApp() {
 let logAllEntries = [];
 let logLastDoc = null;
 let logCurrentFilter = 'todos';
+let logArenaFilter = 'all';
+function setLogArenaFilter(v) { logArenaFilter = v; renderLogEntries(); }
 const LOG_PAGE_SIZE = 50;
 let _unsubLog = null;
 let _logRealtimeEntries = [];
@@ -5000,10 +5116,23 @@ function loadMoreLogs() {
 
 function renderLogEntries() {
   const container = document.getElementById('log-list');
+  renderArenaFilterTabs('log-arena-tabs', logArenaFilter, 'setLogArenaFilter');
   // Filtrar @teste (conta do professor)
   var testeUserIds = new Set();
   allStudents.forEach(function(s) { if (s.username === 'teste') testeUserIds.add(s.id); });
+  // Mapa de arena por userId
+  var userArenaMap = {};
+  allStudents.forEach(function(s) { userArenaMap[s.id] = s.arena || ''; });
   let filtered = logAllEntries.filter(function(e) { return !e.userId || !testeUserIds.has(e.userId); });
+  // Filtro por arena
+  if (logArenaFilter !== 'all') {
+    filtered = filtered.filter(function(e) {
+      if (!e.userId) return logArenaFilter === 'all';
+      var a = userArenaMap[e.userId] || '';
+      if (logArenaFilter === 'none') return !a || (a !== 'cajueiro' && a !== 'grussai' && a !== 'both');
+      return a === logArenaFilter || a === 'both';
+    });
+  }
   if (logCurrentFilter !== 'todos') {
     if (logCurrentFilter === 'navegacao') {
       filtered = filtered.filter(e => e.action === 'navegacao');
@@ -6206,10 +6335,13 @@ async function saveDailyLoginConfig() {
 }
 
 var _dlWeekKeys = [];
+var dlArenaFilter = 'all';
+function setDlArenaFilter(v) { dlArenaFilter = v; loadDailyLoginStudents(); }
 
 async function loadDailyLoginStudents() {
   if (!requireFirebase()) return;
   var listEl = document.getElementById('dl-students-list');
+  renderArenaFilterTabs('dl-arena-tabs', dlArenaFilter, 'setDlArenaFilter');
 
   try {
     var currentCycle = getDailyCycleKeyProf();
@@ -6220,8 +6352,9 @@ async function loadDailyLoginStudents() {
     var students = [];
     usersSnap.forEach(function(doc) {
       var d = doc.data();
-      students.push({ id: doc.id, firstName: d.firstName || '', username: d.username || '' });
+      students.push({ id: doc.id, firstName: d.firstName || '', username: d.username || '', arena: d.arena || '' });
     });
+    students = filterByArena(students, dlArenaFilter);
 
     if (students.length === 0) {
       listEl.innerHTML = '<div class="empty"><div class="icon">👥</div><p>Nenhum aluno cadastrado</p></div>';
