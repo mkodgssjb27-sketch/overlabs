@@ -5322,7 +5322,8 @@ async function editInscricaoTorneio(id) {
     showToast("✅ Atualizado");
     openInscricaoDetail(id);
   } catch(e) {
-    showToast("Erro ao listar torneios");
+    const msg = (e && (e.message || e.code)) ? (e.code || '') + ' ' + (e.message || '') : String(e);
+    showToast("Erro torneios: " + msg.substring(0, 60));
     console.error("[editInscricaoTorneio]", e);
   }
 }
