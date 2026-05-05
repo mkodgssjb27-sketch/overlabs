@@ -6079,6 +6079,8 @@ async function recomputeMonthlyRanking() {
     '• Reservas finalizadas (recompensa por aluno confirmado)\n' +
     '• Recompensas de login diário\n' +
     '• Adições manuais feitas pelo professor\n\n' +
+    'E SUBTRAI:\n' +
+    '• Compras feitas na loja CUTS no mês\n\n' +
     'O saldo total (cuts) NÃO é alterado. Apenas o monthlyCuts é recalculado.\n\n' +
     'Confirma?'
   );
@@ -6094,8 +6096,10 @@ async function recomputeMonthlyRanking() {
 
     const totals = {}; // userId -> sum
     const addTo = (uid, val) => {
-      if (!uid || !val || val <= 0) return;
-      totals[uid] = (totals[uid] || 0) + Number(val);
+      if (!uid || !val) return;
+      const n = Number(val);
+      if (!n || isNaN(n)) return;
+      totals[uid] = (totals[uid] || 0) + n;
     };
 
     // 1) Presenças do mês
@@ -6173,6 +6177,21 @@ async function recomputeMonthlyRanking() {
       });
     } catch (e) { console.warn('[Recalc] activity_log reserva:', e); }
 
+    // 6) Compras na loja (subtraem) e vendas (somam) no mês
+    try {
+      const txSnap = await db.collection('cuts_transactions').get();
+      txSnap.forEach(d => {
+        const t = d.data();
+        const ts = t.data;
+        const when = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+        if (!when || when < monthStart || when >= nextMonthStart) return;
+        const val = Number(t.valor) || 0;
+        if (val <= 0) return;
+        if (t.tipo === 'compra') addTo(t.userId, -val);
+        else if (t.tipo === 'venda') addTo(t.userId, val);
+      });
+    } catch (e) { console.warn('[Recalc] cuts_transactions:', e); }
+
     // Agora aplicar: para cada usuário existente, set monthlyCuts = totals[uid] || 0
     const usersSnap = await db.collection('users').get();
     const allIds = usersSnap.docs.map(d => d.id);
@@ -6181,7 +6200,7 @@ async function recomputeMonthlyRanking() {
     for (let i = 0; i < allIds.length; i += CHUNK) {
       const batch = db.batch();
       allIds.slice(i, i + CHUNK).forEach(uid => {
-        const v = totals[uid] || 0;
+        const v = Math.max(0, totals[uid] || 0);
         batch.update(db.collection('users').doc(uid), { monthlyCuts: v });
         if (v > 0) updated++;
       });

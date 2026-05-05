@@ -467,10 +467,11 @@ async function confirmPurchase() {
     // 3. Batch: descontar saldo + adicionar ao inventário + registrar transação
     const batch = db.batch();
 
-    // Descontar CUTS
+    // Descontar CUTS (também desconta do ranking mensal)
     const userRef = db.collection("users").doc(currentUser.id);
     batch.update(userRef, {
-      cuts: firebase.firestore.FieldValue.increment(-selectedItem.preco)
+      cuts: firebase.firestore.FieldValue.increment(-selectedItem.preco),
+      monthlyCuts: firebase.firestore.FieldValue.increment(-selectedItem.preco)
     });
 
     // Adicionar ao inventário (salvar dados completos do item para persistir mesmo se removido da loja)
@@ -756,10 +757,11 @@ async function confirmSell() {
     const invDocRef = db.collection("cuts_inventory").doc(pendingSellDocId);
     batch.delete(invDocRef);
 
-    // 2. Devolver CUTS ao aluno
+    // 2. Devolver CUTS ao aluno (e ao ranking mensal)
     const userRef = db.collection("users").doc(currentUser.id);
     batch.update(userRef, {
-      cuts: firebase.firestore.FieldValue.increment(sellPrice)
+      cuts: firebase.firestore.FieldValue.increment(sellPrice),
+      monthlyCuts: firebase.firestore.FieldValue.increment(sellPrice)
     });
 
     // 3. Registrar transação
