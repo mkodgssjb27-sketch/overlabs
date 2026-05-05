@@ -687,6 +687,11 @@ input,select{font-family:inherit;outline:none}
       </div>
     </div>
     <div class="rp-footer">
+      <div id="rp-cuts" style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:10px 14px;margin-bottom:12px">
+        <span style="font-size:20px">🪙</span>
+        <span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Carteira:</span>
+        <span id="rp-cuts-val" style="font-size:18px;font-weight:900;color:#f59e0b">—</span>
+      </div>
       <div class="rp-emblems" id="rp-emblems"></div>
     </div>
   </div>
@@ -3178,6 +3183,7 @@ function openRankingProfile(userId) {
   var frameEl = document.getElementById("rp-frame");
   var bannerBg = document.getElementById("rp-banner-bg");
   var emblemsEl = document.getElementById("rp-emblems");
+  var cutsEl = document.getElementById("rp-cuts-val");
 
   // Se já tem cache, restaurar instantaneamente
   var c = _rpCache[userId];
@@ -3185,6 +3191,7 @@ function openRankingProfile(userId) {
     nameEl.textContent = c.name;
     userEl.textContent = c.user;
     avatarEl.innerHTML = c.avatar;
+    if (cutsEl) cutsEl.textContent = (c.cuts != null) ? c.cuts : '—';
     if (c.frameUrl) {
       frameEl.src = c.frameUrl;
       frameEl.style.display = "block";
@@ -3212,10 +3219,11 @@ function openRankingProfile(userId) {
   bannerBg.style.backgroundImage = "";
   bannerBg.innerHTML = "";
   emblemsEl.innerHTML = "";
+  if (cutsEl) cutsEl.textContent = '—';
   overlay.classList.add("active");
 
   // Inicializar cache para este userId
-  _rpCache[userId] = { name: "", user: "", avatar: "", frameUrl: "", frameStyle: null, bannerHtml: "", bannerBg: "", emblems: "" };
+  _rpCache[userId] = { name: "", user: "", avatar: "", frameUrl: "", frameStyle: null, bannerHtml: "", bannerBg: "", emblems: "", cuts: null };
 
   var cached = _rankingUsersCache.find(function(u) { return u.id === userId; });
 
@@ -3226,6 +3234,9 @@ function openRankingProfile(userId) {
     userEl.textContent = user;
     _rpCache[userId].name = name;
     _rpCache[userId].user = user;
+    var cutsVal = Math.max(0, Number(d.cuts) || 0);
+    if (cutsEl) cutsEl.textContent = cutsVal;
+    _rpCache[userId].cuts = cutsVal;
     var photoUrl = d.photoURL || "";
     var equippedAvatarId = d.equippedAvatarItemId || "";
     if (equippedAvatarId) {
