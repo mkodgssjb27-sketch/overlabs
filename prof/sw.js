@@ -1,4 +1,4 @@
-const CACHE_NAME_PROF = "overhost-v211";
+const CACHE_NAME_PROF = "overhost-v212";
 const URLS_TO_CACHE = [
   "./",
   "./index.html",

@@ -188,9 +188,12 @@ input,select{font-family:inherit;outline:none}
 .rp-avatar-frame{position:absolute;inset:-14%;width:128%;height:128%;pointer-events:none;z-index:2;display:none}
 .rp-name{font-weight:800;font-size:18px;color:#fff;letter-spacing:-.3px;text-shadow:0 1px 4px rgba(0,0,0,.5);margin-top:28px}
 .rp-username{font-size:13px;color:#94a3b8;margin-top:3px;text-shadow:0 1px 3px rgba(0,0,0,.4)}
-.rp-footer{display:flex;align-items:center;justify-content:center;padding:10px 16px 14px}
+.rp-footer{position:relative;display:flex;align-items:center;justify-content:center;padding:10px 16px 14px;min-height:40px}
 .rp-emblems{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 .rp-emblems img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.rp-cuts-badge{position:absolute;left:16px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.28);border-radius:12px;line-height:1}
+.rp-cuts-badge .rp-cuts-icon{font-size:14px;line-height:1}
+.rp-cuts-badge .rp-cuts-val{font-size:13px;font-weight:900;color:#f59e0b;line-height:1}
 .rp-close{position:absolute;top:12px;right:12px;z-index:10;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 
 /* Daily Login Check-in */
@@ -716,10 +719,9 @@ input,select{font-family:inherit;outline:none}
       </div>
     </div>
     <div class="rp-footer">
-      <div id="rp-cuts" style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:10px 14px;margin-bottom:12px">
-        <span style="font-size:20px">🪙</span>
-        <span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Carteira:</span>
-        <span id="rp-cuts-val" style="font-size:18px;font-weight:900;color:#f59e0b">—</span>
+      <div id="rp-cuts" class="rp-cuts-badge" title="Carteira CUTS">
+        <span class="rp-cuts-icon">🪙</span>
+        <span id="rp-cuts-val" class="rp-cuts-val">—</span>
       </div>
       <div class="rp-emblems" id="rp-emblems"></div>
     </div>
