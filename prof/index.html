@@ -1949,6 +1949,11 @@ input,select,textarea{font-family:inherit;outline:none}
 
       <!-- View: Itens -->
       <div id="editor-view-itens">
+        <div id="editor-status-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <button onclick="editorFilterStatus('todos')" class="editor-status-btn active" data-status="todos" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">📋 Todos</button>
+          <button onclick="editorFilterStatus('ativos')" class="editor-status-btn" data-status="ativos" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">✅ Ativos</button>
+          <button onclick="editorFilterStatus('expirados')" class="editor-status-btn" data-status="expirados" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">⏰ Expirados</button>
+        </div>
         <div id="editor-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
           <button onclick="editorFilter('todos')" class="editor-filter-btn active" data-filter="todos" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">Todos</button>
           <button onclick="editorFilter('avatar')" class="editor-filter-btn" data-filter="avatar" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">🖼️ Avatar</button>
@@ -7510,11 +7515,23 @@ function editorResetForm() {
 }
 
 let editorCurrentFilter = 'todos';
+let editorCurrentStatus = 'todos';
 
 function editorFilter(filter) {
   editorCurrentFilter = filter;
   document.querySelectorAll('.editor-filter-btn').forEach(btn => {
     const active = btn.dataset.filter === filter;
+    btn.classList.toggle('active', active);
+    btn.style.background = active ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.06)';
+    btn.style.color = active ? '#f59e0b' : '#94a3b8';
+  });
+  renderEditorItemsList();
+}
+
+function editorFilterStatus(status) {
+  editorCurrentStatus = status;
+  document.querySelectorAll('.editor-status-btn').forEach(btn => {
+    const active = btn.dataset.status === status;
     btn.classList.toggle('active', active);
     btn.style.background = active ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.06)';
     btn.style.color = active ? '#f59e0b' : '#94a3b8';
@@ -7528,9 +7545,22 @@ function renderEditorItemsList() {
   if (editorCurrentFilter !== 'todos') {
     items = items.filter(i => i.tipo === editorCurrentFilter);
   }
+  if (editorCurrentStatus !== 'todos') {
+    var now = new Date();
+    items = items.filter(function(i) {
+      if (!i.expiraEm) return editorCurrentStatus === 'ativos'; // sem prazo = sempre ativo
+      var d = i.expiraEm.toDate ? i.expiraEm.toDate() : new Date(i.expiraEm);
+      var expired = (d - now) <= 0;
+      return editorCurrentStatus === 'expirados' ? expired : !expired;
+    });
+  }
 
   if (items.length === 0) {
-    container.innerHTML = '<div class="empty"><div class="icon">📦</div><p>Nenhum item' + (editorCurrentFilter !== 'todos' ? ' deste tipo' : ' publicado') + '</p></div>';
+    var msg = 'Nenhum item';
+    if (editorCurrentStatus === 'ativos') msg += ' ativo';
+    else if (editorCurrentStatus === 'expirados') msg += ' expirado';
+    if (editorCurrentFilter !== 'todos') msg += ' deste tipo';
+    container.innerHTML = '<div class="empty"><div class="icon">📦</div><p>' + msg + '</p></div>';
     return;
   }
 
