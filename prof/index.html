@@ -1765,14 +1765,19 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="section-title">📤 Criar Novo Item</div>
 
       <!-- Upload -->
-      <div id="editor-upload-zone" onclick="document.getElementById('editor-file-input').click()" style="border:2px dashed rgba(255,255,255,.15);border-radius:16px;padding:30px 20px;text-align:center;cursor:pointer;transition:.2s;background:rgba(255,255,255,.02);margin-bottom:16px">
+      <div id="editor-upload-zone" onclick="document.getElementById('editor-file-input').click()" style="border:2px dashed rgba(255,255,255,.15);border-radius:16px;padding:30px 20px;text-align:center;cursor:pointer;transition:.2s;background:rgba(255,255,255,.02);margin-bottom:10px">
         <div id="editor-upload-content">
           <span style="font-size:40px;display:block;margin-bottom:8px">📁</span>
           <span style="color:#94a3b8;font-size:13px">Clique para enviar imagem ou GIF</span>
           <div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP (máx. 10MB)</div>
         </div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+        <button type="button" onclick="document.getElementById('editor-file-input').click()" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;padding:10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer">🖼️ Galeria</button>
+        <button type="button" onclick="document.getElementById('editor-file-input-any').click()" style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:#a5b4fc;padding:10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer">🗂️ Arquivos</button>
+      </div>
       <input type="file" id="editor-file-input" accept="image/*" style="display:none" onchange="editorHandleFile(this)">
+      <input type="file" id="editor-file-input-any" style="display:none" onchange="editorHandleFile(this)">
 
       <!-- Preview da imagem -->
       <div id="editor-img-preview" style="display:none;text-align:center;margin-bottom:16px">
