@@ -1668,7 +1668,10 @@ input,select,textarea{font-family:inherit;outline:none}
     <div class="t-form" style="margin-bottom:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap">
         <div class="section-title" id="ranking-stats-title" style="margin:0">🏆 Ranking Atual — Arena Cajueiro</div>
-        <button onclick="manualResetMonthlyRanking()" style="padding:8px 14px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800;font-size:12px;border:none;cursor:pointer">🔄 Zerar Ranking do Mês</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="recomputeMonthlyRanking()" style="padding:8px 14px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;font-size:12px;border:none;cursor:pointer">♻️ Recalcular Mês</button>
+          <button onclick="manualResetMonthlyRanking()" style="padding:8px 14px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800;font-size:12px;border:none;cursor:pointer">🔄 Zerar Ranking do Mês</button>
+        </div>
       </div>
       <div style="font-size:11px;color:#64748b;margin-bottom:10px">As moedas CUTS totais de cada aluno <b>não</b> serão afetadas. Apenas a competição mensal será reiniciada.</div>
       <div id="ranking-stats-current"><div class="loading"><div class="spin"></div>Carregando...</div></div>
@@ -2393,7 +2396,7 @@ async function autoDistributeCutsReward(ride) {
       const slice = ids.slice(i, i + CHUNK);
       const batch = db.batch();
       slice.forEach(uid => {
-        batch.update(db.collection("users").doc(uid), { cuts: inc, cutsUpdatedAt: ts });
+        batch.update(db.collection("users").doc(uid), { cuts: inc, monthlyCuts: incMonthly, cutsUpdatedAt: ts });
         batch.set(db.collection("notifications").doc(uid).collection("items").doc(), {
           msg: `🪙 Você ganhou ${reward} moeda${reward>1?'s':''} CUTS pela Reserva "${title}"!`,
           read: false,
@@ -6059,6 +6062,145 @@ async function manualResetMonthlyRanking() {
   } catch (e) {
     console.error('[Ranking] Erro no reset manual:', e);
     showToast('❌ Erro ao zerar ranking');
+  }
+}
+
+// ── Recalcula monthlyCuts somando todas as moedas ganhas no mês corrente ──
+// Considera: presenças (attendance.cutsAwarded), reservas distribuídas
+// (rides.cutsReward × booked.userId), recompensas de login diário
+// (dailyLoginRewards.coins) e adições manuais via activity_log
+// (action='cuts_alterado', extra.mode='add'). Subtrações e compras NÃO entram.
+async function recomputeMonthlyRanking() {
+  if (!firebaseOk) return;
+  const ok = confirm(
+    '♻️ Recalcular o ranking do mês atual?\n\n' +
+    'Soma todas as moedas CUTS que cada aluno GANHOU entre o dia 01 e hoje:\n' +
+    '• Presenças lançadas com recompensa\n' +
+    '• Reservas finalizadas (recompensa por aluno confirmado)\n' +
+    '• Recompensas de login diário\n' +
+    '• Adições manuais feitas pelo professor\n\n' +
+    'O saldo total (cuts) NÃO é alterado. Apenas o monthlyCuts é recalculado.\n\n' +
+    'Confirma?'
+  );
+  if (!ok) return;
+  try {
+    showToast('Recalculando ranking...');
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth(); // 0-indexed
+    const monthStart = new Date(y, m, 1, 0, 0, 0, 0);
+    const monthStartStr = y + '-' + String(m + 1).padStart(2, '0') + '-01';
+    const nextMonthStart = new Date(y, m + 1, 1, 0, 0, 0, 0);
+
+    const totals = {}; // userId -> sum
+    const addTo = (uid, val) => {
+      if (!uid || !val || val <= 0) return;
+      totals[uid] = (totals[uid] || 0) + Number(val);
+    };
+
+    // 1) Presenças do mês
+    try {
+      const attSnap = await db.collection('attendance')
+        .where('date', '>=', monthStartStr)
+        .get();
+      attSnap.forEach(d => {
+        const a = d.data();
+        const dt = a.date || '';
+        if (dt >= monthStartStr && (a.cutsAwarded || 0) > 0) addTo(a.userId, a.cutsAwarded);
+      });
+    } catch (e) { console.warn('[Recalc] attendance:', e); }
+
+    // 2) Reservas distribuídas no mês
+    try {
+      const ridesSnap = await db.collection('rides')
+        .where('cutsRewardDistributed', '==', true)
+        .get();
+      ridesSnap.forEach(d => {
+        const r = d.data();
+        const ts = r.cutsRewardDistributedAt;
+        const when = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+        if (!when || when < monthStart || when >= nextMonthStart) return;
+        const reward = Number(r.cutsReward) || 0;
+        if (reward <= 0) return;
+        (r.booked || []).forEach(b => addTo(b.userId, reward));
+      });
+    } catch (e) { console.warn('[Recalc] rides:', e); }
+
+    // 3) Recompensas de login diário no mês
+    try {
+      const dlSnap = await db.collection('dailyLoginRewards').get();
+      dlSnap.forEach(d => {
+        const r = d.data();
+        const ts = r.awardedAt;
+        const when = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+        if (!when || when < monthStart || when >= nextMonthStart) return;
+        addTo(r.userId, r.coins);
+      });
+    } catch (e) { console.warn('[Recalc] dailyLoginRewards:', e); }
+
+    // 4) Adições manuais via activity_log (cuts_alterado / mode=add)
+    try {
+      const logSnap = await db.collection('activity_log')
+        .where('action', '==', 'cuts_alterado')
+        .get();
+      logSnap.forEach(d => {
+        const a = d.data();
+        const ts = a.timestamp;
+        const when = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+        if (!when || when < monthStart || when >= nextMonthStart) return;
+        const ex = a.extra || {};
+        if (ex.mode !== 'add') return;
+        addTo(a.userId, ex.valor);
+      });
+    } catch (e) { console.warn('[Recalc] activity_log:', e); }
+
+    // 5) Recompensas de Reservas via activity_log (fallback caso ride seja apagada)
+    try {
+      const logSnap2 = await db.collection('activity_log')
+        .where('action', '==', 'cuts_recompensa_Reserva')
+        .get();
+      logSnap2.forEach(d => {
+        const a = d.data();
+        const ts = a.timestamp;
+        const when = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+        if (!when || when < monthStart || when >= nextMonthStart) return;
+        const ex = a.extra || {};
+        // Só usar se NÃO contabilizamos via rides (a ride pode já ter sido contada)
+        // Para evitar dupla contagem, ignoramos este passo se a ride existir.
+        // Implementação: marcar via Set de rideIds já vistos.
+        // (deixado simples: só conta se não houver rideId, ou seja, fonte alternativa)
+        if (!ex.rideId) addTo(a.userId, ex.valor);
+      });
+    } catch (e) { console.warn('[Recalc] activity_log reserva:', e); }
+
+    // Agora aplicar: para cada usuário existente, set monthlyCuts = totals[uid] || 0
+    const usersSnap = await db.collection('users').get();
+    const allIds = usersSnap.docs.map(d => d.id);
+    const CHUNK = 400;
+    let updated = 0;
+    for (let i = 0; i < allIds.length; i += CHUNK) {
+      const batch = db.batch();
+      allIds.slice(i, i + CHUNK).forEach(uid => {
+        const v = totals[uid] || 0;
+        batch.update(db.collection('users').doc(uid), { monthlyCuts: v });
+        if (v > 0) updated++;
+      });
+      await batch.commit();
+    }
+
+    // Garante que o monthly_reset esteja marcado para o mês atual
+    const currentKey = y + '-' + String(m + 1).padStart(2, '0');
+    await db.collection('ranking_config').doc('monthly_reset').set({
+      monthKey: currentKey,
+      resetAt: firebase.firestore.FieldValue.serverTimestamp(),
+      resetBy: 'recompute'
+    }, { merge: true });
+
+    showToast('✅ Ranking recalculado (' + updated + ' alunos com ganhos)');
+    loadCurrentRanking();
+  } catch (e) {
+    console.error('[Recalc] Erro:', e);
+    showToast('❌ Erro ao recalcular ranking');
   }
 }
 
