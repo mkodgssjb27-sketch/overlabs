@@ -1325,6 +1325,57 @@ input,select,textarea{font-family:inherit;outline:none}
   </div>
 </div>
 
+<!-- ══ MODAL HISTÓRICO DE CUTS DO ALUNO ═════════════════════════════ -->
+<div id="cuts-history-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:16px">
+  <div style="background:#1e293b;border-radius:18px;padding:24px 20px;max-width:560px;width:100%;max-height:90vh;border:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column">
+    <div style="text-align:center;margin-bottom:14px;flex-shrink:0">
+      <span style="font-size:36px">📜</span>
+      <div style="font-size:17px;font-weight:800;color:#e2e8f0;margin-top:6px" id="ch-title">Histórico de CUTS</div>
+      <div style="font-size:12px;color:#64748b;margin-top:2px">Entradas (ganhos) e saídas (gastos) de moedas</div>
+    </div>
+
+    <!-- Filtros de período -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;flex-shrink:0">
+      <div style="flex:1;min-width:130px">
+        <label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px">DE</label>
+        <input type="date" id="ch-date-from" class="inp" style="padding:8px 10px;font-size:13px;width:100%">
+      </div>
+      <div style="flex:1;min-width:130px">
+        <label style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px">ATÉ</label>
+        <input type="date" id="ch-date-to" class="inp" style="padding:8px 10px;font-size:13px;width:100%">
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;flex-shrink:0">
+      <button onclick="setCutsHistoryRange('today')" class="ch-rng" style="padding:6px 10px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">Hoje</button>
+      <button onclick="setCutsHistoryRange('7d')" class="ch-rng" style="padding:6px 10px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">7 dias</button>
+      <button onclick="setCutsHistoryRange('month')" class="ch-rng" style="padding:6px 10px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(56,189,248,.15);color:#38bdf8">Este mês</button>
+      <button onclick="setCutsHistoryRange('lastMonth')" class="ch-rng" style="padding:6px 10px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">Mês passado</button>
+      <button onclick="setCutsHistoryRange('all')" class="ch-rng" style="padding:6px 10px;border-radius:8px;font-weight:700;font-size:11px;border:none;cursor:pointer;background:rgba(255,255,255,.06);color:#94a3b8">Tudo</button>
+      <button onclick="loadCutsHistory()" style="padding:6px 12px;border-radius:8px;font-weight:800;font-size:11px;border:none;cursor:pointer;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#fff">🔍 Aplicar</button>
+    </div>
+
+    <!-- Resumo -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;flex-shrink:0">
+      <div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:8px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:#64748b">RECEBEU</div>
+        <div style="font-size:16px;font-weight:900;color:#22c55e" id="ch-sum-in">+0</div>
+      </div>
+      <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:8px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:#64748b">GASTOU</div>
+        <div style="font-size:16px;font-weight:900;color:#f87171" id="ch-sum-out">-0</div>
+      </div>
+      <div style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:10px;padding:8px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:#64748b">SALDO</div>
+        <div style="font-size:16px;font-weight:900;color:#38bdf8" id="ch-sum-net">0</div>
+      </div>
+    </div>
+
+    <div id="ch-content" style="flex:1;overflow-y:auto;min-height:80px;margin-bottom:12px"></div>
+
+    <button onclick="closeCutsHistoryModal()" style="flex-shrink:0;width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#94a3b8;font-weight:700;font-size:14px;cursor:pointer">Fechar</button>
+  </div>
+</div>
+
 <!-- ══ MODAL CUTS ═══════════════════════════════════════════════════ -->
 <div id="cuts-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center">
   <div style="background:#1e293b;border-radius:18px;padding:28px 24px;max-width:360px;width:90%;border:1px solid rgba(255,255,255,.1)">
@@ -3111,6 +3162,9 @@ function renderStudents(students) {
           </div>
           <button onclick="openCutsModal('${s.id}','${escapeHtml(s.firstName||'')}',${s.cuts||0})" style="padding:8px 14px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;background:rgba(245,158,11,.15);color:#f59e0b">✏️ Editar</button>
         </div>
+        <div style="display:flex;gap:8px;margin-top:-2px;margin-bottom:10px">
+          <button onclick="openCutsHistoryModal('${s.id}','${escapeHtml(s.firstName||'')}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8;display:flex;align-items:center;justify-content:center;gap:6px">📜 Histórico de CUTS</button>
+        </div>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button onclick="openMsgModal('${s.id}','${escapeHtml(s.firstName||'')}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(139,92,246,.12);color:#a78bfa;display:flex;align-items:center;justify-content:center;gap:6px">✉️ Mensagem</button>
           <button onclick="openInventoryModal('${s.id}','${escapeHtml(s.firstName||'')}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(16,185,129,.12);color:#10b981;display:flex;align-items:center;justify-content:center;gap:6px">🎒 Inventário</button>
@@ -3213,6 +3267,199 @@ function cutsAction(mode) {
 function closeCutsModal() {
   document.getElementById("cuts-modal").style.display = "none";
   cutsModalUserId = null;
+}
+
+// ── Histórico de CUTS do aluno ──
+let cutsHistoryUserId = null;
+let cutsHistoryUserName = '';
+
+function openCutsHistoryModal(userId, name) {
+  cutsHistoryUserId = userId;
+  cutsHistoryUserName = name || '';
+  document.getElementById('ch-title').textContent = '📜 Histórico — ' + (name || 'Aluno');
+  // Default: mês corrente
+  setCutsHistoryRange('month');
+  document.getElementById('cuts-history-modal').style.display = 'flex';
+}
+
+function closeCutsHistoryModal() {
+  document.getElementById('cuts-history-modal').style.display = 'none';
+  cutsHistoryUserId = null;
+}
+
+function setCutsHistoryRange(kind) {
+  const now = new Date();
+  let from, to;
+  if (kind === 'today') {
+    from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (kind === '7d') {
+    to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+  } else if (kind === 'month') {
+    from = new Date(now.getFullYear(), now.getMonth(), 1);
+    to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (kind === 'lastMonth') {
+    from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    to = new Date(now.getFullYear(), now.getMonth(), 0);
+  } else { // all
+    from = null; to = null;
+  }
+  const fmt = d => d ? (d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0')) : '';
+  document.getElementById('ch-date-from').value = fmt(from);
+  document.getElementById('ch-date-to').value = fmt(to);
+  // visual
+  document.querySelectorAll('.ch-rng').forEach(b => {
+    b.style.background = 'rgba(255,255,255,.06)';
+    b.style.color = '#94a3b8';
+  });
+  const labelMap = { today:'Hoje', '7d':'7 dias', month:'Este mês', lastMonth:'Mês passado', all:'Tudo' };
+  document.querySelectorAll('.ch-rng').forEach(b => {
+    if (b.textContent.trim() === labelMap[kind]) {
+      b.style.background = 'rgba(56,189,248,.15)';
+      b.style.color = '#38bdf8';
+    }
+  });
+  loadCutsHistory();
+}
+
+async function loadCutsHistory() {
+  if (!firebaseOk || !cutsHistoryUserId) return;
+  const uid = cutsHistoryUserId;
+  const fromStr = document.getElementById('ch-date-from').value;
+  const toStr = document.getElementById('ch-date-to').value;
+  const fromDate = fromStr ? new Date(fromStr + 'T00:00:00') : null;
+  const toDate = toStr ? new Date(toStr + 'T23:59:59.999') : null;
+
+  const inRange = (when) => {
+    if (!when) return false;
+    if (fromDate && when < fromDate) return false;
+    if (toDate && when > toDate) return false;
+    return true;
+  };
+
+  const content = document.getElementById('ch-content');
+  content.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
+
+  const events = []; // { when, type:'in'|'out', valor, label, icon, source }
+
+  try {
+    // 1) cuts_transactions (compras/vendas)
+    try {
+      const txSnap = await db.collection('cuts_transactions').where('userId', '==', uid).get();
+      txSnap.forEach(d => {
+        const t = d.data();
+        const ts = t.data;
+        const when = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+        if (!inRange(when)) return;
+        const v = Number(t.valor) || 0;
+        if (t.tipo === 'compra') {
+          events.push({ when, type:'out', valor:v, icon:'🛒', label:'Compra na loja', detail: t.itemNome || '' });
+        } else if (t.tipo === 'venda') {
+          events.push({ when, type:'in', valor:v, icon:'💱', label:'Venda de item', detail: t.itemNome || '' });
+        }
+      });
+    } catch(e) { console.warn('[Hist] cuts_transactions:', e); }
+
+    // 2) Presenças com recompensa
+    try {
+      const attSnap = await db.collection('attendance').where('userId', '==', uid).get();
+      attSnap.forEach(d => {
+        const a = d.data();
+        if (!a.cutsAwarded || a.cutsAwarded <= 0) return;
+        // Usar a data da presença (string YYYY-MM-DD) como referência
+        const dt = a.date ? new Date(a.date + 'T12:00:00') : (a.createdAt && a.createdAt.toDate ? a.createdAt.toDate() : null);
+        if (!inRange(dt)) return;
+        events.push({ when: dt, type:'in', valor: Number(a.cutsAwarded), icon:'✅', label:'Presença', detail: a.title || '' });
+      });
+    } catch(e) { console.warn('[Hist] attendance:', e); }
+
+    // 3) Login diário
+    try {
+      const dlSnap = await db.collection('dailyLoginRewards').where('userId', '==', uid).get();
+      dlSnap.forEach(d => {
+        const r = d.data();
+        const ts = r.awardedAt;
+        const when = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+        if (!inRange(when)) return;
+        const v = Number(r.coins) || 0;
+        if (v <= 0) return;
+        events.push({ when, type:'in', valor:v, icon:'🎁', label:'Login diário', detail: r.rewardDay ? (r.rewardDay + '/7') : '' });
+      });
+    } catch(e) { console.warn('[Hist] dailyLoginRewards:', e); }
+
+    // 4) Activity log: cuts_alterado (manual) + recompensa de Reserva
+    try {
+      const logSnap = await db.collection('activity_log').where('userId', '==', uid).get();
+      logSnap.forEach(d => {
+        const a = d.data();
+        const ts = a.timestamp;
+        const when = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+        if (!inRange(when)) return;
+        const ex = a.extra || {};
+        if (a.action === 'cuts_alterado') {
+          const v = Number(ex.valor) || 0;
+          if (v <= 0) return;
+          if (ex.mode === 'add') events.push({ when, type:'in', valor:v, icon:'➕', label:'Adicionado pelo professor', detail:'' });
+          else if (ex.mode === 'remove') events.push({ when, type:'out', valor:v, icon:'➖', label:'Removido pelo professor', detail:'' });
+          else if (ex.mode === 'set') {
+            // set é difícil reconstruir; mostrar como ajuste manual
+            events.push({ when, type:'in', valor:v, icon:'⚙️', label:'Saldo definido pelo professor', detail:'novo saldo: ' + (ex.novoSaldo||v) });
+          }
+        } else if (a.action === 'cuts_recompensa_Reserva') {
+          const v = Number(ex.valor) || 0;
+          if (v <= 0) return;
+          events.push({ when, type:'in', valor:v, icon:'🚗', label:'Reserva', detail: (a.detail || '').replace(/^Recebeu \d+ CUTS pela Reserva /,'') });
+        }
+      });
+    } catch(e) { console.warn('[Hist] activity_log:', e); }
+
+    // Ordenar por data desc
+    events.sort((a,b) => (b.when?.getTime?.()||0) - (a.when?.getTime?.()||0));
+
+    // Resumos
+    let sumIn = 0, sumOut = 0;
+    events.forEach(ev => { if (ev.type === 'in') sumIn += ev.valor; else sumOut += ev.valor; });
+    document.getElementById('ch-sum-in').textContent = '+' + sumIn;
+    document.getElementById('ch-sum-out').textContent = '-' + sumOut;
+    const net = sumIn - sumOut;
+    document.getElementById('ch-sum-net').textContent = (net > 0 ? '+' : '') + net;
+
+    if (events.length === 0) {
+      content.innerHTML = '<div class="empty"><div class="icon">📭</div><p>Nenhuma movimentação no período</p></div>';
+      return;
+    }
+
+    const fmtDt = (d) => {
+      if (!d) return '—';
+      const day = String(d.getDate()).padStart(2,'0');
+      const mon = String(d.getMonth()+1).padStart(2,'0');
+      const yr = d.getFullYear();
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      return day + '/' + mon + '/' + yr + ' ' + hh + ':' + mm;
+    };
+
+    content.innerHTML = events.map(ev => {
+      const c = ev.type === 'in' ? '#22c55e' : '#f87171';
+      const sign = ev.type === 'in' ? '+' : '-';
+      const bg = ev.type === 'in' ? 'rgba(34,197,94,.06)' : 'rgba(239,68,68,.06)';
+      const bd = ev.type === 'in' ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)';
+      const detail = ev.detail ? '<div style="font-size:11px;color:#64748b;margin-top:2px">' + escapeHtml(ev.detail) + '</div>' : '';
+      return '<div style="background:' + bg + ';border:1px solid ' + bd + ';border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">' +
+        '<div style="font-size:20px">' + ev.icon + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:13px;font-weight:700;color:#e2e8f0">' + escapeHtml(ev.label) + '</div>' +
+          detail +
+          '<div style="font-size:10px;color:#64748b;margin-top:2px">' + fmtDt(ev.when) + '</div>' +
+        '</div>' +
+        '<div style="font-size:15px;font-weight:900;color:' + c + '">' + sign + ev.valor + ' 🪙</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    console.error('[Hist] Erro:', e);
+    content.innerHTML = '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar histórico</p></div>';
+  }
 }
 
 async function saveCuts() {
