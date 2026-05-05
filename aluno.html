@@ -2938,6 +2938,33 @@ function loadRanking() {
 
   if (unsubRanking) { unsubRanking(); unsubRanking = null; }
   if (!firebaseOk) return;
+
+  // Verificar se o professor ocultou o ranking globalmente
+  db.collection('ranking_config').doc('visibility').get().then(function(visDoc) {
+    var hidden = visDoc.exists && visDoc.data().hidden === true;
+    if (hidden) {
+      if (loadingEl) loadingEl.style.display = "none";
+      if (tabsEl) tabsEl.style.display = "none";
+      if (titleEl) titleEl.textContent = '🏆 Ranking';
+      if (listEl) {
+        listEl.innerHTML = '<div style="text-align:center;padding:60px 24px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.18);border-radius:18px">' +
+          '<div style="font-size:54px;margin-bottom:14px">🛠️</div>' +
+          '<div style="font-size:18px;font-weight:900;color:#f59e0b;margin-bottom:8px">Ranking Sendo Atualizado</div>' +
+          '<div style="font-size:13px;color:#94a3b8;line-height:1.5">O ranking está temporariamente indisponível.<br>Volte em alguns instantes!</div>' +
+        '</div>';
+      }
+      return;
+    }
+    _loadRankingInternal();
+  }).catch(function(){ _loadRankingInternal(); });
+}
+
+function _loadRankingInternal() {
+  const podiumEl = document.getElementById("ranking-podium");
+  const listEl = document.getElementById("ranking-list");
+  const loadingEl = document.getElementById("ranking-loading");
+  const tabsEl = document.getElementById("ranking-arena-tabs");
+  const titleEl = document.getElementById("ranking-htitle");
   // Auto-reset mensal (dia 1 do mês). Roda em background, listener atualiza display.
   checkMonthlyRankingReset();
 

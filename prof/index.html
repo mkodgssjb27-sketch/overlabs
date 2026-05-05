@@ -1720,10 +1720,12 @@ input,select,textarea{font-family:inherit;outline:none}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap">
         <div class="section-title" id="ranking-stats-title" style="margin:0">🏆 Ranking Atual — Arena Cajueiro</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="btn-toggle-ranking-visibility" onclick="toggleRankingVisibility()" style="padding:8px 14px;border-radius:10px;background:linear-gradient(135deg,#64748b,#334155);color:#fff;font-weight:800;font-size:12px;border:none;cursor:pointer">👁️ Ocultar para alunos</button>
           <button onclick="recomputeMonthlyRanking()" style="padding:8px 14px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;font-size:12px;border:none;cursor:pointer">♻️ Recalcular Mês</button>
           <button onclick="manualResetMonthlyRanking()" style="padding:8px 14px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;font-weight:800;font-size:12px;border:none;cursor:pointer">🔄 Zerar Ranking do Mês</button>
         </div>
       </div>
+      <div id="ranking-visibility-status" style="font-size:11px;font-weight:700;margin-bottom:6px"></div>
       <div style="font-size:11px;color:#64748b;margin-bottom:10px">As moedas CUTS totais de cada aluno <b>não</b> serão afetadas. Apenas a competição mensal será reiniciada.</div>
       <div id="ranking-stats-current"><div class="loading"><div class="spin"></div>Carregando...</div></div>
     </div>
@@ -6312,6 +6314,57 @@ async function manualResetMonthlyRanking() {
   }
 }
 
+// ── Visibilidade global do ranking (mostra/oculta para alunos) ──
+async function refreshRankingVisibilityUI() {
+  try {
+    const doc = await db.collection('ranking_config').doc('visibility').get();
+    const hidden = doc.exists && doc.data().hidden === true;
+    const btn = document.getElementById('btn-toggle-ranking-visibility');
+    const status = document.getElementById('ranking-visibility-status');
+    if (btn) {
+      if (hidden) {
+        btn.innerHTML = '👁️ Mostrar para alunos';
+        btn.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
+      } else {
+        btn.innerHTML = '🙈 Ocultar para alunos';
+        btn.style.background = 'linear-gradient(135deg,#64748b,#334155)';
+      }
+    }
+    if (status) {
+      if (hidden) {
+        status.textContent = '⚠️ O ranking está OCULTO para os alunos. Eles veem "Ranking sendo atualizado".';
+        status.style.color = '#f59e0b';
+      } else {
+        status.textContent = '✅ O ranking está VISÍVEL para os alunos.';
+        status.style.color = '#22c55e';
+      }
+    }
+  } catch(e) { console.warn('[Ranking] refreshRankingVisibilityUI:', e); }
+}
+
+async function toggleRankingVisibility() {
+  if (!firebaseOk) return;
+  try {
+    const ref = db.collection('ranking_config').doc('visibility');
+    const doc = await ref.get();
+    const cur = doc.exists && doc.data().hidden === true;
+    const next = !cur;
+    const ok = confirm(next
+      ? '🙈 Ocultar o Ranking para TODOS os alunos?\n\nEles verão a mensagem "Ranking sendo atualizado" até você reativar.'
+      : '👁️ Mostrar o Ranking novamente para todos os alunos?');
+    if (!ok) return;
+    await ref.set({
+      hidden: next,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    showToast(next ? '🙈 Ranking ocultado para alunos' : '👁️ Ranking visível para alunos');
+    refreshRankingVisibilityUI();
+  } catch(e) {
+    console.error('[Ranking] toggleRankingVisibility:', e);
+    showToast('❌ Erro ao alterar visibilidade');
+  }
+}
+
 // ── Recalcula monthlyCuts somando todas as moedas ganhas no mês corrente ──
 // Considera: presenças (attendance.cutsAwarded), reservas distribuídas
 // (rides.cutsReward × booked.userId), recompensas de login diário
@@ -6504,6 +6557,8 @@ async function loadCurrentRanking() {
   if (!firebaseOk) return;
   // Auto-reset mensal (dia 1 do mês)
   await checkMonthlyRankingResetProf();
+  // Carregar estado de visibilidade global do ranking
+  refreshRankingVisibilityUI();
   const container = document.getElementById('ranking-stats-current');
   container.innerHTML = '<div class="loading"><div class="spin"></div>Carregando...</div>';
 
