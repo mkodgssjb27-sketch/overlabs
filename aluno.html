@@ -934,10 +934,15 @@ async function loadEquippedAvatarGif(itemId, fallbackUrl) {
       const snap = await db.collection('cuts_items').doc(itemId).collection('chunks').get();
       if (!snap.empty) {
         const sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
-        const fullGif = sorted.map(d => d.data().data).join('');
+        let fullGif = sorted.map(d => d.data().data).join('');
+        const mt = itemDoc.data().mediaType;
+        const mm = itemDoc.data().mediaMime;
+        if (mt === 'video' && fullGif.indexOf('data:') !== 0) {
+          fullGif = 'data:' + (mm || 'video/webm') + ';base64,' + fullGif;
+        }
         gifAvatarCache = fullGif;
         _lastValidatedAvatarId = itemId;
-        try { localStorage.removeItem('carolampra_photo'); localStorage.setItem('carolampra_photo', fullGif); } catch(lsErr) { console.warn('[Avatar] GIF grande demais para localStorage, usando cache em memória'); }
+        try { localStorage.removeItem('carolampra_photo'); localStorage.setItem('carolampra_photo', fullGif); } catch(lsErr) { console.warn('[Avatar] Conteúdo grande demais para localStorage, usando cache em memória'); }
         updateAllAvatars();
         return;
       }
@@ -2500,10 +2505,15 @@ function updateAllAvatars() {
   const initial = currentUser ? (currentUser.firstName || "?")[0] : "?";
   const custom = userCustomization || {};
   const frame = custom.frameId ? allDecorations.find(d => d.id === custom.frameId) : null;
+  const isVid = photo && typeof photo === "string" && photo.indexOf("data:video/") === 0;
 
   btns.forEach(btn => {
     if (photo) {
-      btn.innerHTML = `<img src="${photo}" alt="Foto">`;
+      if (isVid) {
+        btn.innerHTML = `<video src="${photo}" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:50%"></video>`;
+      } else {
+        btn.innerHTML = `<img src="${photo}" alt="Foto">`;
+      }
     } else {
       btn.textContent = initial;
     }
@@ -2528,8 +2538,13 @@ function updateAllAvatars() {
   const sidebarPhoto = document.getElementById("sidebar-photo");
   if (sidebarPhoto) {
     const sidebarSrc = gifAvatarCache || localStorage.getItem("carolampra_photo");
+    const sidebarIsVid = sidebarSrc && typeof sidebarSrc === "string" && sidebarSrc.indexOf("data:video/") === 0;
     if (sidebarSrc) {
-      sidebarPhoto.innerHTML = `<img src="${sidebarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="Foto">`;
+      if (sidebarIsVid) {
+        sidebarPhoto.innerHTML = `<video src="${sidebarSrc}" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:50%"></video>`;
+      } else {
+        sidebarPhoto.innerHTML = `<img src="${sidebarSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="Foto">`;
+      }
     } else {
       sidebarPhoto.textContent = initial;
     }
@@ -3156,6 +3171,23 @@ function renderRanking(users, podiumEl, listEl) {
 async function loadRankingAnimatedAvatars(users) {
   var withAvatar = users.filter(function(u) { return u.equippedAvatarItemId; });
   if (!withAvatar.length) return;
+  function _swapToVideo(img, src) {
+    var v = document.createElement('video');
+    v.src = src;
+    v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
+    v.setAttribute("playsinline", "");
+    v.style.cssText = img.style.cssText || "width:100%;height:100%;object-fit:cover;border-radius:50%";
+    if (img.className) v.className = img.className;
+    if (img.dataset && img.dataset.rankingUid) v.setAttribute('data-ranking-uid', img.dataset.rankingUid);
+    img.replaceWith(v);
+  }
+  function _applyAvatarSrc(img, src) {
+    if (typeof src === "string" && src.indexOf("data:video/") === 0) {
+      _swapToVideo(img, src);
+    } else {
+      img.src = src;
+    }
+  }
   for (var i = 0; i < withAvatar.length; i++) {
     var u = withAvatar[i];
     var imgs = document.querySelectorAll('img[data-ranking-uid="' + u.id + '"]');
@@ -3164,15 +3196,21 @@ async function loadRankingAnimatedAvatars(users) {
     if (currentUser && u.id === currentUser.id) {
       var cached = gifAvatarCache || localStorage.getItem('carolampra_photo') || '';
       if (cached && cached.length > 1000) {
-        imgs.forEach(function(img) { img.src = cached; });
+        imgs.forEach(function(img) { _applyAvatarSrc(img, cached); });
       }
       continue;
     }
     // Para outros: buscar chunks da loja ou do inventário
     try {
       var fullGif = '';
+      var mediaType = '';
+      var mediaMime = '';
       // 1. Tentar chunks da loja
       var shopDoc = await db.collection('cuts_items').doc(u.equippedAvatarItemId).get();
+      if (shopDoc.exists) {
+        mediaType = shopDoc.data().mediaType || '';
+        mediaMime = shopDoc.data().mediaMime || '';
+      }
       if (shopDoc.exists && shopDoc.data().chunked) {
         var shopChunks = await db.collection('cuts_items').doc(u.equippedAvatarItemId).collection('chunks').get();
         if (!shopChunks.empty) {
@@ -3195,7 +3233,11 @@ async function loadRankingAnimatedAvatars(users) {
         }
       }
       if (fullGif) {
-        imgs.forEach(function(img) { img.src = fullGif; });
+        if (mediaType === 'video' && fullGif.indexOf('data:') !== 0) {
+          fullGif = 'data:' + (mediaMime || 'video/webm') + ';base64,' + fullGif;
+        }
+        var src = fullGif;
+        imgs.forEach(function(img) { _applyAvatarSrc(img, src); });
       }
     } catch(e) {
       console.warn('[Ranking] Erro ao carregar avatar animado:', u.id, e);
@@ -3273,7 +3315,11 @@ function openRankingProfile(userId) {
     if (equippedAvatarId) {
       rpLoadAvatar(equippedAvatarId, photoUrl, avatarEl, userId);
     } else if (photoUrl) {
-      avatarEl.innerHTML = '<img src="' + photoUrl + '" alt="">';
+      if (photoUrl.indexOf("data:video/") === 0) {
+        avatarEl.innerHTML = '<video src="' + photoUrl + '" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:50%"></video>';
+      } else {
+        avatarEl.innerHTML = '<img src="' + photoUrl + '" alt="">';
+      }
       _rpCache[userId].avatar = avatarEl.innerHTML;
     } else {
       var initial = (d.firstName || "?")[0].toUpperCase();
@@ -3303,29 +3349,41 @@ function closeRankingProfile() {
 }
 
 function rpLoadAvatar(itemId, fallback, el, userId) {
+  function _avHtml(url) {
+    if (!url) return "";
+    if (typeof url === "string" && url.indexOf("data:video/") === 0) {
+      return '<video src="' + url + '" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:50%"></video>';
+    }
+    return '<img src="' + url + '" alt="">';
+  }
   db.collection("cuts_items").doc(itemId).get().then(function(itemDoc) {
+    var mediaType = itemDoc.exists ? itemDoc.data().mediaType : null;
+    var mediaMime = itemDoc.exists ? itemDoc.data().mediaMime : null;
     if (itemDoc.exists && itemDoc.data().chunked) {
       db.collection("cuts_items").doc(itemId).collection("chunks").get().then(function(snap) {
         if (!snap.empty) {
           var sorted = snap.docs.sort(function(a,b){return parseInt(a.id)-parseInt(b.id)});
           var full = sorted.map(function(d){return d.data().data}).join("");
-          el.innerHTML = '<img src="' + full + '" alt="">';
+          if (mediaType === "video" && full.indexOf("data:") !== 0) {
+            full = "data:" + (mediaMime || "video/webm") + ";base64," + full;
+          }
+          el.innerHTML = _avHtml(full);
         } else if (itemDoc.data().url) {
-          el.innerHTML = '<img src="' + itemDoc.data().url + '" alt="">';
+          el.innerHTML = _avHtml(itemDoc.data().url);
         } else if (fallback) {
-          el.innerHTML = '<img src="' + fallback + '" alt="">';
+          el.innerHTML = _avHtml(fallback);
         }
         if (userId && _rpCache[userId]) _rpCache[userId].avatar = el.innerHTML;
       });
     } else if (itemDoc.exists && itemDoc.data().url) {
-      el.innerHTML = '<img src="' + itemDoc.data().url + '" alt="">';
+      el.innerHTML = _avHtml(itemDoc.data().url);
       if (userId && _rpCache[userId]) _rpCache[userId].avatar = el.innerHTML;
     } else if (fallback) {
-      el.innerHTML = '<img src="' + fallback + '" alt="">';
+      el.innerHTML = _avHtml(fallback);
       if (userId && _rpCache[userId]) _rpCache[userId].avatar = el.innerHTML;
     }
   }).catch(function() {
-    if (fallback) el.innerHTML = '<img src="' + fallback + '" alt="">';
+    if (fallback) el.innerHTML = _avHtml(fallback);
     if (userId && _rpCache[userId]) _rpCache[userId].avatar = el.innerHTML;
   });
 }

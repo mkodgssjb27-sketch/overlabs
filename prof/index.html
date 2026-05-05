@@ -1800,7 +1800,7 @@ input,select,textarea{font-family:inherit;outline:none}
           <span style="font-size:40px;display:block;margin-bottom:8px">📁</span>
           <span style="color:#94a3b8;font-size:13px">Clique para enviar imagem, GIF ou vídeo</span>
           <div style="color:#64748b;font-size:11px;margin-top:4px">PNG, GIF, JPG, WebP, MP4, MPEG, MKV, WebM (máx. 10MB)</div>
-          <div style="color:#64748b;font-size:11px;margin-top:2px">Vídeos só para tipo Banner — recorte até 10s, sem áudio, em loop</div>
+          <div style="color:#64748b;font-size:11px;margin-top:2px">Vídeos só para Avatar ou Banner — recorte até 10s, sem áudio, em loop</div>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
@@ -6999,10 +6999,13 @@ function editorOpenVideoTrim(file) {
     endEl.min = 0;
     endEl.max = dur.toFixed(1);
     endEl.value = Math.min(dur, 10).toFixed(1);
-    document.getElementById("vt-status").textContent = "Duração total: " + dur.toFixed(1) + "s";
+    document.getElementById("vt-status").textContent = "Duração total: " + dur.toFixed(1) + "s — pré-visualizando trecho selecionado";
     document.getElementById("vt-confirm-btn").disabled = false;
     editorTrimRangeChange();
     v.currentTime = 0;
+    // Garantir que só haja um listener de timeupdate
+    v.removeEventListener("timeupdate", _vtTimeUpdate);
+    v.addEventListener("timeupdate", _vtTimeUpdate);
     v.play().catch(function(){});
   };
   v.onerror = function() {
@@ -7023,7 +7026,27 @@ function editorTrimRangeChange() {
   document.getElementById("vt-end-lbl").textContent = e.toFixed(1) + "s";
   document.getElementById("vt-dur-lbl").textContent = (e - s).toFixed(1) + "s";
   var v = document.getElementById("vt-video");
-  if (v && Math.abs(v.currentTime - s) > 0.3) {
+  if (!v) return;
+  // Se tempo atual fora da janela, pular para o início
+  if (v.currentTime < s - 0.05 || v.currentTime > e + 0.05) {
+    try { v.currentTime = s; } catch(err){}
+  }
+  v.play().catch(function(){});
+}
+
+// Loop dentro da janela [start, end] no preview do modal
+function _vtTimeUpdate() {
+  var v = document.getElementById("vt-video");
+  if (!v) return;
+  var startEl = document.getElementById("vt-start");
+  var endEl = document.getElementById("vt-end");
+  if (!startEl || !endEl) return;
+  var s = parseFloat(startEl.value) || 0;
+  var e = parseFloat(endEl.value) || 0;
+  if (v.currentTime >= e - 0.02) {
+    try { v.currentTime = s; } catch(err){}
+    v.play().catch(function(){});
+  } else if (v.currentTime < s - 0.05) {
     try { v.currentTime = s; } catch(err){}
   }
 }
@@ -7031,6 +7054,7 @@ function editorTrimRangeChange() {
 function editorCancelVideoTrim() {
   document.getElementById("video-trim-overlay").style.display = "none";
   var v = document.getElementById("vt-video");
+  try { v.removeEventListener("timeupdate", _vtTimeUpdate); } catch(e){}
   try { v.pause(); v.removeAttribute("src"); v.load(); } catch(e){}
   if (editorVideoSourceUrl) { try { URL.revokeObjectURL(editorVideoSourceUrl); } catch(e){} editorVideoSourceUrl = null; }
   if (_vtStopTimer) { clearTimeout(_vtStopTimer); _vtStopTimer = null; }
@@ -7060,6 +7084,8 @@ function editorConfirmVideoTrim() {
   document.getElementById("vt-status").textContent = "Recortando vídeo (" + (e - s).toFixed(1) + "s)…";
 
   try {
+    // Remover loop de preview antes de gravar
+    try { v.removeEventListener("timeupdate", _vtTimeUpdate); } catch(e){}
     // Captura apenas o stream de vídeo (sem áudio)
     var fullStream = v.captureStream();
     var videoStream = new MediaStream();
@@ -7132,11 +7158,13 @@ function editorShowUploadResult(file) {
     prevImg.style.display = "none";
     document.getElementById("editor-vid-preview-src").src = editorFileUrl;
     prevVid.style.display = "block";
-    // Forçar tipo banner se ainda não escolhido
-    if (editorType && editorType !== "banner") {
-      showToast("⚠️ Vídeo só funciona como Banner. Tipo redefinido.");
+    // Se tipo atual incompatível com vídeo, voltar para banner por padrão
+    if (editorType && editorType !== "banner" && editorType !== "avatar") {
+      showToast("⚠️ Vídeo aceita só Avatar ou Banner. Tipo redefinido.");
+      editorSelectType("banner");
+    } else if (!editorType) {
+      // não força — usuário escolherá entre Avatar/Banner
     }
-    editorSelectType("banner");
   } else {
     prevVid.style.display = "none";
     document.getElementById("editor-img-preview-src").src = editorFileUrl;
@@ -7146,9 +7174,9 @@ function editorShowUploadResult(file) {
 }
 
 function editorSelectType(tipo) {
-  // Bloquear tipos não-banner para vídeo
-  if (editorIsVideo && tipo !== "banner") {
-    showToast("⚠️ Vídeos só podem ser usados como Banner.");
+  // Bloquear tipos não suportados para vídeo (apenas avatar e banner)
+  if (editorIsVideo && tipo !== "banner" && tipo !== "avatar") {
+    showToast("⚠️ Vídeos só podem ser Avatar ou Banner.");
     return;
   }
   editorType = tipo;
@@ -7204,7 +7232,11 @@ function editorUpdatePreview() {
 
   switch (editorType) {
     case "avatar":
-      simAvatar.innerHTML = '<img src="' + editorFileUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      if (editorIsVideo) {
+        simAvatar.innerHTML = '<video src="' + editorFileUrl + '" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:50%"></video>';
+      } else {
+        simAvatar.innerHTML = '<img src="' + editorFileUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      }
       break;
     case "moldura":
       simFrame.src = editorFileUrl;
@@ -7270,8 +7302,8 @@ async function editorPublish() {
   if (!editorFile) { showToast("⚠️ Envie uma imagem primeiro"); return; }
   if (!editorFileUrl) { showToast("⚠️ Aguarde o carregamento da imagem"); return; }
   if (!editorType) { showToast("⚠️ Selecione o tipo do item"); return; }
-  if (editorIsVideo && editorType !== "banner") {
-    showToast("❌ Vídeos só podem ser publicados como Banner");
+  if (editorIsVideo && editorType !== "banner" && editorType !== "avatar") {
+    showToast("❌ Vídeos só podem ser Avatar ou Banner");
     return;
   }
 
