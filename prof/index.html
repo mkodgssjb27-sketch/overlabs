@@ -3827,6 +3827,7 @@ function renderInventoryModal(items) {
           <div style="font-size:11px;font-weight:700;color:#e2e8f0;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(item.nome || 'Item')}</div>
           ${comprado ? '<div style="font-size:9px;color:#64748b;margin-bottom:6px">' + comprado + '</div>' : ''}
           <button onclick="removeInventoryItem('${item.docId}','${escapeHtml(item.nome || 'Item')}')" style="padding:5px 10px;border-radius:8px;border:none;cursor:pointer;background:rgba(239,68,68,.12);color:#f87171;font-weight:700;font-size:11px;width:100%">🗑 Remover</button>
+          ${item.chunked ? `<button onclick="resyncInventoryItem('${item.docId}','${item.itemId}','${escapeHtml(item.nome || 'Item')}')" style="margin-top:4px;padding:5px 10px;border-radius:8px;border:none;cursor:pointer;background:rgba(59,130,246,.12);color:#60a5fa;font-weight:700;font-size:11px;width:100%">🔄 Re-sincronizar</button>` : ''}
         </div>`;
     });
     html += '</div></div>';
@@ -3876,6 +3877,50 @@ async function removeInventoryItem(docId, itemName) {
 // ── PRESENTEAR ITEM ──
 let giftAllItems = [];
 let giftCurrentFilter = 'todos';
+
+// Re-sincroniza chunks/metadata de um item no invent\u00e1rio do aluno a partir da loja
+async function resyncInventoryItem(docId, itemId, itemName) {
+  if (!confirm('Re-sincronizar chunks de "' + itemName + '" a partir da loja? (use se o aluno n\u00e3o consegue equipar)')) return;
+  try {
+    showToast('\u23f3 Sincronizando...');
+    const shopDoc = await db.collection('cuts_items').doc(itemId).get();
+    if (!shopDoc.exists) { showToast('\u274c Item n\u00e3o existe mais na loja'); return; }
+    const sd = shopDoc.data();
+    // Atualiza metadata do invent\u00e1rio
+    const updates = { url: sd.url || '' };
+    if (sd.chunked) updates.chunked = true;
+    if (sd.mediaType) updates.mediaType = sd.mediaType;
+    if (sd.mediaMime) updates.mediaMime = sd.mediaMime;
+    if (sd.raridade) updates.raridade = sd.raridade;
+    if (sd.frameAdjust) updates.frameAdjust = sd.frameAdjust;
+    if (sd.tipo) updates.tipo = sd.tipo;
+    if (sd.nome) updates.nome = sd.nome;
+    await db.collection('cuts_inventory').doc(docId).update(updates);
+
+    if (sd.chunked) {
+      // Apaga chunks antigos
+      const oldChunks = await db.collection('cuts_inventory').doc(docId).collection('chunks').get();
+      if (!oldChunks.empty) {
+        await Promise.all(oldChunks.docs.map(d => d.ref.delete()));
+      }
+      // Copia chunks atuais da loja em paralelo
+      const shopChunks = await db.collection('cuts_items').doc(itemId).collection('chunks').get();
+      if (!shopChunks.empty) {
+        await Promise.all(shopChunks.docs.map(c =>
+          db.collection('cuts_inventory').doc(docId).collection('chunks').doc(c.id).set(c.data())
+        ));
+        showToast('\u2705 Re-sincronizado (' + shopChunks.size + ' chunks)');
+      } else {
+        showToast('\u26a0\ufe0f Loja n\u00e3o tem chunks deste item');
+      }
+    } else {
+      showToast('\u2705 Metadata sincronizada');
+    }
+  } catch(e) {
+    console.error('[Resync]', e);
+    showToast('\u274c Erro ao re-sincronizar');
+  }
+}
 
 async function openGiftModal() {
   if (!invModalUserId) return;
@@ -3958,27 +4003,33 @@ async function confirmGift(itemId) {
   try {
     // Adicionar ao inventário do aluno
     const invRef = db.collection('cuts_inventory').doc();
-    const invUrl = item.chunked ? item.url : item.url;
     const invData = {
       userId: invModalUserId,
       itemId: item.id,
       nome: item.nome,
-      url: invUrl,
+      url: item.url || '',
       tipo: item.tipo,
       equipado: false,
       compradoEm: firebase.firestore.FieldValue.serverTimestamp(),
       presenteado: true
     };
     if (item.chunked) invData.chunked = true;
+    if (item.raridade) invData.raridade = item.raridade;
+    if (item.mediaType) invData.mediaType = item.mediaType;
+    if (item.mediaMime) invData.mediaMime = item.mediaMime;
+    if (item.frameAdjust) invData.frameAdjust = item.frameAdjust;
     await invRef.set(invData);
 
-    // Copiar chunks se necessário
+    // Copiar chunks em paralelo (rápido e robusto para vídeos com muitos chunks)
     if (item.chunked) {
       const chunksSnap = await db.collection('cuts_items').doc(item.id).collection('chunks').get();
       if (!chunksSnap.empty) {
-        for (const chunkDoc of chunksSnap.docs) {
-          await db.collection('cuts_inventory').doc(invRef.id).collection('chunks').doc(chunkDoc.id).set(chunkDoc.data());
-        }
+        await Promise.all(chunksSnap.docs.map(chunkDoc =>
+          db.collection('cuts_inventory').doc(invRef.id).collection('chunks').doc(chunkDoc.id).set(chunkDoc.data())
+        ));
+        console.log('[Gift] ' + chunksSnap.size + ' chunks copiados');
+      } else {
+        console.warn('[Gift] Item chunked mas sem chunks na loja:', item.id);
       }
     }
 

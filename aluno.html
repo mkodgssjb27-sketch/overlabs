@@ -955,10 +955,15 @@ async function loadEquippedAvatarGif(itemId, fallbackUrl) {
           .collection('chunks').get();
         if (!chunkSnap.empty) {
           const sorted = chunkSnap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
-          const fullGif = sorted.map(d => d.data().data).join('');
+          let fullGif = sorted.map(d => d.data().data).join('');
+          const mt = invDoc.data().mediaType;
+          const mm = invDoc.data().mediaMime;
+          if (mt === 'video' && fullGif.indexOf('data:') !== 0) {
+            fullGif = 'data:' + (mm || 'video/webm') + ';base64,' + fullGif;
+          }
           gifAvatarCache = fullGif;
           _lastValidatedAvatarId = itemId;
-          try { localStorage.removeItem('carolampra_photo'); localStorage.setItem('carolampra_photo', fullGif); } catch(lsErr) { console.warn('[Avatar] GIF grande demais para localStorage, usando cache em memória'); }
+          try { localStorage.removeItem('carolampra_photo'); localStorage.setItem('carolampra_photo', fullGif); } catch(lsErr) { console.warn('[Avatar] Conteúdo grande demais para localStorage, usando cache em memória'); }
           updateAllAvatars();
           return;
         }
@@ -3225,6 +3230,9 @@ async function loadRankingAnimatedAvatars(users) {
           .where('itemId', '==', u.equippedAvatarItemId)
           .get();
         if (!invSnap.empty && invSnap.docs[0].data().chunked) {
+          // Se o item da loja foi deletado, herdar mediaType/Mime do inventário
+          if (!mediaType) mediaType = invSnap.docs[0].data().mediaType || '';
+          if (!mediaMime) mediaMime = invSnap.docs[0].data().mediaMime || '';
           var invChunks = await db.collection('cuts_inventory').doc(invSnap.docs[0].id).collection('chunks').get();
           if (!invChunks.empty) {
             var sorted2 = invChunks.docs.sort(function(a, b) { return parseInt(a.id) - parseInt(b.id); });

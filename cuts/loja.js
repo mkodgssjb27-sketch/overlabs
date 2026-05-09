@@ -154,9 +154,17 @@ async function loadInventoryChunks() {
       if (snap.empty) continue;
       var sorted = snap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
       chunkCache[inv.itemId] = sorted.map(d => d.data().data).join("");
+      // Se for vídeo e os chunks não trazem prefixo, prefixar
+      var mt = inv.mediaType || '';
+      var mm = inv.mediaMime || '';
+      if (mt === 'video' && chunkCache[inv.itemId].indexOf('data:') !== 0) {
+        chunkCache[inv.itemId] = 'data:' + (mm || 'video/webm') + ';base64,' + chunkCache[inv.itemId];
+      }
       document.querySelectorAll('img[data-item-id="' + inv.itemId + '"]').forEach(img => {
         img.src = chunkCache[inv.itemId];
       });
+      // Re-render inventory para que itens sem thumbnail finalmente apareçam
+      try { renderInventory(); } catch(e) {}
     } catch(e) {
       console.error("[Loja] Erro chunks inventário:", inv.docId, e);
     }
@@ -298,9 +306,8 @@ function renderInventory() {
     const tipo = inv.tipo || (fromShop && fromShop.tipo) || "outro";
     const raridade = inv.raridade || (fromShop && fromShop.raridade) || '';
     if (raridade && rarityCounts.hasOwnProperty(raridade)) rarityCounts[raridade]++;
-    if (!url) return;
     if (!groups[tipo]) groups[tipo] = [];
-    groups[tipo].push({ id: inv.itemId, nome, url, tipo, raridade, docId: inv.docId, equipado: inv.equipado });
+    groups[tipo].push({ id: inv.itemId, nome, url, tipo, raridade, docId: inv.docId, equipado: inv.equipado, chunked: inv.chunked });
   });
 
   const tipoLabels = { avatar: "🖼️ Avatares", moldura: "🖼️ Molduras", banner: "🌄 Banners", emblema: "🏅 Emblemas" };
@@ -489,6 +496,9 @@ async function confirmPurchase() {
     };
     if (selectedItem.chunked) invData.chunked = true;
     if (selectedItem.raridade) invData.raridade = selectedItem.raridade;
+    if (selectedItem.mediaType) invData.mediaType = selectedItem.mediaType;
+    if (selectedItem.mediaMime) invData.mediaMime = selectedItem.mediaMime;
+    if (selectedItem.frameAdjust) invData.frameAdjust = selectedItem.frameAdjust;
     batch.set(invRef, invData);
 
     // Registrar transação
@@ -529,17 +539,17 @@ async function confirmPurchase() {
     }).catch(function(e) { console.warn('[notif]', e); });
     closeBuyModal();
 
-    // Copiar chunks para o inventário em background (preserva GIF mesmo se removido da loja)
+    // Copiar chunks para o inventário em background (preserva GIF/vídeo mesmo se removido da loja)
     if (purchasedChunked) {
       (async function() {
         try {
           const chunksSnap = await db.collection("cuts_items").doc(purchasedItemId)
             .collection("chunks").get();
           if (!chunksSnap.empty) {
-            for (const chunkDoc of chunksSnap.docs) {
-              await db.collection("cuts_inventory").doc(invRef.id)
-                .collection("chunks").doc(chunkDoc.id).set(chunkDoc.data());
-            }
+            await Promise.all(chunksSnap.docs.map(chunkDoc =>
+              db.collection("cuts_inventory").doc(invRef.id)
+                .collection("chunks").doc(chunkDoc.id).set(chunkDoc.data())
+            ));
             console.log("[Loja] Chunks copiados para inventário:", chunksSnap.size);
           }
         } catch(e) {
@@ -569,7 +579,13 @@ async function toggleEquip(itemId, tipo) {
     if (isChunked && !chunkCache[itemId]) {
       // Tentar da loja primeiro
       let loaded = false;
+      let mt = '', mm = '';
       try {
+        const shopDoc = await db.collection("cuts_items").doc(itemId).get();
+        if (shopDoc.exists) {
+          mt = shopDoc.data().mediaType || '';
+          mm = shopDoc.data().mediaMime || '';
+        }
         const shopSnap = await db.collection("cuts_items").doc(itemId).collection("chunks").get();
         if (!shopSnap.empty) {
           const sorted = shopSnap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
@@ -580,12 +596,18 @@ async function toggleEquip(itemId, tipo) {
       // Fallback: chunks do inventário
       if (!loaded) {
         try {
+          if (!mt) mt = inv.mediaType || '';
+          if (!mm) mm = inv.mediaMime || '';
           const invSnap = await db.collection("cuts_inventory").doc(inv.docId).collection("chunks").get();
           if (!invSnap.empty) {
             const sorted = invSnap.docs.sort((a, b) => parseInt(a.id) - parseInt(b.id));
             chunkCache[itemId] = sorted.map(d => d.data().data).join("");
           }
         } catch(e) {}
+      }
+      // Prefixar vídeo se necessário
+      if (chunkCache[itemId] && mt === 'video' && chunkCache[itemId].indexOf('data:') !== 0) {
+        chunkCache[itemId] = 'data:' + (mm || 'video/webm') + ';base64,' + chunkCache[itemId];
       }
     }
 
