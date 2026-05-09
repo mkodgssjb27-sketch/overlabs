@@ -3934,6 +3934,16 @@ async function getGeoPermStatus() {
 async function refreshPermGate(userTriggered) {
   const gate = document.getElementById("perm-gate");
   if (!gate) return;
+  // Dev bypass: localhost / 127.0.0.1 / vscode-livepreview pulam o gate
+  const _h = location.hostname;
+  const _isDev = _h === "localhost" || _h === "127.0.0.1" || _h === "" || location.search.indexOf("vscode-livepreview") !== -1;
+  if (_isDev) {
+    try { localStorage.setItem("carolampra_perms_asked", "1"); } catch(e) {}
+    try { localStorage.setItem("carolampra_perms_granted", "1"); } catch(e) {}
+    gate.style.display = "none";
+    _permGateReady = true;
+    return;
+  }
   const notif = await getNotifPermStatus();
   const geo = await getGeoPermStatus();
 
@@ -4632,6 +4642,13 @@ function installApp() {
 
 // ── Gate de instalação — bloqueia acesso pelo navegador ──
 function checkInstallGate() {
+  // Dev bypass: localhost / 127.0.0.1 / vscode-livepreview pulam o gate
+  const _h = location.hostname;
+  const _isDev = _h === "localhost" || _h === "127.0.0.1" || _h === "" || location.search.indexOf("vscode-livepreview") !== -1;
+  if (_isDev) {
+    document.getElementById("install-gate").style.display = "none";
+    return;
+  }
   if (isStandalone()) {
     // Já instalado como PWA — esconde o gate
     document.getElementById("install-gate").style.display = "none";

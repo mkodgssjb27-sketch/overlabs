@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// ============================================================
+// OVER LABS — Regras do Firestore
+// ------------------------------------------------------------
+// Estas regras NÃO usam timestamp.date() (que expira), mantendo
+// o acesso aberto enquanto o app não usa Firebase Auth real.
+//
+// Atenção: este modelo permite leitura/escrita pública. Mantém
+// o comportamento original do app (login custom por username/
+// senha em /users), apenas restaurando a operação. Para reforço
+// de segurança no futuro, migrar para Firebase Auth + regras
+// baseadas em request.auth.uid.
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
