@@ -4591,6 +4591,7 @@ if ("serviceWorker" in navigator) {
   }
 
   const hadController = !!navigator.serviceWorker.controller;
+  const _bootedAt = Date.now();
 
   navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
     setInterval(() => reg.update(), 60000);
@@ -4600,12 +4601,14 @@ if ("serviceWorker" in navigator) {
     });
   }).catch(err => console.log("SW:", err));
 
-  // Quando o novo SW assume, recarrega a página uma única vez
+  // Quando o novo SW assume, recarrega APENAS se a página já estava aberta há >30s
+  // (evita flicker no cold start, já que o fetch é network-first)
   let refreshing = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (refreshing) return;
     refreshing = true;
-    if (hadController) window.location.reload();
+    const elapsed = Date.now() - _bootedAt;
+    if (hadController && elapsed > 30000) window.location.reload();
   });
 }
 

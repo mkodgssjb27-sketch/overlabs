@@ -6026,6 +6026,7 @@ if ("serviceWorker" in navigator) {
     keys.forEach(k => { if (k.startsWith("overhost-")) caches.delete(k); });
   });
   const hadController = !!navigator.serviceWorker.controller;
+  const _bootedAtProf = Date.now();
   navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
     // Forçar instalação do SW novo
     if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
@@ -6042,11 +6043,13 @@ if ("serviceWorker" in navigator) {
     });
   }).catch(err => console.log("SW Prof:", err));
 
+  // Recarrega APENAS se a página já estava aberta há >30s (evita flicker no cold start)
   let refreshing = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (refreshing) return;
     refreshing = true;
-    if (hadController) window.location.reload();
+    const elapsed = Date.now() - _bootedAtProf;
+    if (hadController && elapsed > 30000) window.location.reload();
   });
 }
 
