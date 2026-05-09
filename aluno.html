@@ -996,6 +996,14 @@ let firebaseOk = false;
 try {
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
+  // Persistencia offline (multi-tab): cache local em IndexedDB.
+  // Re-aberturas servem dados do cache instantaneamente, sincroniza em background.
+  if (db.enablePersistence) {
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+      // failed-precondition: multiplas abas; unimplemented: navegador sem suporte. Apenas seguir sem cache local.
+      console.log('[FS persistence skipped]', err && err.code);
+    });
+  }
   firebaseOk = true;
 } catch(e) {
   console.error("Firebase error:", e);
@@ -1441,13 +1449,18 @@ function enterStudentApp() {
   loadUserCustomization();
   // Check daily login
   setTimeout(checkDailyLogin, 500);
-  // Preload do mercado em segundo plano (após 2s para não competir com carregamento inicial)
-  setTimeout(function() {
+  // Preload do mercado em segundo plano (idle callback p/ nao competir com carregamento inicial)
+  var _lojaPreload = function() {
     if (!_lojaStarted) {
       var iframe = document.getElementById('loja-iframe');
       if (iframe) { iframe.src = 'cuts/loja.html'; _lojaStarted = true; }
     }
-  }, 2000);
+  };
+  if (window.requestIdleCallback) {
+    requestIdleCallback(_lojaPreload, { timeout: 3000 });
+  } else {
+    setTimeout(_lojaPreload, 1500);
+  }
 }
 
 // ── Arena: aplica layout (nav inferior + sidebar) e bloqueio ──
@@ -4594,7 +4607,7 @@ if ("serviceWorker" in navigator) {
   const _bootedAt = Date.now();
 
   navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
-    setInterval(() => reg.update(), 60000);
+    setInterval(() => reg.update(), 300000);
     reg.update();
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") reg.update();

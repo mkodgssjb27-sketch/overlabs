@@ -28,7 +28,7 @@ messaging.onBackgroundMessage(payload => {
   return self.registration.showNotification(title, options);
 });
 
-const CACHE_NAME = "overlabs-v294";
+const CACHE_NAME = "overlabs-v295";
 const URLS_TO_CACHE = [
   "./aluno.html",
   "./manifest.json",
@@ -79,22 +79,45 @@ self.addEventListener("notificationclick", event => {
   );
 });
 
-// Network first, fallback to cache (ignora requests do /prof/, /cuts/ e Firebase APIs)
+// Network first p/ HTML (atualizacoes instantaneas), stale-while-revalidate p/ assets (load instantaneo)
+// Ignora requests do /prof/, /cuts/ e Firebase APIs
 self.addEventListener("fetch", event => {
-  if (event.request.url.includes("/prof/")) return;
-  if (event.request.url.includes("/cuts/")) return;
-  if (event.request.url.includes("googleapis.com")) return;
-  if (event.request.url.includes("firebaseio.com")) return;
-  if (event.request.url.includes("firebaseinstallations")) return;
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        if (response.ok && event.request.method === "GET") {
+  const req = event.request;
+  const url = req.url;
+  if (req.method !== "GET") return;
+  if (url.includes("/prof/")) return;
+  if (url.includes("/cuts/")) return;
+  if (url.includes("googleapis.com")) return;
+  if (url.includes("firebaseio.com")) return;
+  if (url.includes("firebaseinstallations")) return;
+  if (url.includes("gstatic.com")) return;
+
+  const isHTML = req.destination === "document" || url.endsWith(".html") || url.endsWith("/");
+  if (isHTML) {
+    // Network-first com fallback ao cache (mantem updates rapidos)
+    event.respondWith(
+      fetch(req).then(response => {
+        if (response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
         }
         return response;
-      })
-      .catch(() => caches.match(event.request))
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Stale-while-revalidate p/ JS/CSS/img: serve cache instantaneo, atualiza em background
+  event.respondWith(
+    caches.match(req).then(cached => {
+      const fetchPromise = fetch(req).then(response => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
+        }
+        return response;
+      }).catch(() => cached);
+      return cached || fetchPromise;
+    })
   );
 });

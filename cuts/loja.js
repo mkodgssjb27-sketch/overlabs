@@ -32,6 +32,11 @@ function initFirebase() {
       firebase.initializeApp(firebaseConfig);
     }
     db = firebase.firestore();
+    if (db.enablePersistence) {
+      db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.log('[Loja] FS persistence skipped:', err && err.code);
+      });
+    }
     firebaseOk = true;
     console.log("[Loja] Firebase OK");
   } catch (e) {
