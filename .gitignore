@@ -1,0 +1,24 @@
+# ============================================================
+# SEGREDOS / CHAVES — NUNCA commitar nem deixar no Google Drive
+# A chave de serviço do Firebase deve ficar FORA desta pasta,
+# ex.: C:\Users\<voce>\.overlabs-secrets\carolampra-admin.json
+# ============================================================
+*serviceAccount*.json
+*service-account*.json
+*-adminsdk-*.json
+*firebase-adminsdk*.json
+serviceAccountKey.json
+carolampra-admin.json
+*.key
+*.pem
+.env
+.env.*
+secrets/
+.secrets/
+
+# Perfis do Chrome de debug (se algum dia caírem aqui)
+.chrome-*/
+
+# Logs e temporários
+*.log
+~$*
