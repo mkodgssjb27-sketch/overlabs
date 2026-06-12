@@ -6,60 +6,129 @@ const { getMessaging } = require("firebase-admin/messaging");
 
 initializeApp();
 
+// ──────────────────────────────────────────────────────────────────
+// Helpers de envio de push
+// ──────────────────────────────────────────────────────────────────
+
+// Envia push (data-only, para o SW exibir) para uma lista de alvos
+// [{ id, token }]. Limpa tokens invalidos do Firestore. Suporta >500.
+async function sendToTokens(db, targets, bodyText) {
+  if (!targets.length) { console.log("Nenhum token alvo, nada a enviar"); return; }
+  const messaging = getMessaging();
+  const base = {
+    data: { title: "🔔 OVER LABS", body: bodyText },
+    android: { priority: "high" },
+    webpush: { headers: { Urgency: "high" } },
+  };
+
+  let ok = 0, fail = 0;
+  const cleanup = [];
+  for (let i = 0; i < targets.length; i += 450) {
+    const chunk = targets.slice(i, i + 450);
+    const resp = await messaging.sendEachForMulticast({
+      ...base,
+      tokens: chunk.map((t) => t.token),
+    });
+    ok += resp.successCount;
+    fail += resp.failureCount;
+    resp.responses.forEach((r, idx) => {
+      if (r.success) return;
+      const code = (r.error && r.error.code) || "";
+      if (
+        code === "messaging/registration-token-not-registered" ||
+        code === "messaging/invalid-registration-token" ||
+        code === "messaging/invalid-argument"
+      ) {
+        cleanup.push(
+          db.collection("users").doc(chunk[idx].id)
+            .update({ fcmToken: "" }).catch(() => {})
+        );
+      }
+    });
+  }
+  await Promise.all(cleanup);
+  console.log(`Push: ${ok} ok, ${fail} falha(s); ${cleanup.length} token(s) invalido(s) limpo(s)`);
+}
+
+// Arenas-alvo de um item de feed (null = todos). Espelha o app do aluno.
+function targetArenasOf(feed) {
+  if (Array.isArray(feed.targetArenas) && feed.targetArenas.length > 0) return feed.targetArenas;
+  if (feed.targetArena) return [feed.targetArena];
+  return null;
+}
+function userMatchesArenas(userArena, arenas) {
+  if (!arenas) return true;
+  const ua = userArena || "";
+  if (ua === "both") return true;
+  return arenas.indexOf(ua) >= 0 || arenas.indexOf("both") >= 0;
+}
+
+// Coleta alvos (com token valido) entre todos os usuarios, filtrando por arena
+async function collectBroadcastTargets(db, arenas) {
+  const usersSnap = await db.collection("users").get();
+  const targets = [];
+  usersSnap.forEach((d) => {
+    const u = d.data();
+    const t = u.fcmToken;
+    if (!t || typeof t !== "string" || t.length < 20) return;
+    if (!userMatchesArenas(u.arena, arenas)) return;
+    targets.push({ id: d.id, token: t });
+  });
+  return targets;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Push em todo item de feed: pessoal (targetUserId) OU broadcast
+// ──────────────────────────────────────────────────────────────────
 exports.sendPushNotification = onDocumentCreated(
   "feed/{docId}",
   async (event) => {
     const snap = event.data;
     if (!snap) { console.log("Sem data no evento"); return; }
 
-    const feedData = snap.data();
-    const targetUserId = feedData.targetUserId;
-    if (!targetUserId) { console.log("Feed item sem targetUserId, ignorando push"); return; }
+    const feed = snap.data();
+    if (feed.hidden === true) { console.log("Feed item oculto, sem push"); return; }
 
-    console.log(`Feed item criado para userId: ${targetUserId}, type: ${feedData.type}, text: ${feedData.text || "sem text"}`);
-
-    // Buscar o token FCM do usuário
     const db = getFirestore();
-    const userDoc = await db.collection("users").doc(targetUserId).get();
-    if (!userDoc.exists) { console.log(`User ${targetUserId} não existe`); return; }
+    const bodyText = (feed.detail
+      ? `${feed.icon || ""} ${feed.text || ""}: ${feed.detail}`
+      : `${feed.icon || ""} ${feed.text || "Nova atualização"}`).trim();
 
-    const userData = userDoc.data();
-    const fcmToken = userData.fcmToken;
-    if (!fcmToken) { console.log(`User ${targetUserId} (${userData.firstName}) sem fcmToken`); return; }
-    console.log(`Token encontrado para ${userData.firstName}, enviando push...`);
-
-    // Montar body a partir do feed item
-    const bodyText = feedData.detail
-      ? `${feedData.icon || ""} ${feedData.text}: ${feedData.detail}`
-      : `${feedData.icon || ""} ${feedData.text || "Nova atualização"}`;
-
-    // Enviar apenas como data message (evita notificação duplicada pelo browser)
-    const message = {
-      token: fcmToken,
-      data: {
-        title: "🔔 OVER LABS",
-        body: bodyText,
-      },
-      android: {
-        priority: "high",
-      },
-      webpush: {
-        headers: { Urgency: "high" },
-      },
-    };
-
-    try {
-      await getMessaging().send(message);
-      console.log(`Push enviado para ${targetUserId}`);
-    } catch (err) {
-      console.error(`Erro ao enviar push para ${targetUserId}:`, err.message);
-      if (
-        err.code === "messaging/registration-token-not-registered" ||
-        err.code === "messaging/invalid-registration-token"
-      ) {
-        await db.collection("users").doc(targetUserId).update({ fcmToken: "" });
-      }
+    // 1) Notificacao PESSOAL
+    if (feed.targetUserId) {
+      const userDoc = await db.collection("users").doc(feed.targetUserId).get();
+      if (!userDoc.exists) { console.log(`User ${feed.targetUserId} nao existe`); return; }
+      const token = userDoc.data().fcmToken;
+      if (!token) { console.log(`User ${feed.targetUserId} sem fcmToken`); return; }
+      await sendToTokens(db, [{ id: feed.targetUserId, token }], bodyText);
+      return;
     }
+
+    // 2) BROADCAST para todos os alunos (respeitando arena do item)
+    const arenas = targetArenasOf(feed);
+    const targets = await collectBroadcastTargets(db, arenas);
+    console.log(`Broadcast "${feed.type || "?"}" -> ${targets.length} aluno(s) com token (arenas: ${arenas ? arenas.join(",") : "todas"})`);
+    await sendToTokens(db, targets, bodyText);
+  }
+);
+
+// ──────────────────────────────────────────────────────────────────
+// Push quando um novo item entra na loja (cuts_items)
+// ──────────────────────────────────────────────────────────────────
+exports.notifyNewShopItem = onDocumentCreated(
+  "cuts_items/{itemId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const item = snap.data();
+    if (item.hidden === true) { console.log("Item da loja oculto, sem push"); return; }
+
+    const db = getFirestore();
+    const nome = item.nome || "Novo item";
+    const bodyText = `🛒 Novidade na loja: ${nome}! Garanta o seu com seus CUTS.`;
+    const targets = await collectBroadcastTargets(db, null);
+    console.log(`Novo item na loja "${nome}" -> ${targets.length} aluno(s)`);
+    await sendToTokens(db, targets, bodyText);
   }
 );
 

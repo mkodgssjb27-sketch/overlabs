@@ -4374,6 +4374,8 @@ async function saveStudentProfile() {
   const stats = {};
   _statKeys.forEach(k => { const v = _clamp(document.getElementById("es-st-" + k).value, 0, 10); stats[k] = (v == null ? 0 : v); });
   const lvl = _clamp(document.getElementById("es-level").value, 1, 99);
+  const _prevStudent = (allStudents || []).find(s => s.id === editingStudentId) || {};
+  const _oldLevel = (_prevStudent.athlete && _prevStudent.athlete.level != null) ? _prevStudent.athlete.level : null;
   const athlete = {
     level: (lvl == null ? 1 : lvl),
     classification: document.getElementById("es-classification").value || "",
@@ -4391,6 +4393,21 @@ async function saveStudentProfile() {
     if (fullName) updates.firstName = fullName.split(" ")[0];
     if (password && password.length >= 4) updates.password = password;
     await db.collection("users").doc(editingStudentId).update(updates);
+
+    // Notificar o aluno se o Level mudou (cria feed pessoal -> dispara o push)
+    if (_oldLevel != null && athlete.level !== _oldLevel) {
+      const _subiu = athlete.level > _oldLevel;
+      db.collection("feed").add({
+        type: "personal_msg",
+        icon: _subiu ? "🎉" : "📉",
+        text: _subiu ? "Level Up!" : "Level atualizado",
+        detail: _subiu
+          ? `Parabéns! Você subiu para o Level ${athlete.level}. Confira seu Perfil de Atleta!`
+          : `Seu Level foi ajustado para ${athlete.level}.`,
+        targetUserId: editingStudentId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function(e){ console.warn("[LevelNotif]", e); });
+    }
 
     // Atualizar nome/username nas Reservas (booked e waitlist)
     if (updates.firstName) {
