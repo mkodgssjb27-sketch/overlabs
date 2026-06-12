@@ -184,6 +184,12 @@ input,select,textarea{font-family:inherit;outline:none}
       <div class="stat-card"><div class="stat-val" id="stat-wait" style="color:#f97316">0</div><div class="stat-lbl">Na Fila</div></div>
     </div>
 
+    <!-- Modo Manutenção: bloqueia o app de TODOS os alunos -->
+    <button id="maintenance-toggle-btn" onclick="toggleMaintenance()" style="width:100%;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#94a3b8;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:10px">
+      <span id="maintenance-toggle-icon">🟢</span>
+      <span id="maintenance-toggle-label">Modo Manutenção: DESLIGADO</span>
+    </button>
+
     <!-- Menu de funções -->
     <div class="section-title">Funções</div>
     <div class="menu-grid">
@@ -2084,6 +2090,7 @@ function teacherLogin() {
     startTeacherListener();
     loadAlerts();
     startProfNotifsListener();
+    startMaintenanceListener();
   } else {
     setErr("t-pin-err", "PIN incorreto");
   }
@@ -2097,7 +2104,63 @@ function teacherLogout() {
   if (unsubProfNotifs) { unsubProfNotifs(); unsubProfNotifs = null; }
   localStorage.removeItem("teacher_logged_in");
   screenHistory = [];
+  if (unsubMaintenance) { unsubMaintenance(); unsubMaintenance = null; }
   showScreen("teacher-login");
+}
+
+// ── Modo Manutenção: bloqueia o app do aluno para TODOS ──
+// Grava em settings/maintenance { active }. O app do aluno escuta esse doc em
+// tempo real e mostra a tela "APLICATIVO EM MANUTENÇÃO" quando active === true.
+let _maintenanceActive = false;
+let _maintenanceBusy = false;
+let unsubMaintenance = null;
+
+function _renderMaintenanceBtn(active) {
+  _maintenanceActive = !!active;
+  const btn = document.getElementById("maintenance-toggle-btn");
+  const icon = document.getElementById("maintenance-toggle-icon");
+  const label = document.getElementById("maintenance-toggle-label");
+  if (!btn) return;
+  if (active) {
+    btn.style.background = "rgba(239,68,68,.15)";
+    btn.style.borderColor = "rgba(239,68,68,.45)";
+    btn.style.color = "#ef4444";
+    if (icon) icon.textContent = "🔧";
+    if (label) label.textContent = "EM MANUTENÇÃO — toque para liberar";
+  } else {
+    btn.style.background = "rgba(255,255,255,.04)";
+    btn.style.borderColor = "rgba(255,255,255,.12)";
+    btn.style.color = "#94a3b8";
+    if (icon) icon.textContent = "🟢";
+    if (label) label.textContent = "Modo Manutenção: DESLIGADO";
+  }
+}
+
+function startMaintenanceListener() {
+  if (!firebaseOk) return;
+  if (unsubMaintenance) { unsubMaintenance(); unsubMaintenance = null; }
+  unsubMaintenance = db.collection("settings").doc("maintenance").onSnapshot(doc => {
+    _renderMaintenanceBtn(doc.exists && doc.data().active === true);
+  }, err => console.error("[Manutenção] listener:", err));
+}
+
+async function toggleMaintenance() {
+  if (!requireFirebase()) return;
+  if (_maintenanceBusy) return;
+  const turningOn = !_maintenanceActive;
+  if (turningOn && !confirm("Ativar MODO MANUTENÇÃO?\n\nTodos os alunos que abrirem o app verão a tela \"APLICATIVO EM MANUTENÇÃO\" e não conseguirão usar o app até você desligar.")) return;
+  _maintenanceBusy = true;
+  try {
+    await db.collection("settings").doc("maintenance").set({
+      active: turningOn,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    showToast(turningOn ? "🔧 Modo manutenção ATIVADO — alunos bloqueados" : "✅ Modo manutenção desligado");
+  } catch (e) {
+    console.error("[Manutenção] toggle:", e);
+    showToast("Erro ao alterar o modo manutenção");
+  }
+  _maintenanceBusy = false;
 }
 
 // ── Notificações do Professor ──
@@ -8205,6 +8268,7 @@ if (localStorage.getItem("teacher_logged_in") === "true") {
   startTeacherListener();
   loadAlerts();
   startProfNotifsListener();
+  startMaintenanceListener();
 }
 
 // ========== SISTEMA DE GAMES (CONFIG DE RECOMPENSAS) ==========
