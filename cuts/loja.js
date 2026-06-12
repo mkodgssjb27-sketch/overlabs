@@ -112,6 +112,8 @@ function loadItems() {
       if (first) { first = false; resolve(); }
     }, err => {
       console.error("[Loja] Erro ao ouvir itens:", err);
+      var _ll = document.getElementById("loja-loading");
+      if (_ll) _ll.style.display = "none"; // não deixa o spinner principal preso no erro
       document.getElementById("items-grid").innerHTML =
         '<div class="empty"><div class="icon">⚠️</div><p>Erro ao carregar itens</p></div>';
       if (first) { first = false; resolve(); }
@@ -854,8 +856,8 @@ async function initLoja() {
   // Carregar itens e inventário em paralelo (não sequencial)
   await Promise.all([loadItems(), loadInventory()]);
 
-  // Atualizar contadores regressivos a cada minuto
-  setInterval(function() { renderItems(); }, 60000);
+  // Atualizar contadores regressivos a cada minuto (só com o app em foco)
+  setInterval(function() { if (!document.hidden) renderItems(); }, 60000);
 
   // Se acessou via #inventario, abrir direto no inventário
   if (window.location.hash === "#inventario") {
