@@ -2020,6 +2020,9 @@ function showScreen(name, skipHistory) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById("screen-" + name).classList.add("active");
   window.scrollTo(0, 0);
+  // Encerra o listener da tela de CUTS em massa (escuta a coleção 'users' inteira) ao
+  // sair. Sem isso ele seguia ativo re-montando allStudents a cada mudança de usuário.
+  if (name !== "teacher-bulk-cuts" && bulkCutsUnsub) { bulkCutsUnsub(); bulkCutsUnsub = null; }
 
   if (!skipHistory && prevName && prevName !== name) {
     screenHistory.push(prevName);
@@ -2212,6 +2215,9 @@ function startTeacherListener() {
       allRides.forEach(r => autoDistributeCutsReward(r));
     }, err => {
       console.error(err);
+      // Esconde o spinner para não travar a tela em "Carregando..." no erro
+      document.getElementById("t-rides-loading").style.display = "none";
+      document.getElementById("t-rides-empty").style.display = "block";
       showToast("Erro ao carregar Reservas");
     });
 }
@@ -2346,7 +2352,8 @@ async function createRide() {
   }
   if (!ok) return;
 
-  const btn = event.target; btn.disabled = true; btn.textContent = "Criando...";
+  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target : document.activeElement;
+  if (btn) { btn.disabled = true; btn.textContent = "Criando..."; }
   try {
     const data = {
       title, date, time, seats,
@@ -2848,7 +2855,8 @@ async function saveEditRide() {
   }
   if (!ok) return;
 
-  const btn = event.target; btn.disabled = true; btn.textContent = "Salvando...";
+  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target : document.activeElement;
+  if (btn) { btn.disabled = true; btn.textContent = "Salvando..."; }
   try {
     const rideRef = db.collection("rides").doc(currentDetailRideId);
     let promoted = 0;

@@ -577,7 +577,8 @@ async function createRide() {
   if (!time)  { setErr("r-time-err","Informe o horário"); ok=false; }
   if (!ok) return;
 
-  const btn = event.target; btn.disabled = true; btn.textContent = "Criando...";
+  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target : document.activeElement;
+  if (btn) { btn.disabled = true; btn.textContent = "Criando..."; }
   try {
     await db.collection("rides").add({ title, date, time, seats, booked: [], waitlist: [], createdAt: firebase.firestore.FieldValue.serverTimestamp() });
     showToast("✅ Carona criada!");
@@ -586,7 +587,7 @@ async function createRide() {
     showToast("Erro ao criar carona");
     console.error(e);
   }
-  btn.disabled = false; btn.textContent = "✓ Criar Carona";
+  if (btn) { btn.disabled = false; btn.textContent = "✓ Criar Carona"; }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -663,7 +664,8 @@ async function studentRegister() {
   if (!ph) { setErr("e-ph","Campo obrigatório"); ok=false; }
   if (!ok) return;
 
-  const btn = event.target; btn.disabled=true; btn.textContent="Verificando...";
+  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target : document.activeElement;
+  if (btn) { btn.disabled = true; btn.textContent = "Verificando..."; }
   try {
     // Verifica username único
     const snap = await db.collection("users").where("username","==",un).get();
@@ -681,7 +683,7 @@ async function studentRegister() {
     document.getElementById("reg-err").style.display = "block";
     console.error(e);
   }
-  btn.disabled=false; btn.textContent="Criar Conta";
+  if (btn) { btn.disabled = false; btn.textContent = "Criar Conta"; }
 }
 
 async function studentLogin() {
@@ -692,7 +694,8 @@ async function studentLogin() {
 
   if (!un || !pw) { showLoginErr("Preencha todos os campos"); return; }
 
-  const btn = event.target; btn.disabled=true; btn.textContent="Entrando...";
+  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target : document.activeElement;
+  if (btn) { btn.disabled = true; btn.textContent = "Entrando..."; }
   try {
     const snap = await db.collection("users").where("username","==",un).where("password","==",pw).get();
     if (snap.empty) { showLoginErr("Usuário ou senha incorretos"); btn.disabled=false; btn.textContent="Entrar"; return; }
@@ -706,7 +709,7 @@ async function studentLogin() {
     showLoginErr("Erro ao conectar. Verifique o Firebase.");
     console.error(e);
   }
-  btn.disabled=false; btn.textContent="Entrar";
+  if (btn) { btn.disabled = false; btn.textContent = "Entrar"; }
 }
 
 function showLoginErr(msg) {

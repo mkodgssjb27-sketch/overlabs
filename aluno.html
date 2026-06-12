@@ -1038,6 +1038,10 @@ function showScreen(name, skipHistory) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById("screen-" + name).classList.add("active");
   window.scrollTo(0, 0);
+  // Encerra o listener do ranking (escuta a coleção 'users' inteira) ao sair da tela.
+  // Sem isso, sair pelo "voltar" do Android (popstate) ou pela navegação deixava o
+  // listener ativo re-renderizando uma tela oculta a cada mudança de qualquer usuário.
+  if (name !== "student-ranking" && unsubRanking) { unsubRanking(); unsubRanking = null; }
   if (name === "student-notifs") markNotifsRead();
 
   // Log de navegação
@@ -1191,7 +1195,7 @@ function normalizePhone(s) {
   return (s || '').replace(/\D/g, '');
 }
 
-async function studentRegister() {
+async function studentRegister(event) {
   if (!requireFirebase()) return;
   const fn = document.getElementById("r-fn").value.trim();
   const un = document.getElementById("r-un").value.trim().toLowerCase();
@@ -1208,7 +1212,10 @@ async function studentRegister() {
   if (!ph) { setErr("e-ph","Campo obrigatório"); ok=false; }
   if (!ok) return;
 
-  const btn = event.target; btn.disabled=true; btn.textContent="Verificando...";
+  const btn = (typeof event !== 'undefined' && event && event.target)
+    ? event.target
+    : (document.getElementById('form-register') && document.getElementById('form-register').querySelector('.btn-main'));
+  if (btn) { btn.disabled = true; btn.textContent = "Verificando..."; }
   try {
     const snap = await db.collection("users").where("username","==",un).get();
     if (!snap.empty) { setErr("e-un","Usuário já cadastrado"); btn.disabled=false; btn.textContent="Criar Conta"; return; }
@@ -1316,7 +1323,7 @@ async function studentRegister() {
     document.getElementById("reg-err").style.display = "block";
     console.error(e);
   }
-  btn.disabled=false; btn.textContent="Criar Conta";
+  if (btn) { btn.disabled = false; btn.textContent = "Criar Conta"; }
 }
 
 async function studentLogin() {
@@ -1767,6 +1774,11 @@ function startStudentListeners() {
         const r = allRides.find(r => r.id === currentRideId);
         if (r) renderStudentDetail(r);
       }
+    }, err => {
+      // Sem isto, um erro no listener deixava o spinner "Carregando..." preso para sempre
+      console.error("[Reservas] listener:", err);
+      document.getElementById("s-loading").style.display = "none";
+      document.getElementById("s-empty").style.display = "block";
     });
 
   if (unsubNotifs) unsubNotifs();
@@ -1836,18 +1848,34 @@ function startStudentListeners() {
     .onSnapshot(snap => {
       allFeedItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderFilteredFeed();
+    }, err => {
+      // Evita o spinner do feed preso caso o listener falhe
+      console.error("[Feed] listener:", err);
+      const fl = document.getElementById("feed-loading");
+      if (fl) fl.style.display = "none";
+      const fe = document.getElementById("feed-empty");
+      if (fe) fe.style.display = "block";
     });
 
-  // Auto-refresh silencioso a cada 2 segundos
+  // Auto-refresh silencioso: re-renderiza SÓ a tela ativa e SÓ com o app em foco.
+  // Serve apenas para expirar itens por tempo (caronas passadas, posts >24h, enquetes
+  // encerradas) — os onSnapshot já atualizam em tempo real quando os dados mudam.
+  // Antes rodava a cada 2s reconstruindo feed + lista de caronas via innerHTML mesmo
+  // em background e mesmo na tela errada, causando jank/toques perdidos e gasto de bateria.
   if (autoRefreshInterval) clearInterval(autoRefreshInterval);
   autoRefreshInterval = setInterval(() => {
-    renderFilteredFeed();
-    renderStudentRides(allRides);
-    if (currentRideId) {
+    if (document.hidden) return;
+    const activeScreen = document.querySelector(".screen.active");
+    const activeId = activeScreen ? activeScreen.id : "";
+    if (activeId === "screen-student-home") {
+      renderFilteredFeed();
+    } else if (activeId === "screen-student-list") {
+      renderStudentRides(allRides);
+    } else if (activeId === "screen-student-detail" && currentRideId) {
       const r = allRides.find(r => r.id === currentRideId);
       if (r) renderStudentDetail(r);
     }
-  }, 2000);
+  }, 10000);
 }
 
 function renderFilteredFeed() {
