@@ -853,6 +853,61 @@ input,select,textarea{font-family:inherit;outline:none}
           <input class="inp" id="es-password" placeholder="Nova senha">
         </div>
       </div>
+      <!-- ══ Gestão de Estatísticas (RPG do Atleta) ══ -->
+      <div style="margin:8px 0 18px;height:1px;background:rgba(255,255,255,.08)"></div>
+      <div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:4px;display:flex;align-items:center;gap:8px">🏐 Gestão de Estatísticas</div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:16px">Perfil RPG do atleta — visível para o aluno, editável só aqui.</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        <div>
+          <label class="lbl">LEVEL</label>
+          <input type="number" inputmode="numeric" min="1" max="99" class="inp" id="es-level" placeholder="1">
+        </div>
+        <div>
+          <label class="lbl">CLASSIFICAÇÃO</label>
+          <select class="inp" id="es-classification" style="color-scheme:dark">
+            <option value="">— selecione —</option>
+            <option>Iniciante B</option>
+            <option>Iniciante A</option>
+            <option>Intermediário B</option>
+            <option>Intermediário A</option>
+            <option>Avançado C</option>
+            <option>Avançado Prata</option>
+            <option>Avançado Ouro</option>
+            <option>Avançado Platina</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">TÍTULO DO ATLETA</label>
+        <input class="inp" id="es-title" list="es-title-suggestions" placeholder="Ex.: Muralha da Defesa, Rei da Cortada...">
+        <datalist id="es-title-suggestions">
+          <option>Muralha da Defesa</option>
+          <option>Rei da Cortada</option>
+          <option>Mestre da Recepção</option>
+          <option>Especialista em Saque</option>
+          <option>Atleta Completo</option>
+          <option>Potência de Ataque</option>
+        </datalist>
+      </div>
+
+      <label class="lbl" style="display:block;margin-bottom:8px">ATRIBUTOS (0 a 10)</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div><label class="lbl" style="font-size:10px">SAQUE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-saque" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">RECEPÇÃO</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-recepcao" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">PASSE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-passe" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">MANCHETE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-manchete" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">ATAQUE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-ataque" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">CORTADA</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-cortada" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">IMPULSÃO</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-impulsao" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">DESLOCAMENTO</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-deslocamento" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">DEFESA</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-defesa" placeholder="0"></div>
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">AVALIAÇÃO TÉCNICA (análise do professor)</label>
+        <textarea class="inp" id="es-analysis" rows="4" placeholder="Observações livres sobre o atleta..." style="resize:vertical;min-height:90px"></textarea>
+      </div>
+
       <button onclick="saveStudentProfile()" class="btn-main" id="btn-save-student">💾 Salvar Alterações</button>
     </div>
   </div>
@@ -4274,6 +4329,24 @@ function openEditStudent(userId) {
   document.getElementById("es-password").value = student.password || "";
   setEditArena(student.arena || '');
 
+  // Estatísticas (RPG do atleta)
+  const ath = student.athlete || {};
+  const st = ath.stats || {};
+  const _setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v != null ? v : ""); };
+  _setVal("es-level", ath.level);
+  _setVal("es-classification", ath.classification);
+  _setVal("es-title", ath.title);
+  _setVal("es-st-saque", st.saque);
+  _setVal("es-st-recepcao", st.recepcao);
+  _setVal("es-st-passe", st.passe);
+  _setVal("es-st-manchete", st.manchete);
+  _setVal("es-st-ataque", st.ataque);
+  _setVal("es-st-cortada", st.cortada);
+  _setVal("es-st-impulsao", st.impulsao);
+  _setVal("es-st-deslocamento", st.deslocamento);
+  _setVal("es-st-defesa", st.defesa);
+  _setVal("es-analysis", ath.analysis);
+
   const photoEl = document.getElementById("es-photo");
   const initialEl = document.getElementById("es-photo-initial");
   if (student.photoURL) {
@@ -4295,10 +4368,25 @@ async function saveStudentProfile() {
   const password = document.getElementById("es-password").value;
   const arena = document.getElementById("es-arena").value;
 
+  // Estatísticas (RPG do atleta) — validação 0..10 e level 1..99
+  const _clamp = (raw, lo, hi) => { const v = parseInt(raw, 10); if (isNaN(v)) return null; return Math.max(lo, Math.min(hi, v)); };
+  const _statKeys = ["saque","recepcao","passe","manchete","ataque","cortada","impulsao","deslocamento","defesa"];
+  const stats = {};
+  _statKeys.forEach(k => { const v = _clamp(document.getElementById("es-st-" + k).value, 0, 10); stats[k] = (v == null ? 0 : v); });
+  const lvl = _clamp(document.getElementById("es-level").value, 1, 99);
+  const athlete = {
+    level: (lvl == null ? 1 : lvl),
+    classification: document.getElementById("es-classification").value || "",
+    title: document.getElementById("es-title").value.trim(),
+    stats: stats,
+    analysis: document.getElementById("es-analysis").value.trim(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
   const btn = document.getElementById("btn-save-student");
   btn.disabled = true; btn.textContent = "Salvando...";
   try {
-    const updates = { fullName, nickname, birthdate, address, phone };
+    const updates = { fullName, nickname, birthdate, address, phone, athlete };
     if (arena) updates.arena = arena;
     if (fullName) updates.firstName = fullName.split(" ")[0];
     if (password && password.length >= 4) updates.password = password;
