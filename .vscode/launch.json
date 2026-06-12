@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🎒 App Aluno",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8080/aluno.html",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "OverLabs: servidor local",
+      "userDataDir": "${env:LOCALAPPDATA}\\OverLabsDebug\\aluno"
+    },
+    {
+      "name": "🧑‍🏫 App Professor",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8080/prof/",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "OverLabs: servidor local",
+      "userDataDir": "${env:LOCALAPPDATA}\\OverLabsDebug\\prof"
+    }
+  ]
+}
