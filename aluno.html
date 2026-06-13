@@ -369,9 +369,7 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
 /* Home — hero banner do cabeçalho */
 .hero-banner{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:var(--radius-hero);background:linear-gradient(135deg,rgba(239,68,68,.18),rgba(245,158,11,.12) 55%,rgba(59,130,246,.14));border:1px solid rgba(255,255,255,.08);box-shadow:var(--shadow-card)}
 
-/* Avatar com badge de nível (arena) */
 .avatar-wrap{position:relative;flex-shrink:0;display:inline-flex}
-.level-badge{position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;background:var(--c-green);border:2px solid #0c0b12;box-shadow:0 2px 6px rgba(0,0,0,.45)}
 
 /* Chip de streak/CUTS (reutilizado na Home e na Sidebar) */
 .streak-chip{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(245,158,11,.22),rgba(232,93,4,.12));border:1px solid rgba(245,158,11,.4);border-radius:16px;padding:9px 13px;cursor:pointer;box-shadow:0 6px 16px -10px rgba(245,158,11,.5)}
@@ -520,17 +518,22 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
         <div style="display:flex;align-items:center;gap:12px">
           <div class="avatar-wrap">
             <button class="profile-avatar-btn" id="avatar-btn-list" onclick="openSidebar()"></button>
-            <span class="level-badge" id="list-level-badge">🏐</span>
           </div>
           <div>
             <div class="s-hsub" id="sl-greeting">Olá!</div>
             <div class="s-htitle">OVER LABS</div>
           </div>
         </div>
-        <button onclick="showScreen('student-notifs')" style="background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.3);border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;position:relative">
-          <span style="font-size:18px">🔔</span>
-          <span class="notif-dot" id="notif-badge" style="display:none">0</span>
-        </button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="streak-chip" onclick="openLojaOverlay()">
+            <span class="sc-icon">🪙</span>
+            <span class="sc-value" id="list-cuts">0</span>
+          </div>
+          <button onclick="showScreen('student-notifs')" style="background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.3);border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;position:relative">
+            <span style="font-size:18px">🔔</span>
+            <span class="notif-dot" id="notif-badge" style="display:none">0</span>
+          </button>
+        </div>
       </div>
     </div>
     <div class="s-content" id="s-rides-content">
@@ -579,7 +582,7 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
 <div class="screen" id="screen-student-notifs">
   <div class="app-wrap">
     <div class="s-header" style="display:flex;align-items:center;gap:14px">
-      <button onclick="showScreen('student-list')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <button onclick="goBackFromNotifs()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
       <div class="s-htitle" style="flex:1;font-size:16px">Notificações</div>
       <button id="clear-notifs-btn" onclick="clearNotifications()" style="display:none;background:rgba(255,255,255,.08);padding:7px 12px;border-radius:10px;color:#94a3b8;font-size:12px;font-weight:700;border:none;cursor:pointer">🗑 Limpar</button>
     </div>
@@ -598,12 +601,21 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
         <div style="display:flex;align-items:center;gap:12px">
           <div class="avatar-wrap">
             <button class="profile-avatar-btn" id="avatar-btn-presence" onclick="openSidebar()"></button>
-            <span class="level-badge" id="presence-level-badge">🏐</span>
           </div>
           <div>
             <div class="s-hsub" id="sp-greeting">Olá!</div>
             <div class="s-htitle">OVER LABS</div>
           </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="streak-chip" onclick="openLojaOverlay()">
+            <span class="sc-icon">🪙</span>
+            <span class="sc-value" id="presence-cuts">0</span>
+          </div>
+          <button onclick="showScreen('student-notifs')" style="background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.3);border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;position:relative">
+            <span style="font-size:18px">🔔</span>
+            <span class="notif-dot" id="notif-badge-presence" style="display:none">0</span>
+          </button>
         </div>
       </div>
     </div>
@@ -635,12 +647,21 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
         <div style="display:flex;align-items:center;gap:12px">
           <div class="avatar-wrap">
             <button class="profile-avatar-btn" id="avatar-btn-tournaments" onclick="openSidebar()"></button>
-            <span class="level-badge" id="tournaments-level-badge">🏐</span>
           </div>
           <div>
             <div class="s-hsub" id="st-greeting">Olá!</div>
             <div class="s-htitle">OVER LABS</div>
           </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="streak-chip" onclick="openLojaOverlay()">
+            <span class="sc-icon">🪙</span>
+            <span class="sc-value" id="tournaments-cuts">0</span>
+          </div>
+          <button onclick="showScreen('student-notifs')" style="background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.3);border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;position:relative">
+            <span style="font-size:18px">🔔</span>
+            <span class="notif-dot" id="notif-badge-tournaments" style="display:none">0</span>
+          </button>
         </div>
       </div>
     </div>
@@ -727,7 +748,6 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
         <div style="display:flex;align-items:center;gap:12px">
           <div class="avatar-wrap">
             <button class="profile-avatar-btn" id="avatar-btn-home" onclick="openSidebar()"></button>
-            <span class="level-badge" id="home-level-badge">🌳</span>
           </div>
           <div>
             <div class="s-hsub" id="sh-greeting">Olá!</div>

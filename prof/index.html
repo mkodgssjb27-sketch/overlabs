@@ -853,10 +853,22 @@ input,select,textarea{font-family:inherit;outline:none}
           <input class="inp" id="es-password" placeholder="Nova senha">
         </div>
       </div>
-      <!-- ══ Gestão de Estatísticas (RPG do Atleta) ══ -->
-      <div style="margin:8px 0 18px;height:1px;background:rgba(255,255,255,.08)"></div>
-      <div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:4px;display:flex;align-items:center;gap:8px">🏐 Gestão de Estatísticas</div>
-      <div style="font-size:11px;color:#64748b;margin-bottom:16px">Perfil RPG do atleta — visível para o aluno, editável só aqui.</div>
+      <button onclick="saveStudentProfile()" class="btn-main" id="btn-save-student">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — ESTATÍSTICAS / ELO DO ATLETA ═══════════════════ -->
+<div class="screen" id="screen-teacher-athlete-stats">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-students');loadStudents()" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px" id="athlete-stats-title">Estatísticas / Elo</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <div class="t-form">
+      <div style="font-size:11px;color:#64748b;margin-bottom:16px">🏐 Perfil RPG do atleta — visível para o aluno na Home e no Perfil de Atleta.</div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
         <div>
@@ -864,7 +876,7 @@ input,select,textarea{font-family:inherit;outline:none}
           <input type="number" inputmode="numeric" min="1" max="99" class="inp" id="es-level" placeholder="1">
         </div>
         <div>
-          <label class="lbl">CLASSIFICAÇÃO</label>
+          <label class="lbl">CLASSIFICAÇÃO (ELO)</label>
           <select class="inp" id="es-classification" style="color-scheme:dark">
             <option value="">— selecione —</option>
             <option>Iniciante B</option>
@@ -912,7 +924,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <textarea class="inp" id="es-analysis" rows="4" placeholder="Observações livres sobre o atleta..." style="resize:vertical;min-height:90px"></textarea>
       </div>
 
-      <button onclick="saveStudentProfile()" class="btn-main" id="btn-save-student">💾 Salvar Alterações</button>
+      <button onclick="saveAthleteStats()" class="btn-main" id="btn-save-athlete-stats">💾 Salvar Estatísticas/Elo</button>
     </div>
   </div>
 </div>
@@ -3192,6 +3204,7 @@ let allStudents = [];
 let studentMap = null;
 let studentsArenaFilter = 'all'; // 'all' | 'cajueiro' | 'grussai' | 'none'
 let studentsSearchQuery = '';
+let expandedStudentCards = new Set();
 
 function _normSearch(s) {
   return (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -3309,19 +3322,34 @@ function renderStudents(students) {
         : arena === 'cajueiro'
           ? { label: '🌳 Cajueiro', color: '#22c55e', bg: 'rgba(34,197,94,.12)', bd: 'rgba(34,197,94,.25)' }
           : { label: '⏳ Sem Arena', color: '#fbbf24', bg: 'rgba(251,191,36,.12)', bd: 'rgba(251,191,36,.35)' };
-    const arenaBadge = `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:${arenaInfo.bg};border:1px solid ${arenaInfo.bd};color:${arenaInfo.color};margin-left:6px">${arenaInfo.label}</span>`;
+    const arenaBadge = `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:${arenaInfo.bg};border:1px solid ${arenaInfo.bd};color:${arenaInfo.color}">${arenaInfo.label}</span>`;
+    const ath = s.athlete || {};
+    const level = ath.level != null ? ath.level : 1;
+    const classification = ath.classification || '';
+    const eloBadge = classification
+      ? `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b">🏆 ${escapeHtml(classification)} · Nv.${level}</span>`
+      : `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:rgba(100,116,139,.12);border:1px solid rgba(100,116,139,.3);color:#64748b">⏳ Sem elo · Nv.${level}</span>`;
+    const cutsBadge = `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:#f59e0b">🪙 ${s.cuts || 0}</span>`;
+    const expanded = expandedStudentCards.has(s.id);
     return `
       <div style="background:rgba(255,255,255,.04);border:1px solid ${blocked?'rgba(239,68,68,.3)':'rgba(255,255,255,.08)'};border-radius:16px;padding:18px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;cursor:pointer" onclick="toggleStudentCard('${s.id}')">
           ${hasPhoto
             ? `<div style="width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid ${blocked?'#ef4444':'rgba(245,158,11,.5)'}"><img src="${s.photoURL}" style="width:100%;height:100%;object-fit:cover"></div>`
             : `<div class="avatar" style="background:${blocked?'linear-gradient(135deg,#ef4444,#dc2626)':'linear-gradient(135deg,#f59e0b,#e85d04)'}">${(s.firstName||'?')[0]}</div>`
           }
-          <div style="flex:1">
+          <div style="flex:1;min-width:0">
             <div style="font-weight:800;font-size:15px;color:${blocked?'#f87171':'#fff'}">${escapeHtml(s.firstName||'')}${nickname} ${blocked?'<span style="font-size:11px;color:#f87171">(BLOQUEADO)</span>':''}</div>
-            <div style="color:#64748b;font-size:12px">@${escapeHtml(s.username||'')}${s.birthdate ? ' · 🎂 '+s.birthdate : ''}${arenaBadge}</div>
+            <div style="color:#64748b;font-size:12px">@${escapeHtml(s.username||'')}${s.birthdate ? ' · 🎂 '+s.birthdate : ''}</div>
           </div>
+          <button onclick="event.stopPropagation();toggleStudentCard('${s.id}')" style="background:rgba(255,255,255,.06);border:none;color:#94a3b8;width:30px;height:30px;border-radius:9px;cursor:pointer;font-size:13px;flex-shrink:0">${expanded?'▲':'▼'}</button>
         </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${eloBadge}
+          ${arenaBadge}
+          ${cutsBadge}
+        </div>
+        <div style="display:${expanded?'block':'none'};margin-top:14px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
           <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px">
             <div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:3px">SENHA</div>
@@ -3339,6 +3367,9 @@ function renderStudents(students) {
           <button onclick="toggleBlock('${s.id}',${!blocked})" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:${blocked?'rgba(34,197,94,.15)':'rgba(239,68,68,.12)'};color:${blocked?'#22c55e':'#f87171'}">${blocked?'🔓 Desbloquear':'🔒 Bloquear'}</button>
           <button onclick="openEditStudent('${s.id}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(245,158,11,.12);color:#f59e0b">✏️ Editar</button>
           ${hasLoc ? `<button onclick="openStudentMap('${s.id}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(56,189,248,.12);color:#38bdf8">📍 Local</button>` : `<button disabled style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;background:rgba(255,255,255,.04);color:#64748b;cursor:default">📍 Sem local</button>`}
+        </div>
+        <div style="margin-top:8px">
+          <button onclick="openAthleteStats('${s.id}')" style="width:100%;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:1px solid rgba(250,204,21,.25);cursor:pointer;background:rgba(250,204,21,.12);color:#facc15;display:flex;align-items:center;justify-content:center;gap:6px">📊 Estatísticas / Elo</button>
         </div>
         <!-- CUTS -->
         <div style="display:flex;align-items:center;gap:10px;margin-top:10px;margin-bottom:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15);border-radius:12px;padding:10px 14px">
@@ -3358,8 +3389,14 @@ function renderStudents(students) {
           <button onclick="deleteStudent('${s.id}','${escapeHtml(s.firstName||'')}')" style="flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;background:rgba(239,68,68,.08);color:#f87171;display:flex;align-items:center;justify-content:center;gap:6px">🗑 Excluir Conta</button>
         </div>
         ${hasLoc ? `<div style="color:#64748b;font-size:11px;margin-top:8px">📍 Última atualização: ${locTime}</div>` : ''}
+        </div>
       </div>`;
   }).join("");
+}
+
+function toggleStudentCard(id) {
+  if (expandedStudentCards.has(id)) expandedStudentCards.delete(id); else expandedStudentCards.add(id);
+  renderStudents(allStudents);
 }
 
 function togglePw(id) {
@@ -4333,7 +4370,23 @@ function openEditStudent(userId) {
   document.getElementById("es-password").value = student.password || "";
   setEditArena(student.arena || '');
 
-  // Estatísticas (RPG do atleta)
+  const photoEl = document.getElementById("es-photo");
+  const initialEl = document.getElementById("es-photo-initial");
+  if (student.photoURL) {
+    photoEl.innerHTML = `<img src="${student.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    photoEl.innerHTML = `<span style="font-size:28px;font-weight:800;color:#fff">${(student.firstName||'?')[0]}</span>`;
+  }
+
+  showScreen("teacher-edit-student");
+}
+
+function openAthleteStats(userId) {
+  const student = allStudents.find(s => s.id === userId);
+  if (!student) return;
+  editingStudentId = userId;
+  document.getElementById("athlete-stats-title").textContent = "Estatísticas / Elo — " + (student.firstName || "Aluno");
+
   const ath = student.athlete || {};
   const st = ath.stats || {};
   const _setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v != null ? v : ""); };
@@ -4352,15 +4405,7 @@ function openEditStudent(userId) {
   _setVal("es-st-defesa", st.defesa);
   _setVal("es-analysis", ath.analysis);
 
-  const photoEl = document.getElementById("es-photo");
-  const initialEl = document.getElementById("es-photo-initial");
-  if (student.photoURL) {
-    photoEl.innerHTML = `<img src="${student.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-  } else {
-    photoEl.innerHTML = `<span style="font-size:28px;font-weight:800;color:#fff">${(student.firstName||'?')[0]}</span>`;
-  }
-
-  showScreen("teacher-edit-student");
+  showScreen("teacher-athlete-stats");
 }
 
 async function saveStudentProfile() {
@@ -4373,46 +4418,14 @@ async function saveStudentProfile() {
   const password = document.getElementById("es-password").value;
   const arena = document.getElementById("es-arena").value;
 
-  // Estatísticas (RPG do atleta) — validação 0..10 e level 1..99
-  const _clamp = (raw, lo, hi) => { const v = parseInt(raw, 10); if (isNaN(v)) return null; return Math.max(lo, Math.min(hi, v)); };
-  const _statKeys = ["saque","recepcao","passe","levantamento","manchete","ataque","cortada","impulsao","deslocamento","defesa"];
-  const stats = {};
-  _statKeys.forEach(k => { const v = _clamp(document.getElementById("es-st-" + k).value, 0, 10); stats[k] = (v == null ? 0 : v); });
-  const lvl = _clamp(document.getElementById("es-level").value, 1, 99);
-  const _prevStudent = (allStudents || []).find(s => s.id === editingStudentId) || {};
-  const _oldLevel = (_prevStudent.athlete && _prevStudent.athlete.level != null) ? _prevStudent.athlete.level : null;
-  const athlete = {
-    level: (lvl == null ? 1 : lvl),
-    classification: document.getElementById("es-classification").value || "",
-    title: document.getElementById("es-title").value.trim(),
-    stats: stats,
-    analysis: document.getElementById("es-analysis").value.trim(),
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-
   const btn = document.getElementById("btn-save-student");
   btn.disabled = true; btn.textContent = "Salvando...";
   try {
-    const updates = { fullName, nickname, birthdate, address, phone, athlete };
+    const updates = { fullName, nickname, birthdate, address, phone };
     if (arena) updates.arena = arena;
     if (fullName) updates.firstName = fullName.split(" ")[0];
     if (password && password.length >= 4) updates.password = password;
     await db.collection("users").doc(editingStudentId).update(updates);
-
-    // Notificar o aluno se o Level mudou (cria feed pessoal -> dispara o push)
-    if (_oldLevel != null && athlete.level !== _oldLevel) {
-      const _subiu = athlete.level > _oldLevel;
-      db.collection("feed").add({
-        type: "personal_msg",
-        icon: _subiu ? "🎉" : "📉",
-        text: _subiu ? "Level Up!" : "Level atualizado",
-        detail: _subiu
-          ? `Parabéns! Você subiu para o Level ${athlete.level}. Confira seu Perfil de Atleta!`
-          : `Seu Level foi ajustado para ${athlete.level}.`,
-        targetUserId: editingStudentId,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).catch(function(e){ console.warn("[LevelNotif]", e); });
-    }
 
     // Atualizar nome/username nas Reservas (booked e waitlist)
     if (updates.firstName) {
@@ -4443,6 +4456,56 @@ async function saveStudentProfile() {
     console.error(e);
   }
   btn.disabled = false; btn.textContent = "💾 Salvar Alterações";
+}
+
+async function saveAthleteStats() {
+  if (!editingStudentId || !firebaseOk) return;
+
+  // Estatísticas (RPG do atleta) — validação 0..10 e level 1..99
+  const _clamp = (raw, lo, hi) => { const v = parseInt(raw, 10); if (isNaN(v)) return null; return Math.max(lo, Math.min(hi, v)); };
+  const _statKeys = ["saque","recepcao","passe","levantamento","manchete","ataque","cortada","impulsao","deslocamento","defesa"];
+  const stats = {};
+  _statKeys.forEach(k => { const v = _clamp(document.getElementById("es-st-" + k).value, 0, 10); stats[k] = (v == null ? 0 : v); });
+  const lvl = _clamp(document.getElementById("es-level").value, 1, 99);
+  const _prevStudent = (allStudents || []).find(s => s.id === editingStudentId) || {};
+  const _oldLevel = (_prevStudent.athlete && _prevStudent.athlete.level != null) ? _prevStudent.athlete.level : null;
+  const athlete = {
+    level: (lvl == null ? 1 : lvl),
+    classification: document.getElementById("es-classification").value || "",
+    title: document.getElementById("es-title").value.trim(),
+    stats: stats,
+    analysis: document.getElementById("es-analysis").value.trim(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  const btn = document.getElementById("btn-save-athlete-stats");
+  btn.disabled = true; btn.textContent = "Salvando...";
+  try {
+    await db.collection("users").doc(editingStudentId).update({ athlete });
+
+    // Notificar o aluno se o Level mudou (cria feed pessoal -> dispara o push)
+    if (_oldLevel != null && athlete.level !== _oldLevel) {
+      const _subiu = athlete.level > _oldLevel;
+      db.collection("feed").add({
+        type: "personal_msg",
+        icon: _subiu ? "🎉" : "📉",
+        text: _subiu ? "Level Up!" : "Level atualizado",
+        detail: _subiu
+          ? `Parabéns! Você subiu para o Level ${athlete.level}. Confira seu Perfil de Atleta!`
+          : `Seu Level foi ajustado para ${athlete.level}.`,
+        targetUserId: editingStudentId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function(e){ console.warn("[LevelNotif]", e); });
+    }
+
+    showToast("✅ Estatísticas/Elo atualizados!");
+    showScreen("teacher-students");
+    loadStudents();
+  } catch(e) {
+    showToast("Erro ao salvar");
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = "💾 Salvar Estatísticas/Elo";
 }
 
 function closeMap() {
