@@ -818,7 +818,7 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
       </div>
       <div id="sidebar-emblems" style="display:flex;align-items:center;gap:4px"></div>
     </div>
-    <script>try{var _c=localStorage.getItem("carolampra_cuts");if(_c!=null){document.getElementById("sidebar-cuts").textContent=_c;var _hc=document.getElementById("home-cuts");if(_hc)_hc.textContent=_c}}catch(e){}</script>
+    <script>try{var _c=localStorage.getItem("carolampra_cuts");if(_c!=null){document.querySelectorAll(".sc-value").forEach(function(e){e.textContent=_c})}}catch(e){}</script>
     <button class="sidebar-btn" onclick="closeSidebar();showScreen('student-personal');loadProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
       <span class="sb-icon-amber" style="font-size:18px">👤</span> Dados Pessoais
     </button>
@@ -1660,6 +1660,11 @@ function showLoginErr(msg) {
   el.style.display = "block";
 }
 
+// Atualiza o saldo de CUTS em TODAS as telas (chips .sc-value: home, reservas,
+// presencas, torneios, sidebar). Antes so home/sidebar eram atualizados.
+function setCutsDisplay(val) {
+  document.querySelectorAll('.sc-value').forEach(function(el){ el.textContent = val; });
+}
 function enterStudentApp() {
   logActivity('app_abriu', 'Abriu o app');
   applyMaintenanceState(); // @teste nunca vê a tela de manutenção
@@ -1686,10 +1691,7 @@ function enterStudentApp() {
     // Restaurar CUTS do cache imediatamente
     const cachedCuts = localStorage.getItem("carolampra_cuts");
     if (cachedCuts != null) {
-      const cutsEl = document.getElementById("sidebar-cuts");
-      if (cutsEl) cutsEl.textContent = cachedCuts;
-      const hcEl0 = document.getElementById("home-cuts");
-      if (hcEl0) hcEl0.textContent = cachedCuts;
+      setCutsDisplay(cachedCuts);
     }
     unsubUserDoc = db.collection("users").doc(currentUser.id).onSnapshot(doc => {
       if (!doc.exists) return;
@@ -1698,10 +1700,7 @@ function enterStudentApp() {
       applyArenaLayout(d.arena || null);
       // CUTS
       const cutsVal = d.cuts || 0;
-      const cutsEl = document.getElementById("sidebar-cuts");
-      if (cutsEl) cutsEl.textContent = cutsVal;
-      const hcEl = document.getElementById("home-cuts");
-      if (hcEl) hcEl.textContent = cutsVal;
+      setCutsDisplay(cutsVal);
       localStorage.setItem("carolampra_cuts", cutsVal);
       // Nível/Categoria (RPG do Atleta) — pílula da Home
       const ath = d.athlete || {};
@@ -1735,8 +1734,7 @@ function enterStudentApp() {
         db.collection("users").doc(currentUser.id).get().then(doc => {
           if (!doc.exists) return;
           const d = doc.data();
-          const cutsEl = document.getElementById("sidebar-cuts");
-          if (cutsEl) cutsEl.textContent = d.cuts || 0;
+          setCutsDisplay(d.cuts || 0);
           localStorage.setItem("carolampra_cuts", d.cuts || 0);
         }).catch(() => {});
         // Re-check daily login when returning from background
@@ -4654,8 +4652,7 @@ function loadMyPresence() {
   // Atualizar CUTS na sidebar
   db.collection("users").doc(currentUser.id).get().then(doc => {
     if (doc.exists && doc.data().cuts != null) {
-      const cutsEl = document.getElementById("sidebar-cuts");
-      if (cutsEl) cutsEl.textContent = doc.data().cuts;
+      setCutsDisplay(doc.data().cuts);
     }
   }).catch(() => {});
 }
