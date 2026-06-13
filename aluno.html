@@ -667,6 +667,7 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
     </div>
     <div class="s-content" id="s-tournaments-content">
       <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">🏐 Torneios</div>
+      <div id="student-publicados-list" style="margin-bottom:6px"></div>
       <div class="loading" id="student-torn-loading"><div class="spin"></div>Carregando...</div>
       <div class="empty" id="student-torn-empty" style="display:none"><div class="icon">🏆</div><p>Nenhum torneio disponível</p><small>Em breve novos torneios!</small></div>
       <div id="student-torn-list"></div>
@@ -4772,8 +4773,39 @@ function _stuTornFmtDate(ts) {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+function _ptFmtDateStu(d) {
+  if (!d) return '—';
+  var p = String(d).split('-');
+  return (p.length === 3) ? (p[2] + '/' + p[1] + '/' + p[0]) : d;
+}
+// Torneios publicados pelo professor (anúncios: título, data, horário opcional, foto 1:1)
+function loadPublicadosStudent() {
+  if (!firebaseOk) return;
+  var cont = document.getElementById('student-publicados-list');
+  if (!cont) return;
+  db.collection('torneios_publicados').orderBy('createdAt', 'desc').get().then(function(snap) {
+    var items = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });
+    window._hasPublicados = items.length > 0;
+    var _emptyEl = document.getElementById('student-torn-empty');
+    if (items.length === 0) { cont.innerHTML = ''; return; }
+    if (_emptyEl) _emptyEl.style.display = 'none';
+    cont.innerHTML = items.map(function(t) {
+      var photo = t.photoData
+        ? '<img src="' + t.photoData + '" style="width:64px;height:64px;border-radius:12px;object-fit:cover;flex-shrink:0">'
+        : '';
+      var horario = t.time ? ('⏰ ' + t.time) : '⏰ Horário não definido';
+      return '<div style="display:flex;align-items:center;gap:14px;background:linear-gradient(168deg,rgba(245,158,11,.1),rgba(255,255,255,.02));border:1px solid rgba(245,158,11,.22);border-radius:16px;padding:14px;margin-bottom:10px">'
+        + photo
+        + '<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px;color:#fff">🏆 ' + escapeHtml(t.title || '') + '</div>'
+        + '<div style="color:#f59e0b;font-size:12px;font-weight:700;margin-top:4px">📅 ' + _ptFmtDateStu(t.date) + '</div>'
+        + '<div style="color:#94a3b8;font-size:12px;margin-top:2px">' + horario + '</div></div>'
+        + '</div>';
+    }).join('');
+  }).catch(function(e) { console.error('[Publicados aluno]', e); });
+}
 function loadStudentTorneios() {
   if (!firebaseOk) return;
+  loadPublicadosStudent();
   const list = document.getElementById("student-torn-list");
   const loading = document.getElementById("student-torn-loading");
   const empty = document.getElementById("student-torn-empty");
@@ -4782,7 +4814,7 @@ function loadStudentTorneios() {
   db.collection("torneios").orderBy("createdAt", "desc").get().then(snap => {
     if (loading) loading.style.display = "none";
     const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (empty) empty.style.display = items.length === 0 ? "block" : "none";
+    if (empty) empty.style.display = (items.length === 0 && !window._hasPublicados) ? "block" : "none";
     if (!list) return;
     list.innerHTML = items.map(t => `
       <div onclick="openStudentTorneio('${t.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:18px;margin-bottom:10px;cursor:pointer">
@@ -4799,7 +4831,7 @@ function loadStudentTorneios() {
         const tb=b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():0;
         return tb-ta;
       });
-      if (empty) empty.style.display = items.length === 0 ? "block" : "none";
+      if (empty) empty.style.display = (items.length === 0 && !window._hasPublicados) ? "block" : "none";
       if (!list) return;
       list.innerHTML = items.map(t => `
         <div onclick="openStudentTorneio('${t.id}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(245,158,11,.2);border-radius:16px;padding:18px;margin-bottom:10px;cursor:pointer">

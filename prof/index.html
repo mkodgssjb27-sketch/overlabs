@@ -1135,6 +1135,9 @@ input,select,textarea{font-family:inherit;outline:none}
       <button onclick="showScreen('teacher-consultar-torneios');loadTorneios()" style="padding:20px;border-radius:16px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);color:#a78bfa;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px">
         <span style="font-size:22px">📋</span> Consultar Torneio
       </button>
+      <button onclick="showScreen('teacher-publicar-torneio');loadPublicados()" style="padding:20px;border-radius:16px;background:rgba(236,72,153,.1);border:1px solid rgba(236,72,153,.25);color:#ec4899;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:12px">
+        <span style="font-size:22px">📢</span> Publicar Torneio
+      </button>
       <button disabled style="padding:20px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#475569;font-weight:800;font-size:15px;cursor:not-allowed;display:flex;align-items:center;gap:12px;position:relative">
         <span style="font-size:22px">📊</span> Criar Tabela de Torneio
         <span style="position:absolute;right:16px;font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:800">EM BREVE</span>
@@ -1144,6 +1147,57 @@ input,select,textarea{font-family:inherit;outline:none}
         <span style="position:absolute;right:16px;font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;padding:3px 10px;border-radius:20px;font-weight:800">EM BREVE</span>
       </button>
     </div>
+  </div>
+</div>
+
+<!-- ══ PROFESSOR — PUBLICAR TORNEIO ═══════════════════════════════ -->
+<div class="screen" id="screen-teacher-publicar-torneio">
+  <div class="top-bar">
+    <div class="top-bar-brand">
+      <button onclick="showScreen('teacher-tournaments')" style="background:rgba(255,255,255,.08);padding:8px 14px;border-radius:10px;color:#fff;font-weight:700;font-size:14px">←</button>
+      <h1 style="font-size:16px">📢 Publicar Torneio</h1>
+    </div>
+  </div>
+  <div class="t-content" style="max-width:560px">
+    <div class="t-form">
+      <div style="margin-bottom:16px">
+        <label class="lbl">TÍTULO DO EVENTO</label>
+        <input class="inp" id="pt-title" placeholder="Ex: Torneio de Vôlei de Praia — Junho">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+        <div>
+          <label class="lbl">DATA</label>
+          <input type="date" class="inp" id="pt-date" style="color-scheme:dark">
+        </div>
+        <div>
+          <label class="lbl">HORÁRIO (opcional)</label>
+          <input type="time" class="inp" id="pt-time" style="color-scheme:dark">
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl">FOTO DO EVENTO 1:1 (opcional)</label>
+        <div style="display:flex;gap:8px">
+          <label style="flex:1;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.15);color:#94a3b8;font-weight:700;font-size:13px;text-align:center;cursor:pointer">
+            📷 Câmera
+            <input type="file" accept="image/*" capture="environment" onchange="previewTorneioPhoto(this)" style="display:none">
+          </label>
+          <label style="flex:1;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.15);color:#94a3b8;font-weight:700;font-size:13px;text-align:center;cursor:pointer">
+            🖼️ Galeria
+            <input type="file" accept="image/*" onchange="previewTorneioPhoto(this)" style="display:none">
+          </label>
+        </div>
+        <div id="pt-preview" style="display:none;margin-top:12px;position:relative;width:120px">
+          <img id="pt-preview-img" style="width:120px;height:120px;border-radius:12px;object-fit:cover;border:1px solid rgba(255,255,255,.12)">
+          <button onclick="clearTorneioPhoto()" style="position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:13px;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <p class="err-txt" id="pt-err" style="margin-bottom:12px"></p>
+      <button onclick="publishTorneio()" class="btn-main" id="btn-publish-torneio">📢 Publicar</button>
+    </div>
+    <div style="margin:26px 0 12px;font-size:14px;font-weight:800;color:#94a3b8;display:flex;align-items:center;gap:8px">📋 Torneios Publicados</div>
+    <div class="loading" id="publicados-loading"><div class="spin"></div>Carregando...</div>
+    <div class="empty" id="publicados-empty" style="display:none"><div class="icon">📭</div><p>Nenhum torneio publicado</p></div>
+    <div id="publicados-list"></div>
   </div>
 </div>
 
@@ -2100,6 +2154,7 @@ function showScreen(name, skipHistory) {
   // Encerra o listener da tela de CUTS em massa (escuta a coleção 'users' inteira) ao
   // sair. Sem isso ele seguia ativo re-montando allStudents a cada mudança de usuário.
   if (name !== "teacher-bulk-cuts" && bulkCutsUnsub) { bulkCutsUnsub(); bulkCutsUnsub = null; }
+  if (name !== "teacher-publicar-torneio" && unsubPublicados) { unsubPublicados(); unsubPublicados = null; }
 
   if (!skipHistory && prevName && prevName !== name) {
     screenHistory.push(prevName);
@@ -3752,6 +3807,7 @@ async function saveCuts() {
 let bulkCutsMode = "add";
 let bulkCutsSelected = new Set();
 let bulkCutsUnsub = null;
+let unsubPublicados = null;
 
 function openBulkCutsScreen() {
   bulkCutsMode = "add";
@@ -4699,6 +4755,97 @@ function clearPostImage() {
   _fpImageData = null;
   document.getElementById('fp-preview').style.display = 'none';
   document.getElementById('fp-preview-img').src = '';
+}
+
+// ── Publicar Torneio (anúncio simples: título, data, horário opcional, foto 1:1) ──
+var _ptPhotoData = null;
+function _ptFmtDate(d) {
+  if (!d) return '—';
+  var p = String(d).split('-');
+  return (p.length === 3) ? (p[2] + '/' + p[1] + '/' + p[0]) : d;
+}
+function previewTorneioPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      // Recorte central 1:1 + redimensiona para 500x500
+      var side = Math.min(img.width, img.height);
+      var sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+      var OUT = 500;
+      var canvas = document.createElement('canvas');
+      canvas.width = OUT; canvas.height = OUT;
+      canvas.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, OUT, OUT);
+      _ptPhotoData = canvas.toDataURL('image/jpeg', 0.75);
+      document.getElementById('pt-preview-img').src = _ptPhotoData;
+      document.getElementById('pt-preview').style.display = 'block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function clearTorneioPhoto() {
+  _ptPhotoData = null;
+  document.getElementById('pt-preview').style.display = 'none';
+  document.getElementById('pt-preview-img').src = '';
+}
+async function publishTorneio() {
+  if (!firebaseOk) return;
+  var title = document.getElementById('pt-title').value.trim();
+  var date = document.getElementById('pt-date').value;
+  var time = document.getElementById('pt-time').value;
+  setErr('pt-err', '');
+  if (!title) { setErr('pt-err', 'Informe o título'); return; }
+  if (!date) { setErr('pt-err', 'Informe a data'); return; }
+  var btn = document.getElementById('btn-publish-torneio');
+  btn.disabled = true; btn.textContent = 'Publicando...';
+  try {
+    var data = { title: title, date: date, time: time || '', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+    if (_ptPhotoData) data.photoData = _ptPhotoData;
+    await db.collection('torneios_publicados').add(data);
+    showToast('📢 Torneio publicado!');
+    document.getElementById('pt-title').value = '';
+    document.getElementById('pt-date').value = '';
+    document.getElementById('pt-time').value = '';
+    clearTorneioPhoto();
+  } catch (e) {
+    console.error('[Publicar torneio]', e);
+    showToast('Erro ao publicar');
+  }
+  btn.disabled = false; btn.textContent = '📢 Publicar';
+}
+function loadPublicados() {
+  if (!firebaseOk) return;
+  var loading = document.getElementById('publicados-loading');
+  var empty = document.getElementById('publicados-empty');
+  var list = document.getElementById('publicados-list');
+  if (loading) loading.style.display = 'flex';
+  if (list) list.innerHTML = '';
+  if (unsubPublicados) unsubPublicados();
+  unsubPublicados = db.collection('torneios_publicados').orderBy('createdAt', 'desc').onSnapshot(function(snap) {
+    if (loading) loading.style.display = 'none';
+    var items = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });
+    if (empty) empty.style.display = items.length === 0 ? 'block' : 'none';
+    if (!list) return;
+    list.innerHTML = items.map(function(t) {
+      var photo = t.photoData
+        ? '<img src="' + t.photoData + '" style="width:54px;height:54px;border-radius:10px;object-fit:cover;flex-shrink:0">'
+        : '<div style="width:54px;height:54px;border-radius:10px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px">🏐</div>';
+      var horario = t.time ? ('⏰ ' + t.time) : '⏰ Não definido';
+      return '<div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:10px">'
+        + photo
+        + '<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:14px;color:#fff">' + escapeHtml(t.title || '') + '</div>'
+        + '<div style="color:#94a3b8;font-size:12px;margin-top:3px">📅 ' + _ptFmtDate(t.date) + ' · ' + horario + '</div></div>'
+        + '<button onclick="deletePublicado(\'' + t.id + '\')" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:#f87171;width:32px;height:32px;border-radius:9px;cursor:pointer;flex-shrink:0;font-size:14px">🗑</button>'
+        + '</div>';
+    }).join('');
+  }, function(e) { if (loading) loading.style.display = 'none'; console.error('[Publicados]', e); });
+}
+async function deletePublicado(id) {
+  if (!confirm('Remover este torneio publicado?')) return;
+  try { await db.collection('torneios_publicados').doc(id).delete(); showToast('Removido'); }
+  catch (e) { console.error(e); showToast('Erro ao remover'); }
 }
 
 async function publishFeedPost() {
