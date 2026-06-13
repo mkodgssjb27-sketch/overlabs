@@ -1329,7 +1329,8 @@ function showScreen(name, skipHistory) {
     'student-tournaments': 'Torneios',
     'student-notifs': 'Notificações',
     'student-list': 'Reservas',
-    'student-presence': 'Presença'
+    'student-presence': 'Presença',
+    'student-athlete': 'Estatísticas do Atleta'
   };
   if (screenLabels[name]) {
     logActivity('navegacao', 'Acessou: ' + screenLabels[name], { tela: name });
@@ -4778,6 +4779,21 @@ function _ptFmtDateStu(d) {
   var p = String(d).split('-');
   return (p.length === 3) ? (p[2] + '/' + p[1] + '/' + p[0]) : d;
 }
+// Esconde um torneio publicado quando a data (e hora, se definida) já passou
+function _torneioPassou(t) {
+  if (!t.date) return false;
+  var p = String(t.date).split('-');
+  if (p.length !== 3) return false;
+  var y = parseInt(p[0], 10), mo = parseInt(p[1], 10) - 1, d = parseInt(p[2], 10);
+  var cutoff;
+  if (t.time && /^\d{1,2}:\d{2}/.test(t.time)) {
+    var hm = String(t.time).split(':');
+    cutoff = new Date(y, mo, d, parseInt(hm[0], 10), parseInt(hm[1], 10), 0);
+  } else {
+    cutoff = new Date(y, mo, d + 1, 0, 0, 0); // sem hora: expira no fim do dia
+  }
+  return Date.now() > cutoff.getTime();
+}
 // Torneios publicados pelo professor (anúncios: título, data, horário opcional, foto 1:1)
 function loadPublicadosStudent() {
   if (!firebaseOk) return;
@@ -4785,6 +4801,7 @@ function loadPublicadosStudent() {
   if (!cont) return;
   db.collection('torneios_publicados').orderBy('createdAt', 'desc').get().then(function(snap) {
     var items = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });
+    items = items.filter(function(t) { return !_torneioPassou(t); });
     window._hasPublicados = items.length > 0;
     var _emptyEl = document.getElementById('student-torn-empty');
     if (items.length === 0) { cont.innerHTML = ''; return; }
