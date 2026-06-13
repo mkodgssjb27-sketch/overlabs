@@ -5013,9 +5013,9 @@ function loadAthleteProfile() {
 }
 
 function _athStatColor(v) {
-  if (v >= 8) return "#22c55e";
-  if (v >= 6) return "#f59e0b";
-  if (v >= 4) return "#f97316";
+  if (v >= 80) return "#22c55e";
+  if (v >= 60) return "#f59e0b";
+  if (v >= 40) return "#f97316";
   if (v >= 1) return "#ef4444";
   return "#64748b";
 }
@@ -5025,9 +5025,9 @@ function renderAthleteProfile(data) {
   if (!content) return;
   var ath = data.athlete || {};
   var stats = ath.stats || {};
-  var vals = ATHLETE_ATTRS.map(function(a){ var v = parseInt(stats[a.key], 10); return isNaN(v) ? 0 : Math.max(0, Math.min(10, v)); });
+  var vals = ATHLETE_ATTRS.map(function(a){ var v = parseInt(stats[a.key], 10); return isNaN(v) ? 0 : Math.max(0, Math.min(100, v)); });
   var sum = vals.reduce(function(s,v){ return s+v; }, 0);
-  var ovr = Math.min(99, Math.round((sum / (vals.length || 1)) * 10)); // média 0..10 -> 0..99
+  var ovr = Math.min(100, Math.round(sum / (vals.length || 1))); // média dos atributos 0..100
   var level = (ath.level != null) ? ath.level : 1;
   var classification = ath.classification || "";
   var title = ath.title || "";
@@ -5068,12 +5068,8 @@ function renderAthleteProfile(data) {
   ATHLETE_ATTRS.forEach(function(a, i){
     var v = vals[i], col = _athStatColor(v);
     html += '<div style="margin-bottom:14px">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:700;color:#e2e8f0">' + a.label + '</span><span style="font-size:13px;font-weight:900;color:' + col + '">' + v + '<span style="color:#475569;font-weight:700">/10</span></span></div>';
-    html += '<div style="display:flex;gap:3px">';
-    for (var s = 1; s <= 10; s++) {
-      html += '<div style="flex:1;height:8px;border-radius:3px;background:' + (s <= v ? col : 'rgba(255,255,255,.07)') + '"></div>';
-    }
-    html += '</div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:700;color:#e2e8f0">' + a.label + '</span><span style="font-size:13px;font-weight:900;color:' + col + '">' + v + '<span style="color:#475569;font-weight:700">/100</span></span></div>';
+    html += '<div style="height:8px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden"><div style="height:100%;width:' + v + '%;border-radius:6px;background:linear-gradient(90deg,' + col + ',rgba(255,255,255,.4))"></div></div>';
     html += '</div>';
   });
   html += '</div>';
@@ -5095,8 +5091,8 @@ function buildAthleteRadar(vals) {
   var n = ATHLETE_ATTRS.length;
   function pt(r, i){ var ang = -Math.PI/2 + i*(2*Math.PI/n); return [cx + r*Math.cos(ang), cy + r*Math.sin(ang)]; }
   var svg = '<svg viewBox="0 0 ' + size + ' ' + size + '" width="100%" style="max-width:320px;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">';
-  [2,4,6,8,10].forEach(function(lvl){
-    var r = (lvl/10)*maxR, p = [];
+  [20,40,60,80,100].forEach(function(lvl){
+    var r = (lvl/100)*maxR, p = [];
     for (var i=0;i<n;i++){ var xy = pt(r,i); p.push(xy[0].toFixed(1) + ',' + xy[1].toFixed(1)); }
     svg += '<polygon points="' + p.join(' ') + '" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>';
   });
@@ -5108,9 +5104,9 @@ function buildAthleteRadar(vals) {
     svg += '<text x="' + lab[0].toFixed(1) + '" y="' + (lab[1]+3).toFixed(1) + '" fill="#94a3b8" font-size="11" font-weight="700" text-anchor="' + anchor + '">' + ATHLETE_ATTRS[i].short + '</text>';
   }
   var dp = [];
-  for (var j=0;j<n;j++){ var xy2 = pt((vals[j]/10)*maxR, j); dp.push(xy2[0].toFixed(1) + ',' + xy2[1].toFixed(1)); }
+  for (var j=0;j<n;j++){ var xy2 = pt((vals[j]/100)*maxR, j); dp.push(xy2[0].toFixed(1) + ',' + xy2[1].toFixed(1)); }
   svg += '<polygon points="' + dp.join(' ') + '" fill="rgba(239,68,68,0.28)" stroke="#ef4444" stroke-width="2" stroke-linejoin="round"/>';
-  for (var k=0;k<n;k++){ var xy3 = pt((vals[k]/10)*maxR, k); svg += '<circle cx="' + xy3[0].toFixed(1) + '" cy="' + xy3[1].toFixed(1) + '" r="3" fill="#fff"/>'; }
+  for (var k=0;k<n;k++){ var xy3 = pt((vals[k]/100)*maxR, k); svg += '<circle cx="' + xy3[0].toFixed(1) + '" cy="' + xy3[1].toFixed(1) + '" r="3" fill="#fff"/>'; }
   svg += '</svg>';
   return svg;
 }

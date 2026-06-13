@@ -873,7 +873,7 @@ input,select,textarea{font-family:inherit;outline:none}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
         <div>
           <label class="lbl">LEVEL</label>
-          <input type="number" inputmode="numeric" min="1" max="99" class="inp" id="es-level" placeholder="1">
+          <input type="number" inputmode="numeric" min="1" max="999" class="inp" id="es-level" placeholder="1">
         </div>
         <div>
           <label class="lbl">CLASSIFICAÇÃO (ELO)</label>
@@ -906,18 +906,18 @@ input,select,textarea{font-family:inherit;outline:none}
         </datalist>
       </div>
 
-      <label class="lbl" style="display:block;margin-bottom:8px">ATRIBUTOS (0 a 10)</label>
+      <label class="lbl" style="display:block;margin-bottom:8px">ATRIBUTOS (0 a 100)</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-        <div><label class="lbl" style="font-size:10px">SAQUE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-saque" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">RECEPÇÃO</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-recepcao" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">PASSE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-passe" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">LEVANTAMENTO</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-levantamento" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">MANCHETE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-manchete" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">ATAQUE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-ataque" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">CORTADA</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-cortada" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">IMPULSÃO</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-impulsao" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">DESLOCAMENTO</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-deslocamento" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">DEFESA</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-defesa" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">SAQUE</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-saque" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">RECEPÇÃO</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-recepcao" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">PASSE</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-passe" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">LEVANTAMENTO</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-levantamento" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">MANCHETE</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-manchete" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">ATAQUE</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-ataque" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">CORTADA</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-cortada" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">IMPULSÃO</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-impulsao" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">DESLOCAMENTO</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-deslocamento" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">DEFESA</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-defesa" placeholder="0"></div>
       </div>
       <div style="margin-bottom:16px">
         <label class="lbl">AVALIAÇÃO TÉCNICA (análise do professor)</label>
@@ -3330,6 +3330,12 @@ function renderStudents(students) {
       ? `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b">🏆 ${escapeHtml(classification)} · Nv.${level}</span>`
       : `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:rgba(100,116,139,.12);border:1px solid rgba(100,116,139,.3);color:#64748b">⏳ Sem elo · Nv.${level}</span>`;
     const cutsBadge = `<span style="font-size:10px;font-weight:800;padding:3px 8px;border-radius:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:#f59e0b">🪙 ${s.cuts || 0}</span>`;
+    const _ovrSt = ath.stats || {};
+    const _ovrKeys = ["saque","recepcao","passe","levantamento","manchete","ataque","cortada","impulsao","deslocamento","defesa"];
+    let _ovrSum = 0, _ovrN = 0;
+    _ovrKeys.forEach(k => { const v = parseInt(_ovrSt[k], 10); if (!isNaN(v)) { _ovrSum += v; _ovrN++; } });
+    const ovr = _ovrN ? Math.round(_ovrSum / _ovrN) : 0;
+    const ovrBadge = `<span style="font-size:11px;font-weight:900;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.16);border:1px solid rgba(239,68,68,.4);color:#fca5a5">⭐ OVR ${ovr}</span>`;
     const expanded = expandedStudentCards.has(s.id);
     return `
       <div style="background:rgba(255,255,255,.04);border:1px solid ${blocked?'rgba(239,68,68,.3)':'rgba(255,255,255,.08)'};border-radius:16px;padding:18px;margin-bottom:12px">
@@ -3345,6 +3351,7 @@ function renderStudents(students) {
           <button onclick="event.stopPropagation();toggleStudentCard('${s.id}')" style="background:rgba(255,255,255,.06);border:none;color:#94a3b8;width:30px;height:30px;border-radius:9px;cursor:pointer;font-size:13px;flex-shrink:0">${expanded?'▲':'▼'}</button>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${ovrBadge}
           ${eloBadge}
           ${arenaBadge}
           ${cutsBadge}
@@ -4465,8 +4472,8 @@ async function saveAthleteStats() {
   const _clamp = (raw, lo, hi) => { const v = parseInt(raw, 10); if (isNaN(v)) return null; return Math.max(lo, Math.min(hi, v)); };
   const _statKeys = ["saque","recepcao","passe","levantamento","manchete","ataque","cortada","impulsao","deslocamento","defesa"];
   const stats = {};
-  _statKeys.forEach(k => { const v = _clamp(document.getElementById("es-st-" + k).value, 0, 10); stats[k] = (v == null ? 0 : v); });
-  const lvl = _clamp(document.getElementById("es-level").value, 1, 99);
+  _statKeys.forEach(k => { const v = _clamp(document.getElementById("es-st-" + k).value, 0, 100); stats[k] = (v == null ? 0 : v); });
+  const lvl = _clamp(document.getElementById("es-level").value, 1, 999);
   const _prevStudent = (allStudents || []).find(s => s.id === editingStudentId) || {};
   const _oldLevel = (_prevStudent.athlete && _prevStudent.athlete.level != null) ? _prevStudent.athlete.level : null;
   const athlete = {
