@@ -96,6 +96,10 @@ input,select{font-family:inherit;outline:none}
 .s-seat.taken{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1)}
 .s-seat.mine{background:rgba(245,158,11,.1);border:1.5px solid #f59e0b}
 .s-seat .seat-name{font-size:10px;font-weight:700;line-height:1.2;margin-top:3px}
+.s-seat .seat-avatar{width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);margin:0 auto}
+.s-seat .seat-avatar img,.s-seat .seat-avatar video{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.s-seat .seat-avatar .seat-initial{font-size:14px;font-weight:800;color:#fff}
+.s-seat.mine .seat-avatar{box-shadow:0 0 0 2px #f59e0b}
 
 /* Notifications dark */
 .notif-item{background:rgba(255,255,255,.04);border-radius:14px;padding:15px;margin-bottom:10px;border:1px solid rgba(255,255,255,.08)}
@@ -225,6 +229,8 @@ input,select{font-family:inherit;outline:none}
   --accent:#f59e0b;--accent-2:#e85d04;
   --radius-card:18px;--radius-btn:14px;
   --shadow-card:0 10px 28px -16px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.05);
+  --c-red:#ef4444;--c-blue:#3b82f6;--c-green:#22c55e;
+  --radius-hero:28px;
 }
 body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .app-wrap{background:radial-gradient(135% 95% at 50% -8%,#191420 0%,#0c0b12 46%,#08080c 100%)}
@@ -270,6 +276,130 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
 .s-content::-webkit-scrollbar{width:6px}
 .s-content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:6px}
 .s-content::-webkit-scrollbar-track{background:transparent}
+
+/* ═══════════════════════════════════════════════════════════════
+   REDESIGN — leva 2b (v302)
+   Refino visual: reservas (badges/barra de vagas), detalhe (status/
+   vagas/espera/assentos/action-bar), pódio do ranking + lista + abas,
+   perfil (sidebar, dados pessoais, card flutuante). Mantém estrutura/IDs/JS.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Reservas — badges semânticos com profundidade */
+.badge-confirmed{background:linear-gradient(135deg,rgba(245,158,11,.22),rgba(245,158,11,.08));color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
+.badge-waiting{background:linear-gradient(135deg,rgba(249,115,22,.22),rgba(249,115,22,.08));color:#fb923c;border:1px solid rgba(249,115,22,.3)}
+.badge-open{background:linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.07));color:#4ade80;border:1px solid rgba(34,197,94,.28)}
+.badge-full{background:linear-gradient(135deg,rgba(249,115,22,.22),rgba(249,115,22,.08));color:#fb923c;border:1px solid rgba(249,115,22,.3)}
+.badge-soldout{background:linear-gradient(135deg,rgba(239,68,68,.2),rgba(239,68,68,.07));color:#f87171;border:1px solid rgba(239,68,68,.28)}
+
+/* Reservas — barra de vagas em pílulas com brilho */
+.s-ride-progress{display:flex;gap:4px}
+.s-ride-progress i{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.08)}
+.s-ride-progress i.filled{background:linear-gradient(90deg,var(--accent),var(--accent-2));box-shadow:0 0 8px rgba(245,158,11,.45)}
+
+/* Reservas — banner informativo com vidro */
+#rides-info-banner{background:linear-gradient(168deg,rgba(59,130,246,.1),rgba(59,130,246,.03));border:1px solid rgba(59,130,246,.22);box-shadow:var(--shadow-card);border-radius:var(--radius-card)}
+
+/* Detalhe — painéis com profundidade */
+.sd-panel{background:linear-gradient(168deg,rgba(255,255,255,.05),rgba(255,255,255,.016));border:1px solid rgba(255,255,255,.07);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:18px;margin-bottom:14px}
+
+/* Detalhe — cards de status (confirmado / fila) */
+.sd-status{border-radius:var(--radius-card);padding:18px;margin-bottom:14px;text-align:center;display:flex;flex-direction:column;align-items:center}
+.sd-status-icon{font-size:24px;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.sd-status.confirmed{background:linear-gradient(168deg,rgba(245,158,11,.16),rgba(245,158,11,.03));border:1px solid rgba(245,158,11,.35);box-shadow:0 12px 30px -16px rgba(245,158,11,.5),inset 0 1px 0 rgba(255,255,255,.06)}
+.sd-status.confirmed .sd-status-icon{background:rgba(245,158,11,.16);box-shadow:0 0 22px rgba(245,158,11,.4)}
+.sd-status.waiting{background:linear-gradient(168deg,rgba(249,115,22,.16),rgba(249,115,22,.03));border:1px solid rgba(249,115,22,.35);box-shadow:0 12px 30px -16px rgba(249,115,22,.5),inset 0 1px 0 rgba(255,255,255,.06)}
+.sd-status.waiting .sd-status-icon{background:rgba(249,115,22,.16);box-shadow:0 0 22px rgba(249,115,22,.4)}
+
+/* Detalhe — assentos com profundidade */
+.s-seat{border-radius:var(--radius-btn);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+.s-seat.taken{background:linear-gradient(168deg,rgba(255,255,255,.05),rgba(255,255,255,.015));box-shadow:var(--shadow-card)}
+.s-seat.mine{background:linear-gradient(168deg,rgba(245,158,11,.18),rgba(245,158,11,.04));box-shadow:0 10px 24px -14px rgba(245,158,11,.5),inset 0 1px 0 rgba(255,255,255,.08)}
+
+/* Detalhe — barra de ação com vidro */
+.action-bar{background:rgba(12,11,17,.9);backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);border-top:1px solid rgba(255,255,255,.05);box-shadow:0 -12px 32px -22px rgba(0,0,0,.95)}
+
+/* Ranking — pódio com profundidade e hierarquia */
+.rk-podium-wrap{background:linear-gradient(168deg,rgba(255,255,255,.05),rgba(255,255,255,.016));border:1px solid rgba(255,255,255,.07);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:26px 12px 16px;margin-bottom:20px;display:flex;align-items:flex-end;justify-content:center;gap:8px}
+.rk-podium-item{display:flex;flex-direction:column;align-items:center;flex:1;max-width:120px;cursor:pointer;transition:transform .15s ease}
+.rk-podium-item:active{transform:scale(.96)}
+.rk-podium-item.first{position:relative}
+.rk-crown{position:absolute;top:-24px;left:50%;transform:translateX(-50%);font-size:20px;filter:drop-shadow(0 3px 8px rgba(245,158,11,.6))}
+.rk-medal{font-size:24px;margin-bottom:6px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+.rk-avatar{border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);margin-bottom:8px}
+.rk-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.rk-name{font-weight:800;font-size:13px;color:#fff;text-align:center;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-cuts{font-weight:900;font-size:15px;margin-top:3px}
+.rk-pedestal{width:100%;border-radius:14px 14px 5px 5px;margin-top:10px;display:flex;align-items:center;justify-content:center;position:relative;border:1px solid;border-bottom:none}
+.rk-pedestal::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:rgba(255,255,255,.3)}
+.rk-pedestal-pos{font-size:26px;font-weight:900;opacity:.5}
+
+/* Ranking — demais posições com vidro */
+.rk-row{display:flex;align-items:center;gap:12px;border-radius:14px;padding:12px 14px;margin-bottom:6px;background:linear-gradient(168deg,rgba(255,255,255,.04),rgba(255,255,255,.012));border:1px solid rgba(255,255,255,.06);transition:transform .15s ease,border-color .15s ease}
+.rk-row:active{transform:scale(.985)}
+.rk-row.me{border-color:rgba(245,158,11,.35);background:linear-gradient(168deg,rgba(245,158,11,.1),rgba(245,158,11,.02));box-shadow:0 10px 24px -16px rgba(245,158,11,.45)}
+.rk-row-avatar{width:36px;height:36px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0}
+.rk-row-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+
+/* Ranking — abas de arena com vidro (cores dinâmicas via JS preservadas) */
+#ranking-arena-tabs button{box-shadow:var(--shadow-card);transition:transform .15s ease,background .2s,border-color .2s,color .2s}
+#ranking-arena-tabs button:active{transform:scale(.97)}
+
+/* Perfil — itens da sidebar com micro-interação */
+.sidebar-btn{transition:background .15s ease,transform .15s ease,border-color .15s ease}
+.sidebar-btn:active{transform:scale(.98)}
+.sidebar-btn span:first-child{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:10px;background:rgba(255,255,255,.05);flex-shrink:0}
+
+/* Perfil — card de Dados Pessoais com vidro */
+.profile-card{background:linear-gradient(168deg,rgba(255,255,255,.05),rgba(255,255,255,.016));border:1px solid rgba(255,255,255,.07);border-radius:20px;box-shadow:var(--shadow-card);padding:24px}
+.profile-photo-wrap .photo{box-shadow:0 0 0 6px rgba(245,158,11,.08),0 12px 28px -16px rgba(245,158,11,.5)}
+
+/* Perfil — card flutuante do ranking com mais profundidade */
+#ranking-profile-card{box-shadow:0 24px 70px -20px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.05)}
+.rp-avatar-inner{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.rp-cuts-badge{box-shadow:var(--shadow-card)}
+
+/* ═══════════════════════════════════════════════════════════════
+   REDESIGN — leva 3 (v303)
+   Novo design system "bold/vibrante": hero banner da Home, badge de
+   nível sobre o avatar, chip de streak/CUTS reutilizável, bottom nav
+   com destaque circular no item ativo e cores de categoria na sidebar.
+   Mantém estrutura/IDs/JS.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Home — hero banner do cabeçalho */
+.hero-banner{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:var(--radius-hero);background:linear-gradient(135deg,rgba(239,68,68,.18),rgba(245,158,11,.12) 55%,rgba(59,130,246,.14));border:1px solid rgba(255,255,255,.08);box-shadow:var(--shadow-card)}
+
+/* Avatar com badge de nível (arena) */
+.avatar-wrap{position:relative;flex-shrink:0;display:inline-flex}
+.level-badge{position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;background:var(--c-green);border:2px solid #0c0b12;box-shadow:0 2px 6px rgba(0,0,0,.45)}
+
+/* Chip de streak/CUTS (reutilizado na Home e na Sidebar) */
+.streak-chip{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(245,158,11,.22),rgba(232,93,4,.12));border:1px solid rgba(245,158,11,.4);border-radius:16px;padding:9px 13px;cursor:pointer;box-shadow:0 6px 16px -10px rgba(245,158,11,.5)}
+.streak-chip .sc-icon{font-size:15px}
+.streak-chip .sc-value{font-weight:900;font-size:14px;color:#f59e0b}
+
+/* Bottom nav — destaque circular flutuante no item ativo */
+.bottom-nav-v2 .nav-btn.active span:first-child{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--c-red),var(--accent-2));box-shadow:0 8px 20px -8px rgba(239,68,68,.6),0 0 0 6px rgba(239,68,68,.08);transform:translateY(-14px);filter:none}
+.bottom-nav-v2 .nav-btn.active span:last-child{opacity:0;height:0;overflow:hidden}
+
+/* Sidebar — cores de categoria nos ícones do menu */
+.sidebar-btn span.sb-icon-amber{background:rgba(245,158,11,.15);color:#f59e0b}
+.sidebar-btn span.sb-icon-green{background:rgba(34,197,94,.15);color:#22c55e}
+.sidebar-btn span.sb-icon-blue{background:rgba(59,130,246,.15);color:#3b82f6}
+
+/* ═══════════════════════════════════════════════════════════════
+   REDESIGN — leva 4 (v304)
+   Pílula de nível/categoria do atleta na Home + extensão do
+   hero-banner para Reservas, Presenças e Torneios.
+   Mantém estrutura/IDs/JS.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Pílula de nível/categoria (RPG do Atleta) abaixo do hero banner */
+.rank-pill{display:flex;align-items:center;gap:8px;margin-top:10px;padding:9px 14px;border-radius:14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);cursor:pointer}
+.rank-pill .rp-level{font-size:12px;font-weight:900;color:#f59e0b;letter-spacing:.5px;white-space:nowrap}
+.rank-pill .rp-level b{font-size:14px}
+.rank-pill .rp-class{font-size:12px;font-weight:700;color:#e2e8f0;flex:1}
+.rank-pill .rp-arrow{font-size:14px;color:#f59e0b;font-weight:900}
 </style>
 </head>
 <body>
@@ -386,15 +516,18 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
 <div class="screen" id="screen-student-list">
   <div class="app-wrap">
     <div class="s-header">
-      <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="hero-banner">
         <div style="display:flex;align-items:center;gap:12px">
-          <button class="profile-avatar-btn" id="avatar-btn-list" onclick="openSidebar()"></button>
+          <div class="avatar-wrap">
+            <button class="profile-avatar-btn" id="avatar-btn-list" onclick="openSidebar()"></button>
+            <span class="level-badge" id="list-level-badge">🏐</span>
+          </div>
           <div>
             <div class="s-hsub" id="sl-greeting">Olá!</div>
             <div class="s-htitle">OVER LABS</div>
           </div>
         </div>
-        <button onclick="showScreen('student-notifs')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;position:relative">
+        <button onclick="showScreen('student-notifs')" style="background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.3);border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;position:relative">
           <span style="font-size:18px">🔔</span>
           <span class="notif-dot" id="notif-badge" style="display:none">0</span>
         </button>
@@ -414,7 +547,7 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
       <div class="empty" id="s-empty" style="display:none"><div class="icon">🛣️</div><p>Nenhuma reserva disponível</p><small>O professor ainda não criou reservas</small></div>
       <div id="s-rides-list"></div>
     </div>
-    <div class="s-bottom-nav">
+    <div class="s-bottom-nav bottom-nav-v2">
       <button class="nav-btn" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
       <button class="nav-btn active" onclick="switchStudentTab('list')"><span>🎫</span><span>Reservas</span></button>
       <button class="nav-btn" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
@@ -461,11 +594,16 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
 <div class="screen" id="screen-student-presence">
   <div class="app-wrap">
     <div class="s-header">
-      <div style="display:flex;align-items:center;gap:12px">
-        <button class="profile-avatar-btn" id="avatar-btn-presence" onclick="openSidebar()"></button>
-        <div>
-          <div class="s-hsub" id="sp-greeting">Olá!</div>
-          <div class="s-htitle">OVER LABS</div>
+      <div class="hero-banner">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="avatar-wrap">
+            <button class="profile-avatar-btn" id="avatar-btn-presence" onclick="openSidebar()"></button>
+            <span class="level-badge" id="presence-level-badge">🏐</span>
+          </div>
+          <div>
+            <div class="s-hsub" id="sp-greeting">Olá!</div>
+            <div class="s-htitle">OVER LABS</div>
+          </div>
         </div>
       </div>
     </div>
@@ -480,7 +618,7 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
       <div id="my-presence-list"></div>
       <div class="empty" id="my-presence-empty" style="display:none"><div class="icon">📋</div><p>Nenhuma presença neste mês</p></div>
     </div>
-    <div class="s-bottom-nav">
+    <div class="s-bottom-nav bottom-nav-v2">
       <button class="nav-btn" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
       <button class="nav-btn" onclick="switchStudentTab('list')"><span>🎫</span><span>Reservas</span></button>
       <button class="nav-btn active" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
@@ -493,11 +631,16 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
 <div class="screen" id="screen-student-tournaments">
   <div class="app-wrap">
     <div class="s-header">
-      <div style="display:flex;align-items:center;gap:12px">
-        <button class="profile-avatar-btn" id="avatar-btn-tournaments" onclick="openSidebar()"></button>
-        <div>
-          <div class="s-hsub" id="st-greeting">Olá!</div>
-          <div class="s-htitle">OVER LABS</div>
+      <div class="hero-banner">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="avatar-wrap">
+            <button class="profile-avatar-btn" id="avatar-btn-tournaments" onclick="openSidebar()"></button>
+            <span class="level-badge" id="tournaments-level-badge">🏐</span>
+          </div>
+          <div>
+            <div class="s-hsub" id="st-greeting">Olá!</div>
+            <div class="s-htitle">OVER LABS</div>
+          </div>
         </div>
       </div>
     </div>
@@ -507,7 +650,7 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
       <div class="empty" id="student-torn-empty" style="display:none"><div class="icon">🏆</div><p>Nenhum torneio disponível</p><small>Em breve novos torneios!</small></div>
       <div id="student-torn-list"></div>
     </div>
-    <div class="s-bottom-nav">
+    <div class="s-bottom-nav bottom-nav-v2">
       <button class="nav-btn" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
       <button class="nav-btn" onclick="switchStudentTab('list')"><span>🎫</span><span>Reservas</span></button>
       <button class="nav-btn" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
@@ -580,24 +723,32 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
 <div class="screen" id="screen-student-home">
   <div class="app-wrap">
     <div class="s-header">
-      <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="hero-banner">
         <div style="display:flex;align-items:center;gap:12px">
-          <button class="profile-avatar-btn" id="avatar-btn-home" onclick="openSidebar()"></button>
+          <div class="avatar-wrap">
+            <button class="profile-avatar-btn" id="avatar-btn-home" onclick="openSidebar()"></button>
+            <span class="level-badge" id="home-level-badge">🌳</span>
+          </div>
           <div>
             <div class="s-hsub" id="sh-greeting">Olá!</div>
             <div class="s-htitle">OVER LABS</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <div onclick="openLojaOverlay()" style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(232,93,4,.1));border:1px solid rgba(245,158,11,.32);border-radius:14px;padding:8px 11px;cursor:pointer">
-            <span style="font-size:14px">🪙</span>
-            <span id="home-cuts" style="font-weight:900;font-size:14px;color:#f59e0b">0</span>
+          <div class="streak-chip" onclick="openLojaOverlay()">
+            <span class="sc-icon">🪙</span>
+            <span class="sc-value" id="home-cuts">0</span>
           </div>
-          <button onclick="showScreen('student-notifs')" style="background:rgba(255,255,255,.08);border:none;border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;position:relative">
+          <button onclick="showScreen('student-notifs')" style="background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.3);border-radius:12px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;position:relative">
             <span style="font-size:18px">🔔</span>
             <span class="notif-dot" id="notif-badge-home" style="display:none">0</span>
           </button>
         </div>
+      </div>
+      <div class="rank-pill" id="home-rank-pill" onclick="openAthleteProfile()">
+        <span class="rp-level">Nv. <b id="home-athlete-level">1</b></span>
+        <span class="rp-class" id="home-athlete-class" style="color:#64748b">Classificação pendente</span>
+        <span class="rp-arrow">›</span>
       </div>
     </div>
     <div class="s-content" id="s-feed-content">
@@ -607,7 +758,7 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
       <div class="empty" id="feed-empty" style="display:none"><div class="icon">📭</div><p>Nenhuma atualização</p><small>Aqui você se manterá informado de todas atualizações</small></div>
       <div id="feed-list"></div>
     </div>
-    <div class="s-bottom-nav">
+    <div class="s-bottom-nav bottom-nav-v2">
       <button id="nav-home" class="nav-btn active" onclick="switchStudentTab('home')"><span>🏠</span><span>Home</span></button>
       <button id="nav-Reservas" class="nav-btn" onclick="switchStudentTab('list')"><span>🎫</span><span>Reservas</span></button>
       <button id="nav-presencas" class="nav-btn" onclick="switchStudentTab('presence')"><span>📋</span><span>Presenças</span></button>
@@ -620,7 +771,7 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
 
 <!-- ══ SIDEBAR DO PERFIL ════════════════════════════════════════════ -->
 <div id="profile-sidebar-overlay" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.6)" onclick="closeSidebar()"></div>
-<div id="profile-sidebar" style="position:fixed;top:0;left:-300px;width:280px;height:100%;background:#0f172a;z-index:501;transition:left .3s ease;overflow-y:auto;border-right:1px solid rgba(255,255,255,.06)">
+<div id="profile-sidebar" style="position:fixed;top:0;left:-300px;width:280px;height:100%;background:#0c0b12;z-index:501;transition:left .3s ease;overflow-y:auto;border-right:1px solid rgba(255,255,255,.06);box-shadow:12px 0 50px -24px rgba(0,0,0,.85)">
   <!-- Área do perfil / Banner -->
   <div id="sidebar-banner-area" style="padding:40px 20px 24px;text-align:center;position:relative;overflow:hidden;min-height:200px;background:#1a1a2e">
     <div id="sidebar-banner-bg" style="position:absolute;inset:0;background-size:cover;background-position:center;z-index:0"></div>
@@ -640,37 +791,37 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
   <!-- Menu -->
   <div style="padding:8px 14px 20px">
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-      <div style="display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:4px 10px;transform:scale(.8);transform-origin:left center">
-        <span style="font-size:13px">🪙</span>
-        <span style="font-weight:900;font-size:12px;color:#f59e0b" id="sidebar-cuts">0</span>
+      <div class="streak-chip" style="cursor:default;transform:scale(.8);transform-origin:left center">
+        <span class="sc-icon">🪙</span>
+        <span class="sc-value" id="sidebar-cuts">0</span>
         <span style="font-size:9px;font-weight:700;color:#f59e0b">CUTS</span>
       </div>
       <div id="sidebar-emblems" style="display:flex;align-items:center;gap:4px"></div>
     </div>
     <script>try{var _c=localStorage.getItem("carolampra_cuts");if(_c!=null){document.getElementById("sidebar-cuts").textContent=_c;var _hc=document.getElementById("home-cuts");if(_hc)_hc.textContent=_c}}catch(e){}</script>
-    <button onclick="closeSidebar();showScreen('student-personal');loadProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
-      <span style="font-size:18px">👤</span> Dados Pessoais
+    <button class="sidebar-btn" onclick="closeSidebar();showScreen('student-personal');loadProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+      <span class="sb-icon-amber" style="font-size:18px">👤</span> Dados Pessoais
     </button>
-    <button onclick="closeSidebar();openAthleteProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:1px solid rgba(239,68,68,.25);background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(245,158,11,.08));color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+    <button class="sidebar-btn" onclick="closeSidebar();openAthleteProfile()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:1px solid rgba(239,68,68,.25);background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(245,158,11,.08));color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
       <span style="font-size:18px">🏐</span> Estatísticas do Atleta
     </button>
-    <button id="btn-loja-cuts" data-arena-cajueiro onclick="closeSidebar(); openLojaOverlay()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
-      <span style="font-size:18px">🛒</span> Mercado
+    <button id="btn-loja-cuts" class="sidebar-btn" data-arena-cajueiro onclick="closeSidebar(); openLojaOverlay()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
+      <span class="sb-icon-green" style="font-size:18px">🛒</span> Mercado
     </button>
-    <button id="sb-ranking" data-arena-cajueiro onclick="closeSidebar();showScreen('student-ranking');loadRanking()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
-      <span style="font-size:18px">🏆</span> Ranking
+    <button id="sb-ranking" class="sidebar-btn" data-arena-cajueiro onclick="closeSidebar();showScreen('student-ranking');loadRanking()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+      <span class="sb-icon-blue" style="font-size:18px">🏆</span> Ranking
     </button>
-    <button disabled style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.02);color:#475569;font-weight:700;font-size:14px;cursor:not-allowed;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
+    <button disabled class="sidebar-btn" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.02);color:#475569;font-weight:700;font-size:14px;cursor:not-allowed;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative">
       <span style="font-size:18px">⚙️</span> Configurações
       <span style="position:absolute;top:10px;right:12px;background:rgba(245,158,11,.2);color:#f59e0b;font-size:9px;font-weight:900;padding:2px 8px;border-radius:8px">EM BREVE</span>
     </button>
-    <button onclick="closeSidebar();showScreen('student-patchnotes');loadStudentPatchNotes()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+    <button class="sidebar-btn" onclick="closeSidebar();showScreen('student-patchnotes');loadStudentPatchNotes()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(255,255,255,.04);color:#e2e8f0;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;gap:12px">
       <span style="font-size:18px">📋</span> Notas de Patch
     </button>
-    <button id="btn-sidebar-games" onclick="closeSidebar();abrirMenuJogos()" style="display:none;width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:linear-gradient(135deg,rgba(0,212,255,.1),rgba(0,128,255,.1));color:#00d4ff;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;align-items:center;gap:12px;border:1px solid rgba(0,212,255,.2)">
+    <button id="btn-sidebar-games" class="sidebar-btn" onclick="closeSidebar();abrirMenuJogos()" style="display:none;width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:linear-gradient(135deg,rgba(0,212,255,.1),rgba(0,128,255,.1));color:#00d4ff;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;align-items:center;gap:12px;border:1px solid rgba(0,212,255,.2)">
       <span style="font-size:18px">🎮</span> Games
     </button>
-    <button onclick="closeSidebar();studentLogout()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(239,68,68,.1);color:#f87171;font-weight:700;font-size:14px;cursor:pointer;margin-top:4px;display:flex;align-items:center;gap:12px">
+    <button class="sidebar-btn" onclick="closeSidebar();studentLogout()" style="width:100%;text-align:left;padding:14px 16px;border-radius:14px;border:none;background:rgba(239,68,68,.1);color:#f87171;font-weight:700;font-size:14px;cursor:pointer;margin-top:4px;display:flex;align-items:center;gap:12px">
       <span style="font-size:18px">🚪</span> Sair
     </button>
   </div>
@@ -691,7 +842,7 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
       <input type="file" id="photo-input-personal" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
       <p style="text-align:center;color:#64748b;font-size:12px;margin-bottom:24px">Toque na foto para alterar</p>
 
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:24px">
+      <div class="profile-card">
         <div style="margin-bottom:16px">
           <label class="lbl">NOME COMPLETO</label>
           <input class="inp" id="p-fullname" placeholder="Seu nome completo">
@@ -1532,6 +1683,20 @@ function enterStudentApp() {
       const hcEl = document.getElementById("home-cuts");
       if (hcEl) hcEl.textContent = cutsVal;
       localStorage.setItem("carolampra_cuts", cutsVal);
+      // Nível/Categoria (RPG do Atleta) — pílula da Home
+      const ath = d.athlete || {};
+      const rankPill = document.getElementById("home-rank-pill");
+      if (rankPill) {
+        document.getElementById("home-athlete-level").textContent = (ath.level != null ? ath.level : 1);
+        const classEl = document.getElementById("home-athlete-class");
+        if (ath.classification) {
+          classEl.textContent = ath.classification;
+          classEl.style.color = "#e2e8f0";
+        } else {
+          classEl.textContent = "Classificação pendente";
+          classEl.style.color = "#64748b";
+        }
+      }
       // Foto — se avatar equipado com chunks, não sobrescrever GIF do localStorage com thumbnail
       if (d.photoURL && !d.equippedAvatarItemId) {
         gifAvatarCache = null;
@@ -1603,6 +1768,14 @@ function applyArenaLayout(arena) {
   if (presencas) presencas.style.display = isGrussai ? 'none' : '';
   if (mercadoNav) mercadoNav.style.display = isGrussai ? '' : 'none';
   if (rankingNav) rankingNav.style.display = isGrussai ? '' : 'none';
+  // Badges de nível (Home, Reservas, Presenças, Torneios) — ícone/cor conforme a arena
+  ['home-level-badge','list-level-badge','presence-level-badge','tournaments-level-badge'].forEach(function(id){
+    var levelBadge = document.getElementById(id);
+    if (!levelBadge) return;
+    if (arena === 'cajueiro') { levelBadge.textContent = '🌳'; levelBadge.style.background = 'var(--c-green)'; }
+    else if (arena === 'grussai') { levelBadge.textContent = '🏖️'; levelBadge.style.background = 'var(--c-blue)'; }
+    else { levelBadge.textContent = '🏐'; levelBadge.style.background = 'var(--accent)'; }
+  });
   // Sidebar
   var sbMercado = document.getElementById('btn-loja-cuts');
   var sbRanking = document.getElementById('sb-ranking');
@@ -2037,12 +2210,12 @@ function renderFeed(items) {
 
   list.innerHTML = items.map(item => {
     const colors = {
-      ride_created: { bg: "rgba(34,197,94,.08)", border: "rgba(34,197,94,.2)" },
-      alert:        { bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.2)" },
-      personal_msg: { bg: "rgba(139,92,246,.08)", border: "rgba(139,92,246,.2)" },
-      waitlist_promotion: { bg: "rgba(34,197,94,.08)", border: "rgba(34,197,94,.2)" },
-      feed_post:    { bg: "rgba(99,102,241,.08)", border: "rgba(99,102,241,.2)" },
-      poll:         { bg: "rgba(245,158,11,.06)", border: "rgba(245,158,11,.25)" }
+      ride_created: { bg: "rgba(34,197,94,.1)", border: "rgba(34,197,94,.25)", accent: "#22c55e" },
+      alert:        { bg: "rgba(245,158,11,.1)", border: "rgba(245,158,11,.25)", accent: "#f59e0b" },
+      personal_msg: { bg: "rgba(239,68,68,.1)", border: "rgba(239,68,68,.25)", accent: "#ef4444" },
+      waitlist_promotion: { bg: "rgba(34,197,94,.1)", border: "rgba(34,197,94,.25)", accent: "#22c55e" },
+      feed_post:    { bg: "rgba(59,130,246,.1)", border: "rgba(59,130,246,.25)", accent: "#3b82f6" },
+      poll:         { bg: "rgba(245,158,11,.08)", border: "rgba(245,158,11,.28)", accent: "#f59e0b" }
     };
     const c = colors[item.type] || colors.alert;
     const time = item.createdAt ? fmtTs(item.createdAt) : "agora";
@@ -2053,7 +2226,7 @@ function renderFeed(items) {
       var hasVoted = myVote !== undefined;
       var totalVotes = Object.keys(votes).length;
       var opts = item.options || [];
-      var pollHtml = '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:16px;padding:16px;margin-bottom:10px">'
+      var pollHtml = '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-left:4px solid ' + c.accent + ';border-radius:18px;padding:16px;margin-bottom:10px">'
         + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
         + '<span style="font-size:22px">📊</span>'
         + '<span style="font-weight:800;font-size:14px;color:#fff;flex:1">' + escapeHtml(item.text) + '</span>'
@@ -2094,7 +2267,7 @@ function renderFeed(items) {
       // Auto-expandir quando não houver texto nem título (post só de imagem)
       const imageOnly = hasImage && !txt && !item.title;
       const isExpanded = imageOnly || !!_expandedPosts[item.id];
-      return '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:16px;padding:16px;margin-bottom:10px">'
+      return '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-left:4px solid ' + c.accent + ';border-radius:18px;padding:16px;margin-bottom:10px">'
         + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
         + '<span style="font-size:22px">📝</span>'
         + '<span style="font-weight:800;font-size:14px;color:#fff;flex:1">' + postTitle + '</span>'
@@ -2112,7 +2285,7 @@ function renderFeed(items) {
         + '</div>';
     }
 
-    return `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:16px;padding:16px;margin-bottom:10px">
+    return `<div style="background:${c.bg};border:1px solid ${c.border};border-left:4px solid ${c.accent};border-radius:18px;padding:16px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <span style="font-size:22px">${item.icon || "📌"}</span>
         <span style="font-weight:800;font-size:14px;color:#fff;flex:1">${escapeHtml(item.text || "")}</span>
@@ -2247,24 +2420,24 @@ function renderStudentRides(rides) {
 
     const cls = myBooked ? "confirmed" : myWaiting ? "waiting" : "";
     const badge = myBooked
-      ? `<span class="badge" style="background:rgba(245,158,11,.15);color:#f59e0b">✓ CONFIRMADO</span>`
+      ? `<span class="badge badge-confirmed">✓ CONFIRMADO</span>`
       : myWaiting
-      ? `<span class="badge" style="background:rgba(249,115,22,.15);color:#f97316">⏳ FILA</span>`
-      : !full ? `<span class="badge" style="background:rgba(34,197,94,.12);color:#22c55e">${ride.seats-booked.length} VAGAS</span>`
-      : !wFull ? `<span class="badge" style="background:rgba(249,115,22,.15);color:#f97316">LOTADO</span>`
-      : `<span class="badge" style="background:rgba(239,68,68,.15);color:#ef4444">ESGOTADO</span>`;
+      ? `<span class="badge badge-waiting">⏳ FILA</span>`
+      : !full ? `<span class="badge badge-open">${ride.seats-booked.length} VAGAS</span>`
+      : !wFull ? `<span class="badge badge-full">LOTADO</span>`
+      : `<span class="badge badge-soldout">ESGOTADO</span>`;
 
     return `
       <div class="s-ride-card ${cls}" onclick="openStudentDetail('${ride.id}')">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
           <span style="font-weight:800;font-size:15px;color:#fff;flex:1;margin-right:8px">${ride.title}</span>
           ${badge}
         </div>
-        <p style="color:#94a3b8;font-size:13px;margin-bottom:10px">📅 ${fmtShort(ride.date)} · ⏰ ${ride.time}</p>
-        <div style="display:flex;gap:4px;margin-bottom:4px">
-          ${Array.from({length:ride.seats}).map((_,i)=>`<div style="flex:1;height:5px;border-radius:3px;background:${i<booked.length?'#f59e0b':'rgba(255,255,255,.1)'}"></div>`).join("")}
+        <p style="color:#94a3b8;font-size:13px;margin-bottom:12px">📅 ${fmtShort(ride.date)} &nbsp;·&nbsp; ⏰ ${ride.time}</p>
+        <div class="s-ride-progress">
+          ${Array.from({length:ride.seats}).map((_,i)=>`<i class="${i<booked.length?'filled':''}"></i>`).join("")}
         </div>
-        <p style="color:#64748b;font-size:11px">${booked.length} de ${ride.seats} vagas · ${wl.length} na lista de espera</p>
+        <p style="color:#64748b;font-size:11px;margin-top:6px">${booked.length} de ${ride.seats} vagas · ${wl.length} na lista de espera</p>
       </div>`;
   }).join("");
 }
@@ -2292,8 +2465,8 @@ function renderStudentDetail(ride) {
   const cols = Math.min(ride.seats, 4);
   let html = "";
 
-  if (myBooked) html += `<div style="background:rgba(245,158,11,.1);border:1.5px solid #f59e0b;border-radius:16px;padding:14px;margin-bottom:14px;text-align:center"><p style="font-size:22px">🎉</p><p style="font-weight:800;color:#f59e0b;font-size:15px">Você está confirmado!</p></div>`;
-  if (myWaiting) html += `<div style="background:rgba(249,115,22,.1);border:1.5px solid #f97316;border-radius:16px;padding:14px;margin-bottom:14px;text-align:center"><p style="font-size:22px">⏳</p><p style="font-weight:800;color:#f97316;font-size:15px">Lista de espera — #${myPos} na fila</p><p style="color:#94a3b8;font-size:12px;margin-top:3px">Você será notificado se uma vaga abrir</p></div>`;
+  if (myBooked) html += `<div class="sd-status confirmed"><div class="sd-status-icon">🎉</div><p style="font-weight:800;color:#f59e0b;font-size:15px">Você está confirmado!</p></div>`;
+  if (myWaiting) html += `<div class="sd-status waiting"><div class="sd-status-icon">⏳</div><p style="font-weight:800;color:#f97316;font-size:15px">Lista de espera — #${myPos} na fila</p><p style="color:#94a3b8;font-size:12px;margin-top:3px">Você será notificado se uma vaga abrir</p></div>`;
 
   // Build seat map
   const seatMap = new Array(ride.seats).fill(null);
@@ -2311,7 +2484,7 @@ function renderStudentDetail(ride) {
 
   const canTap = !myBooked && !myWaiting && !full;
 
-  html += `<div style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(255,255,255,.08);padding:18px;margin-bottom:14px">
+  html += `<div class="sd-panel">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <span style="font-weight:800;font-size:15px;color:#fff">Vagas</span>
       <span style="color:#94a3b8;font-size:13px">${booked.length}/${ride.seats}</span>
@@ -2320,17 +2493,19 @@ function renderStudentDetail(ride) {
       ${seatMap.map((occ,i) => {
         const isMe = occ && occ.userId === currentUser.id;
         const cls = occ ? (isMe?"mine":"taken") : ("free" + (canTap?" tappable":""));
-        const icon = occ ? (isMe?"😊":"👤") : "💺";
         const name = occ ? (isMe?"Você":occ.firstName) : "Livre";
         const tap = !occ && canTap ? `onclick="bookSeat('${ride.id}',${i})"` : "";
-        return `<div class="s-seat ${cls}" ${tap}><div style="font-size:20px">${icon}</div><div class="seat-name" style="color:${occ?(isMe?'#f59e0b':'#e2e8f0'):'#64748b'}">${name}</div></div>`;
+        const visual = occ
+          ? `<div class="seat-avatar" data-seat-uid="${occ.userId}"><span class="seat-initial">${(occ.firstName||"?").charAt(0).toUpperCase()}</span></div>`
+          : `<div style="font-size:20px">💺</div>`;
+        return `<div class="s-seat ${cls}" ${tap}>${visual}<div class="seat-name" style="color:${occ?(isMe?'#f59e0b':'#e2e8f0'):'#64748b'}">${name}</div></div>`;
       }).join("")}
-    </div>`;
-
-  html += `<div style="display:flex;gap:3px;margin-top:10px">${Array.from({length:ride.seats}).map((_,i)=>`<div style="flex:1;height:5px;border-radius:3px;background:${i<booked.length?'#f59e0b':'rgba(255,255,255,.1)'}"></div>`).join("")}</div></div>`;
+    </div>
+    <div class="s-ride-progress" style="margin-top:10px">${Array.from({length:ride.seats}).map((_,i)=>`<i class="${i<booked.length?'filled':''}"></i>`).join("")}</div>
+  </div>`;
 
   if (full || wl.length > 0) {
-    html += `<div style="background:rgba(255,255,255,.04);border-radius:16px;border:1px solid rgba(249,115,22,.2);padding:18px;margin-bottom:14px">
+    html += `<div class="sd-panel" style="border-color:rgba(249,115,22,.22)">
       <h3 style="font-weight:800;font-size:15px;margin-bottom:12px;color:#fff">⏳ Lista de Espera (${wl.length}/5)</h3>`;
     if (wl.length === 0) html += `<p style="color:#64748b;font-size:13px">Ninguém na fila</p>`;
     else html += wl.map((w,i) => {
@@ -2348,6 +2523,7 @@ function renderStudentDetail(ride) {
   const ptrEl = document.getElementById("ptr-detail");
   sdContent.innerHTML = html;
   if (ptrEl) sdContent.insertBefore(ptrEl, sdContent.firstChild);
+  loadSeatAvatars(seatMap);
 
   let action = "";
   if (!myBooked && !myWaiting && !full) {
@@ -3263,26 +3439,30 @@ function renderRanking(users, podiumEl, listEl) {
     if (top3[1]) positions[0] = { ...top3[1], pos: 2 };
     if (top3[2]) positions[2] = { ...top3[2], pos: 3 };
 
-    const heights = { 1: 130, 2: 100, 3: 80 };
+    const heights = { 1: 120, 2: 92, 3: 70 };
     const colors = { 1: "#f59e0b", 2: "#94a3b8", 3: "#cd7f32" };
     const medals = { 1: "🥇", 2: "🥈", 3: "🥉" };
-    const bgGrad = { 1: "linear-gradient(to top,rgba(245,158,11,.3),rgba(245,158,11,.08))", 2: "linear-gradient(to top,rgba(148,163,184,.25),rgba(148,163,184,.06))", 3: "linear-gradient(to top,rgba(205,127,50,.25),rgba(205,127,50,.06))" };
+    const bgGrad = { 1: "linear-gradient(to top,rgba(245,158,11,.32),rgba(245,158,11,.06))", 2: "linear-gradient(to top,rgba(148,163,184,.28),rgba(148,163,184,.05))", 3: "linear-gradient(to top,rgba(205,127,50,.28),rgba(205,127,50,.05))" };
+    const avatarSize = { 1: 64, 2: 52, 3: 52 };
+    const initialSize = { 1: 24, 2: 20, 3: 20 };
 
-    let html = '<div style="display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:28px;padding:0 10px">';
+    let html = '<div class="rk-podium-wrap">';
     positions.forEach(p => {
       if (!p) return;
       const h = heights[p.pos];
       const c = colors[p.pos];
+      const sz = avatarSize[p.pos];
       const initial = (p.firstName || "?")[0].toUpperCase();
-      const photo = p.photoURL ? `<img data-ranking-uid="${p.id}" src="${p.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : `<span style="font-size:20px;font-weight:900;color:#fff">${initial}</span>`;
+      const photo = p.photoURL ? `<img data-ranking-uid="${p.id}" src="${p.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : `<span style="font-size:${initialSize[p.pos]}px;font-weight:900;color:#fff">${initial}</span>`;
       html += `
-        <div style="display:flex;flex-direction:column;align-items:center;flex:1;max-width:120px;cursor:pointer" onclick="openRankingProfile('${p.id}')">
-          <div style="font-size:24px;margin-bottom:4px">${medals[p.pos]}</div>
-          <div style="width:52px;height:52px;border-radius:50%;border:3px solid ${c};overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);margin-bottom:6px">${photo}</div>
-          <div style="font-weight:800;font-size:13px;color:#fff;text-align:center;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.firstName || "—"}</div>
-          <div style="font-weight:900;font-size:15px;color:${c};margin-top:2px">🪙 ${p._rankCuts || 0}</div>
-          <div style="width:100%;height:${h}px;border-radius:14px 14px 0 0;background:${bgGrad[p.pos]};border:1px solid ${c}33;margin-top:8px;display:flex;align-items:center;justify-content:center">
-            <span style="font-size:28px;font-weight:900;color:${c};opacity:.5">${p.pos}º</span>
+        <div class="rk-podium-item${p.pos===1?' first':''}" onclick="openRankingProfile('${p.id}')">
+          ${p.pos===1?'<span class="rk-crown">👑</span>':''}
+          <div class="rk-medal">${medals[p.pos]}</div>
+          <div class="rk-avatar" style="width:${sz}px;height:${sz}px;border:3px solid ${c};box-shadow:0 0 18px ${c}55">${photo}</div>
+          <div class="rk-name">${p.firstName || "—"}</div>
+          <div class="rk-cuts" style="color:${c}">🪙 ${p._rankCuts || 0}</div>
+          <div class="rk-pedestal" style="height:${h}px;background:${bgGrad[p.pos]};border-color:${c}33">
+            <span class="rk-pedestal-pos" style="color:${c}">${p.pos}º</span>
           </div>
         </div>`;
     });
@@ -3298,11 +3478,10 @@ function renderRanking(users, podiumEl, listEl) {
         const initial = (u.firstName || "?")[0].toUpperCase();
         const photo = u.photoURL ? `<img data-ranking-uid="${u.id}" src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : `<span style="font-size:14px;font-weight:800;color:#fff">${initial}</span>`;
         const isMe = currentUser && u.id === currentUser.id;
-        const meBorder = isMe ? "border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06)" : "border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03)";
         return `
-        <div style="${meBorder};border-radius:14px;padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openRankingProfile('${u.id}')">
+        <div class="rk-row${isMe ? ' me' : ''}" onclick="openRankingProfile('${u.id}')">
           <span style="font-weight:900;font-size:14px;color:#64748b;min-width:28px;text-align:center">${pos}º</span>
-          <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex-shrink:0">${photo}</div>
+          <div class="rk-row-avatar">${photo}</div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:14px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.firstName || "—"}${isMe ? ' <span style="font-size:10px;color:#f59e0b;font-weight:800">(você)</span>' : ''}</div>
           </div>
@@ -3323,26 +3502,76 @@ function renderRanking(users, podiumEl, listEl) {
   loadRankingAnimatedAvatars(users);
 }
 
+// Troca um <img> por <video> preservando estilo/classe/atributos data-* (avatares animados em vídeo)
+function _swapImgToVideo(img, src) {
+  var v = document.createElement('video');
+  v.src = src;
+  v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
+  v.setAttribute("playsinline", "");
+  v.style.cssText = img.style.cssText || "width:100%;height:100%;object-fit:cover;border-radius:50%";
+  if (img.className) v.className = img.className;
+  for (var i = 0; i < img.attributes.length; i++) {
+    var a = img.attributes[i];
+    if (a.name.indexOf('data-') === 0) v.setAttribute(a.name, a.value);
+  }
+  img.replaceWith(v);
+}
+function _applyAvatarSrc(img, src) {
+  if (typeof src === "string" && src.indexOf("data:video/") === 0) {
+    _swapImgToVideo(img, src);
+  } else {
+    img.src = src;
+  }
+}
+
+// Busca a mídia (imagem/gif/vídeo em base64) do avatar equipado de um usuário,
+// reconstruindo a partir dos chunks da loja ou do inventário
+async function fetchEquippedAvatarMedia(itemId, userId) {
+  try {
+    var fullGif = '', mediaType = '', mediaMime = '';
+    // 1. Tentar chunks da loja
+    var shopDoc = await db.collection('cuts_items').doc(itemId).get();
+    if (shopDoc.exists) {
+      mediaType = shopDoc.data().mediaType || '';
+      mediaMime = shopDoc.data().mediaMime || '';
+    }
+    if (shopDoc.exists && shopDoc.data().chunked) {
+      var shopChunks = await db.collection('cuts_items').doc(itemId).collection('chunks').get();
+      if (!shopChunks.empty) {
+        var sorted = shopChunks.docs.sort(function(a, b) { return parseInt(a.id) - parseInt(b.id); });
+        fullGif = sorted.map(function(d) { return d.data().data; }).join('');
+      }
+    }
+    // 2. Sem chunks na loja — tentar do inventário do aluno
+    if (!fullGif) {
+      var invSnap = await db.collection('cuts_inventory')
+        .where('userId', '==', userId)
+        .where('itemId', '==', itemId)
+        .get();
+      if (!invSnap.empty && invSnap.docs[0].data().chunked) {
+        // Se o item da loja foi deletado, herdar mediaType/Mime do inventário
+        if (!mediaType) mediaType = invSnap.docs[0].data().mediaType || '';
+        if (!mediaMime) mediaMime = invSnap.docs[0].data().mediaMime || '';
+        var invChunks = await db.collection('cuts_inventory').doc(invSnap.docs[0].id).collection('chunks').get();
+        if (!invChunks.empty) {
+          var sorted2 = invChunks.docs.sort(function(a, b) { return parseInt(a.id) - parseInt(b.id); });
+          fullGif = sorted2.map(function(d) { return d.data().data; }).join('');
+        }
+      }
+    }
+    if (fullGif && mediaType === 'video' && fullGif.indexOf('data:') !== 0) {
+      fullGif = 'data:' + (mediaMime || 'video/webm') + ';base64,' + fullGif;
+    }
+    return fullGif || null;
+  } catch(e) {
+    console.warn('[Avatar] Erro ao carregar mídia equipada:', userId, e);
+    return null;
+  }
+}
+
 async function loadRankingAnimatedAvatars(users) {
   var withAvatar = users.filter(function(u) { return u.equippedAvatarItemId; });
   if (!withAvatar.length) return;
-  function _swapToVideo(img, src) {
-    var v = document.createElement('video');
-    v.src = src;
-    v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
-    v.setAttribute("playsinline", "");
-    v.style.cssText = img.style.cssText || "width:100%;height:100%;object-fit:cover;border-radius:50%";
-    if (img.className) v.className = img.className;
-    if (img.dataset && img.dataset.rankingUid) v.setAttribute('data-ranking-uid', img.dataset.rankingUid);
-    img.replaceWith(v);
-  }
-  function _applyAvatarSrc(img, src) {
-    if (typeof src === "string" && src.indexOf("data:video/") === 0) {
-      _swapToVideo(img, src);
-    } else {
-      img.src = src;
-    }
-  }
   for (var i = 0; i < withAvatar.length; i++) {
     var u = withAvatar[i];
     var imgs = document.querySelectorAll('img[data-ranking-uid="' + u.id + '"]');
@@ -3356,50 +3585,52 @@ async function loadRankingAnimatedAvatars(users) {
       continue;
     }
     // Para outros: buscar chunks da loja ou do inventário
-    try {
-      var fullGif = '';
-      var mediaType = '';
-      var mediaMime = '';
-      // 1. Tentar chunks da loja
-      var shopDoc = await db.collection('cuts_items').doc(u.equippedAvatarItemId).get();
-      if (shopDoc.exists) {
-        mediaType = shopDoc.data().mediaType || '';
-        mediaMime = shopDoc.data().mediaMime || '';
-      }
-      if (shopDoc.exists && shopDoc.data().chunked) {
-        var shopChunks = await db.collection('cuts_items').doc(u.equippedAvatarItemId).collection('chunks').get();
-        if (!shopChunks.empty) {
-          var sorted = shopChunks.docs.sort(function(a, b) { return parseInt(a.id) - parseInt(b.id); });
-          fullGif = sorted.map(function(d) { return d.data().data; }).join('');
-        }
-      }
-      // 2. Sem chunks na loja — tentar do inventário do aluno
-      if (!fullGif) {
-        var invSnap = await db.collection('cuts_inventory')
-          .where('userId', '==', u.id)
-          .where('itemId', '==', u.equippedAvatarItemId)
-          .get();
-        if (!invSnap.empty && invSnap.docs[0].data().chunked) {
-          // Se o item da loja foi deletado, herdar mediaType/Mime do inventário
-          if (!mediaType) mediaType = invSnap.docs[0].data().mediaType || '';
-          if (!mediaMime) mediaMime = invSnap.docs[0].data().mediaMime || '';
-          var invChunks = await db.collection('cuts_inventory').doc(invSnap.docs[0].id).collection('chunks').get();
-          if (!invChunks.empty) {
-            var sorted2 = invChunks.docs.sort(function(a, b) { return parseInt(a.id) - parseInt(b.id); });
-            fullGif = sorted2.map(function(d) { return d.data().data; }).join('');
-          }
-        }
-      }
-      if (fullGif) {
-        if (mediaType === 'video' && fullGif.indexOf('data:') !== 0) {
-          fullGif = 'data:' + (mediaMime || 'video/webm') + ';base64,' + fullGif;
-        }
-        var src = fullGif;
-        imgs.forEach(function(img) { _applyAvatarSrc(img, src); });
-      }
-    } catch(e) {
-      console.warn('[Ranking] Erro ao carregar avatar animado:', u.id, e);
+    var src = await fetchEquippedAvatarMedia(u.equippedAvatarItemId, u.id);
+    if (src) {
+      imgs.forEach(function(img) { _applyAvatarSrc(img, src); });
     }
+  }
+}
+
+// Preenche um container .seat-avatar (que começa com as iniciais) com a foto/avatar do ocupante
+function _setAvatarMedia(container, src) {
+  container.innerHTML = '';
+  if (typeof src === 'string' && src.indexOf('data:video/') === 0) {
+    var v = document.createElement('video');
+    v.src = src;
+    v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
+    v.setAttribute('playsinline', '');
+    container.appendChild(v);
+  } else {
+    var img = document.createElement('img');
+    img.src = src;
+    container.appendChild(img);
+  }
+}
+
+// Carrega foto de perfil / avatar equipado de cada ocupante dos assentos
+async function loadSeatAvatars(seatMap) {
+  var ids = [];
+  seatMap.forEach(function(occ) {
+    if (occ && ids.indexOf(occ.userId) === -1) ids.push(occ.userId);
+  });
+  if (!ids.length) return;
+  try {
+    var snap = await db.collection('users')
+      .where(firebase.firestore.FieldPath.documentId(), 'in', ids)
+      .get();
+    for (var i = 0; i < snap.docs.length; i++) {
+      var u = snap.docs[i].data();
+      var uid = snap.docs[i].id;
+      var els = document.querySelectorAll('.seat-avatar[data-seat-uid="' + uid + '"]');
+      if (!els.length) continue;
+      var src = null;
+      if (u.equippedAvatarItemId) src = await fetchEquippedAvatarMedia(u.equippedAvatarItemId, uid);
+      if (!src && u.photoURL) src = u.photoURL;
+      if (src) els.forEach(function(el) { _setAvatarMedia(el, src); });
+    }
+  } catch(e) {
+    console.warn('[Seats] Erro ao carregar avatares dos ocupantes:', e);
   }
 }
 
@@ -4734,6 +4965,7 @@ var ATHLETE_ATTRS = [
   { key: "saque",        label: "Saque",        short: "SAQ" },
   { key: "recepcao",     label: "Recepção",     short: "REC" },
   { key: "passe",        label: "Passe",        short: "PAS" },
+  { key: "levantamento", label: "Levantamento", short: "LEV" },
   { key: "manchete",     label: "Manchete",     short: "MAN" },
   { key: "ataque",       label: "Ataque",       short: "ATA" },
   { key: "cortada",      label: "Cortada",      short: "COR" },
@@ -4767,7 +4999,8 @@ function _athStatColor(v) {
   if (v >= 8) return "#22c55e";
   if (v >= 6) return "#f59e0b";
   if (v >= 4) return "#f97316";
-  return "#ef4444";
+  if (v >= 1) return "#ef4444";
+  return "#64748b";
 }
 
 function renderAthleteProfile(data) {
@@ -4799,14 +5032,12 @@ function renderAthleteProfile(data) {
   html += '</div>';
   html += '<div style="position:relative;width:128px;height:128px;margin:14px auto 0;border-radius:50%;overflow:hidden;border:3px solid rgba(245,158,11,.6);background:linear-gradient(135deg,#f59e0b,#e85d04)">' + photoHtml + '</div>';
   html += '<div style="position:relative;text-align:center;margin-top:14px;font-size:22px;font-weight:900;color:#fff">' + escapeHtml(name) + '</div>';
-  if (classification) html += '<div style="position:relative;text-align:center;margin-top:4px;font-size:13px;font-weight:700;color:#f59e0b">' + escapeHtml(classification) + '</div>';
+  html += '<div style="position:relative;text-align:center;margin-top:4px;font-size:13px;font-weight:700;color:' + (classification ? '#f59e0b' : '#64748b') + '">' + (classification ? escapeHtml(classification) : 'Classificação pendente') + '</div>';
   if (title) html += '<div style="position:relative;text-align:center;margin-top:12px"><span style="display:inline-block;padding:7px 16px;border-radius:30px;background:linear-gradient(135deg,#f59e0b,#e85d04);color:#1a1208;font-weight:900;font-size:13px;box-shadow:0 6px 18px -6px rgba(245,158,11,.8)">⭐ ' + escapeHtml(title) + '</span></div>';
   html += '</div>';
 
   if (!evaluated) {
-    html += '<div class="empty" style="padding:30px 20px"><div class="icon">📋</div><p>Seu perfil de atleta ainda não foi avaliado pelo professor.</p><small style="color:#64748b">Suas estatísticas aparecerão aqui em breve!</small></div>';
-    content.innerHTML = html;
-    return;
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:14px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.18);margin-bottom:18px"><span style="font-size:20px">📋</span><span style="font-size:12px;color:#94a3b8;line-height:1.4">Seu perfil de atleta ainda não foi avaliado pelo professor — as estatísticas abaixo começam zeradas e serão atualizadas em breve.</span></div>';
   }
 
   // ── Radar ──
@@ -4815,13 +5046,17 @@ function renderAthleteProfile(data) {
   html += buildAthleteRadar(vals);
   html += '</div>';
 
-  // ── Barras de atributos ──
+  // ── Barras de atributos (nível 0-10 em segmentos) ──
   html += '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:18px 18px 6px;margin-bottom:18px">';
   ATHLETE_ATTRS.forEach(function(a, i){
     var v = vals[i], col = _athStatColor(v);
     html += '<div style="margin-bottom:14px">';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:700;color:#e2e8f0">' + a.label + '</span><span style="font-size:13px;font-weight:900;color:' + col + '">' + v + '<span style="color:#475569;font-weight:700">/10</span></span></div>';
-    html += '<div style="height:8px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden"><div style="height:100%;width:' + (v*10) + '%;border-radius:6px;background:linear-gradient(90deg,' + col + ',rgba(255,255,255,.45))"></div></div>';
+    html += '<div style="display:flex;gap:3px">';
+    for (var s = 1; s <= 10; s++) {
+      html += '<div style="flex:1;height:8px;border-radius:3px;background:' + (s <= v ? col : 'rgba(255,255,255,.07)') + '"></div>';
+    }
+    html += '</div>';
     html += '</div>';
   });
   html += '</div>';

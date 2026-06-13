@@ -871,10 +871,13 @@ input,select,textarea{font-family:inherit;outline:none}
             <option>Iniciante A</option>
             <option>Intermediário B</option>
             <option>Intermediário A</option>
-            <option>Avançado C</option>
-            <option>Avançado Prata</option>
-            <option>Avançado Ouro</option>
-            <option>Avançado Platina</option>
+            <option>Avançado B</option>
+            <option>Avançado A</option>
+            <option>Bronze</option>
+            <option>Prata</option>
+            <option>Ouro</option>
+            <option>Platina</option>
+            <option>Diamante</option>
           </select>
         </div>
       </div>
@@ -896,6 +899,7 @@ input,select,textarea{font-family:inherit;outline:none}
         <div><label class="lbl" style="font-size:10px">SAQUE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-saque" placeholder="0"></div>
         <div><label class="lbl" style="font-size:10px">RECEPÇÃO</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-recepcao" placeholder="0"></div>
         <div><label class="lbl" style="font-size:10px">PASSE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-passe" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">LEVANTAMENTO</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-levantamento" placeholder="0"></div>
         <div><label class="lbl" style="font-size:10px">MANCHETE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-manchete" placeholder="0"></div>
         <div><label class="lbl" style="font-size:10px">ATAQUE</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-ataque" placeholder="0"></div>
         <div><label class="lbl" style="font-size:10px">CORTADA</label><input type="number" inputmode="numeric" min="0" max="10" class="inp" id="es-st-cortada" placeholder="0"></div>
@@ -4339,6 +4343,7 @@ function openEditStudent(userId) {
   _setVal("es-st-saque", st.saque);
   _setVal("es-st-recepcao", st.recepcao);
   _setVal("es-st-passe", st.passe);
+  _setVal("es-st-levantamento", st.levantamento);
   _setVal("es-st-manchete", st.manchete);
   _setVal("es-st-ataque", st.ataque);
   _setVal("es-st-cortada", st.cortada);
@@ -4370,7 +4375,7 @@ async function saveStudentProfile() {
 
   // Estatísticas (RPG do atleta) — validação 0..10 e level 1..99
   const _clamp = (raw, lo, hi) => { const v = parseInt(raw, 10); if (isNaN(v)) return null; return Math.max(lo, Math.min(hi, v)); };
-  const _statKeys = ["saque","recepcao","passe","manchete","ataque","cortada","impulsao","deslocamento","defesa"];
+  const _statKeys = ["saque","recepcao","passe","levantamento","manchete","ataque","cortada","impulsao","deslocamento","defesa"];
   const stats = {};
   _statKeys.forEach(k => { const v = _clamp(document.getElementById("es-st-" + k).value, 0, 10); stats[k] = (v == null ? 0 : v); });
   const lvl = _clamp(document.getElementById("es-level").value, 1, 99);

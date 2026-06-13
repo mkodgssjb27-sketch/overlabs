@@ -4,8 +4,8 @@
     {
       "label": "OverLabs: servidor local",
       "type": "process",
-      "command": "python",
-      "args": ["-u", "-m", "http.server", "8080"],
+      "command": "node",
+      "args": ["scripts/dev-server.js", "8080"],
       "isBackground": true,
       "options": { "cwd": "${workspaceFolder}" },
       "problemMatcher": {
