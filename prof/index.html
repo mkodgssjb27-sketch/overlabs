@@ -754,6 +754,7 @@ input,select,textarea{font-family:inherit;outline:none}
       <input type="text" id="students-search" oninput="setStudentsSearch(this.value)" placeholder="🔎 Buscar aluno por nome, apelido ou @usuário" class="inp" style="padding-right:36px">
       <button id="students-search-clear" onclick="clearStudentsSearch()" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.08);border:none;color:#94a3b8;width:28px;height:28px;border-radius:8px;cursor:pointer;font-weight:900;font-size:14px">✕</button>
     </div>
+    <button id="students-sort-ovr-btn" onclick="toggleStudentsSortOvr()" style="width:100%;margin-bottom:12px;padding:11px;border-radius:10px;border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.08);color:#fca5a5;font-weight:800;font-size:13px;cursor:pointer">⭐ Ordenar por OVR (maior → menor)</button>
     <div id="students-arena-tabs" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap"></div>
     <div id="students-list"></div>
   </div>
@@ -3272,6 +3273,23 @@ let allStudents = [];
 let studentMap = null;
 let studentsArenaFilter = 'all'; // 'all' | 'cajueiro' | 'grussai' | 'none'
 let studentsSearchQuery = '';
+let studentsSortByOvr = false; // false = alfabético | true = OVR (maior→menor)
+function toggleStudentsSortOvr() {
+  studentsSortByOvr = !studentsSortByOvr;
+  const btn = document.getElementById('students-sort-ovr-btn');
+  if (btn) {
+    if (studentsSortByOvr) {
+      btn.style.background = 'linear-gradient(135deg,#ef4444,#b91c1c)';
+      btn.style.color = '#fff'; btn.style.borderColor = 'transparent';
+      btn.textContent = '⭐ OVR (maior → menor) ✓';
+    } else {
+      btn.style.background = 'rgba(239,68,68,.08)';
+      btn.style.color = '#fca5a5'; btn.style.borderColor = 'rgba(239,68,68,.25)';
+      btn.textContent = '⭐ Ordenar por OVR (maior → menor)';
+    }
+  }
+  if (Array.isArray(allStudents)) renderStudents(allStudents);
+}
 let expandedStudentCards = new Set();
 
 function _normSearch(s) {
@@ -3366,12 +3384,20 @@ function renderStudents(students) {
         || _normSearch(s.lastName).includes(q);
     });
   }
-  // Ordena alfabeticamente (firstName, fallback username)
-  filtered = filtered.slice().sort((a, b) => {
-    const na = _normSearch(a.firstName || a.username || '');
-    const nb = _normSearch(b.firstName || b.username || '');
-    return na.localeCompare(nb, 'pt-BR');
-  });
+  // Ordenação: OVR (maior→menor) ou alfabética
+  if (studentsSortByOvr) {
+    filtered = filtered.slice().sort((a, b) => {
+      const ob = _athleteOvr(b.athlete), oa = _athleteOvr(a.athlete);
+      if (ob !== oa) return ob - oa;
+      return _normSearch(a.firstName || a.username || '').localeCompare(_normSearch(b.firstName || b.username || ''), 'pt-BR');
+    });
+  } else {
+    filtered = filtered.slice().sort((a, b) => {
+      const na = _normSearch(a.firstName || a.username || '');
+      const nb = _normSearch(b.firstName || b.username || '');
+      return na.localeCompare(nb, 'pt-BR');
+    });
+  }
   if (filtered.length === 0 && students.length > 0) {
     list.innerHTML = '<div class="empty" style="padding:30px"><div class="icon">🔎</div><p>Nenhum aluno encontrado</p></div>';
     return;
