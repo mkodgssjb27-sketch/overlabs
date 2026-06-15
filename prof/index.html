@@ -870,6 +870,19 @@ input,select,textarea{font-family:inherit;outline:none}
     <div class="t-form">
       <div style="font-size:11px;color:#64748b;margin-bottom:16px">🏐 Perfil RPG do atleta — visível para o aluno na Home e no Perfil de Atleta.</div>
 
+      <!-- Ferramenta de comparação -->
+      <div style="margin-bottom:18px;background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.22);border-radius:14px;padding:12px 14px">
+        <label class="lbl" style="color:#38bdf8">🔍 COMPARAR COM (aluno de referência)</label>
+        <select class="inp" id="cmp-select" onchange="onCompareChange()" style="color-scheme:dark">
+          <option value="">— nenhum —</option>
+        </select>
+        <div id="cmp-summary" style="display:none;margin-top:10px;font-size:12px;color:#cbd5e1;line-height:1.5">
+          <span id="cmp-name" style="font-weight:800;color:#38bdf8"></span>
+          &middot; Nv. <span id="cmp-level">—</span> &middot; <span id="cmp-class">—</span> &middot; OVR <span id="cmp-ovr" style="font-weight:900;color:#38bdf8">—</span>
+          <div style="color:#64748b;font-size:11px;margin-top:2px">Os valores de referência (▸) aparecem ao lado de cada atributo.</div>
+        </div>
+      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
         <div>
           <label class="lbl">LEVEL</label>
@@ -908,16 +921,16 @@ input,select,textarea{font-family:inherit;outline:none}
 
       <label class="lbl" style="display:block;margin-bottom:8px">ATRIBUTOS (0 a 100)</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-        <div><label class="lbl" style="font-size:10px">SAQUE</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-saque" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">RECEPÇÃO</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-recepcao" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">PASSE</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-passe" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">LEVANTAMENTO</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-levantamento" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">MANCHETE</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-manchete" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">ATAQUE</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-ataque" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">CORTADA</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-cortada" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">IMPULSÃO</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-impulsao" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">DESLOCAMENTO</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-deslocamento" placeholder="0"></div>
-        <div><label class="lbl" style="font-size:10px">DEFESA</label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-defesa" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">SAQUE <span id="cmp-st-saque" style="color:#38bdf8;font-weight:800"></span></label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-saque" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">RECEPÇÃO <span id="cmp-st-recepcao" style="color:#38bdf8;font-weight:800"></span></label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-recepcao" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">PASSE <span id="cmp-st-passe" style="color:#38bdf8;font-weight:800"></span></label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-passe" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">LEVANTAMENTO <span id="cmp-st-levantamento" style="color:#38bdf8;font-weight:800"></span></label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-levantamento" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">MANCHETE <span id="cmp-st-manchete" style="color:#38bdf8;font-weight:800"></span></label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-manchete" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">ATAQUE <span id="cmp-st-ataque" style="color:#38bdf8;font-weight:800"></span></label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-ataque" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">CORTADA <span id="cmp-st-cortada" style="color:#38bdf8;font-weight:800"></span></label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-cortada" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">IMPULSÃO <span id="cmp-st-impulsao" style="color:#38bdf8;font-weight:800"></span></label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-impulsao" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">DESLOCAMENTO <span id="cmp-st-deslocamento" style="color:#38bdf8;font-weight:800"></span></label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-deslocamento" placeholder="0"></div>
+        <div><label class="lbl" style="font-size:10px">DEFESA <span id="cmp-st-defesa" style="color:#38bdf8;font-weight:800"></span></label><input type="number" inputmode="numeric" min="0" max="100" class="inp" id="es-st-defesa" placeholder="0"></div>
       </div>
       <div style="margin-bottom:16px">
         <label class="lbl">AVALIAÇÃO TÉCNICA (análise do professor)</label>
@@ -4444,6 +4457,46 @@ function openEditStudent(userId) {
   showScreen("teacher-edit-student");
 }
 
+// ── Comparação de atletas (referência ao avaliar) ──
+var CMP_KEYS = ["saque","recepcao","passe","levantamento","manchete","ataque","cortada","impulsao","deslocamento","defesa"];
+function _athleteOvr(ath) {
+  var st = (ath && ath.stats) || {};
+  var sum = 0, n = 0;
+  CMP_KEYS.forEach(function(k){ var v = parseInt(st[k], 10); if (!isNaN(v)) { sum += v; n++; } });
+  return n ? Math.round(sum / n) : 0;
+}
+function populateCompareSelect() {
+  var sel = document.getElementById('cmp-select');
+  if (!sel) return;
+  var others = (allStudents || []).filter(function(s){ return s.id !== editingStudentId && s.username !== 'teste'; });
+  others.sort(function(a, b){ return (a.firstName || a.username || '').localeCompare(b.firstName || b.username || '', 'pt-BR'); });
+  sel.innerHTML = '<option value="">— nenhum —</option>' + others.map(function(s){
+    var nick = s.nickname ? (' (' + escapeHtml(s.nickname) + ')') : '';
+    return '<option value="' + s.id + '">' + escapeHtml(s.firstName || s.username || 'Aluno') + nick + '</option>';
+  }).join('');
+  sel.value = '';
+  onCompareChange();
+}
+function onCompareChange() {
+  var sel = document.getElementById('cmp-select');
+  var summary = document.getElementById('cmp-summary');
+  var id = sel ? sel.value : '';
+  var setRef = function(k, val){ var el = document.getElementById('cmp-st-' + k); if (el) el.textContent = (val != null && val !== '') ? ('▸ ' + val) : ''; };
+  if (!id) {
+    if (summary) summary.style.display = 'none';
+    CMP_KEYS.forEach(function(k){ setRef(k, ''); });
+    return;
+  }
+  var s = (allStudents || []).find(function(x){ return x.id === id; });
+  if (!s) return;
+  var ath = s.athlete || {}, st = ath.stats || {};
+  document.getElementById('cmp-name').textContent = s.firstName || s.username || 'Aluno';
+  document.getElementById('cmp-level').textContent = (ath.level != null ? ath.level : 1);
+  document.getElementById('cmp-class').textContent = ath.classification || 'sem elo';
+  document.getElementById('cmp-ovr').textContent = _athleteOvr(ath);
+  if (summary) summary.style.display = 'block';
+  CMP_KEYS.forEach(function(k){ setRef(k, (st[k] != null ? st[k] : 0)); });
+}
 function openAthleteStats(userId) {
   const student = allStudents.find(s => s.id === userId);
   if (!student) return;
@@ -4468,6 +4521,7 @@ function openAthleteStats(userId) {
   _setVal("es-st-defesa", st.defesa);
   _setVal("es-analysis", ath.analysis);
 
+  populateCompareSelect();
   showScreen("teacher-athlete-stats");
 }
 
