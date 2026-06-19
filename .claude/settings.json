@@ -10,7 +10,10 @@
       "Bash(rm -rf \"/c/Users/mayko/AppData/Local/Temp/overlabs_verify\")",
       "Bash(cd \"/c/Users/mayko/Meu Drive/PROGRAMAS/Over Labs App\" && ls -la | head -30 && echo \"---firebase.json---\" && cat firebase.json 2>/dev/null && echo \"---package.json scripts---\" && cat package.json 2>/dev/null)",
       "Read(//c/c/Users/mayko/Meu Drive/PROGRAMAS/**)",
-      "PowerShell(.\\\\deploy.ps1 -Msg \"RPG do Atleta: stats completas \\(10 atributos\\), elo/classificacao com placeholder e nivel/elo na home\")"
+      "PowerShell(.\\\\deploy.ps1 -Msg \"RPG do Atleta: stats completas \\(10 atributos\\), elo/classificacao com placeholder e nivel/elo na home\")",
+      "Bash(rm -f \"C:/Users/mayko/Meu Drive/PROGRAMAS/Over Labs App/_tmp_screens\"/*.png)",
+      "Bash(rmdir \"C:/Users/mayko/Meu Drive/PROGRAMAS/Over Labs App/_tmp_screens\")",
+      "Bash(rm -rf \"C:/Users/mayko/AppData/Local/Temp/overlabs_verify\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\mayko\\Meu Drive\\PROGRAMAS\\Over Labs App\\_tmp_screens"

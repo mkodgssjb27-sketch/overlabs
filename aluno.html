@@ -417,6 +417,14 @@ body{background:#08080c;-webkit-font-smoothing:antialiased;text-rendering:optimi
   <button onclick="studentLogout()" style="margin-top:14px;padding:10px 24px;border-radius:10px;background:rgba(239,68,68,.12);color:#f87171;border:none;font-weight:700;font-size:13px;cursor:pointer">🚪 Sair</button>
 </div>
 
+<!-- ══ BLOQUEIO: CONTA BLOQUEADA PELO PROFESSOR ═══════════════════ -->
+<div id="account-blocked-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#0a0a0f;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center">
+  <div style="font-size:64px;margin-bottom:20px">🔒</div>
+  <div style="font-size:22px;font-weight:900;color:#f87171;margin-bottom:12px">Bloqueado Temporariamente</div>
+  <div style="font-size:14px;color:#94a3b8;line-height:1.5;max-width:340px;margin-bottom:24px">Sua conta está temporariamente bloqueada. Entre em contato com o professor para mais informações.</div>
+  <button onclick="studentLogout()" style="padding:14px 28px;border-radius:14px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171;font-weight:800;font-size:14px;cursor:pointer">🚪 Sair</button>
+</div>
+
 <!-- ══ TELA DE INSTALAÇÃO (bloqueia acesso pelo navegador) ══════════ -->
 <div id="install-gate" style="display:none;position:fixed;inset:0;z-index:10000;background:#0a0a0f;align-items:center;justify-content:center;padding:24px;overflow-y:auto">
   <div style="text-align:center;width:100%;max-width:380px">
@@ -1372,6 +1380,11 @@ function switchStudentTab(tab) {
   if (tab === "tournaments") loadStudentTorneios();
 }
 
+function goBackFromNotifs() {
+  const prev = screenHistory.length > 0 ? screenHistory.pop() : "student-home";
+  showScreen(prev, true);
+}
+
 // ── Helpers ──
 function genId() { return Math.random().toString(36).substr(2, 9) + Date.now().toString(36); }
 function clearErr(id) { const el = document.getElementById(id); if(el) el.textContent = ""; }
@@ -1621,7 +1634,7 @@ async function studentLogin() {
     console.log("Login: senha armazenada:", storedPw, "| digitada:", pw, "| match:", storedPw === pw);
     if (storedPw !== pw) { showLoginErr("Senha incorreta"); return; }
 
-    if (doc.data().blocked === true) { showLoginErr("Sua conta foi bloqueada. Fale com o professor."); return; }
+    if (doc.data().blocked === true) { showBlockedOverlay(); return; }
 
     // Atualiza deviceId/fingerprint da conta no login (rastreabilidade)
     try {
@@ -1698,7 +1711,9 @@ function enterStudentApp() {
     unsubUserDoc = db.collection("users").doc(currentUser.id).onSnapshot(doc => {
       if (!doc.exists) return;
       const d = doc.data();
-      // Arena: aplica layout / bloqueio
+      var _bOv = document.getElementById("account-blocked-overlay");
+      if (d.blocked === true) { if (_bOv) _bOv.style.display = "flex"; return; }
+      if (_bOv) _bOv.style.display = "none";
       applyArenaLayout(d.arena || null);
       // CUTS
       const cutsVal = d.cuts || 0;
@@ -1765,6 +1780,11 @@ function enterStudentApp() {
 }
 
 // ── Arena: aplica layout (nav inferior + sidebar) e bloqueio ──
+function showBlockedOverlay() {
+  var ov = document.getElementById("account-blocked-overlay");
+  if (ov) ov.style.display = "flex";
+}
+
 function applyArenaLayout(arena) {
   // arena: 'cajueiro' | 'grussai' | 'both' | null/undefined
   var lock = document.getElementById('arena-lock-overlay');
@@ -1788,14 +1808,6 @@ function applyArenaLayout(arena) {
   if (presencas) presencas.style.display = isGrussai ? 'none' : '';
   if (mercadoNav) mercadoNav.style.display = isGrussai ? '' : 'none';
   if (rankingNav) rankingNav.style.display = isGrussai ? '' : 'none';
-  // Badges de nível (Home, Reservas, Presenças, Torneios) — ícone/cor conforme a arena
-  ['home-level-badge','list-level-badge','presence-level-badge','tournaments-level-badge'].forEach(function(id){
-    var levelBadge = document.getElementById(id);
-    if (!levelBadge) return;
-    if (arena === 'cajueiro') { levelBadge.textContent = '🌳'; levelBadge.style.background = 'var(--c-green)'; }
-    else if (arena === 'grussai') { levelBadge.textContent = '🏖️'; levelBadge.style.background = 'var(--c-blue)'; }
-    else { levelBadge.textContent = '🏐'; levelBadge.style.background = 'var(--accent)'; }
-  });
   // Sidebar
   var sbMercado = document.getElementById('btn-loja-cuts');
   var sbRanking = document.getElementById('sb-ranking');
@@ -2663,15 +2675,12 @@ async function cancelRide(rideId) {
 
 // ── Alertas — Popup e integração ──
 function updateNotifBadge(count) {
-  const badge = document.getElementById("notif-badge");
-  const badgeHome = document.getElementById("notif-badge-home");
-  if (count > 0) {
-    if (badge) { badge.textContent = count; badge.style.display = "flex"; }
-    if (badgeHome) { badgeHome.textContent = count; badgeHome.style.display = "flex"; }
-  } else {
-    if (badge) badge.style.display = "none";
-    if (badgeHome) badgeHome.style.display = "none";
-  }
+  ["notif-badge", "notif-badge-home", "notif-badge-presence", "notif-badge-tournaments"].forEach(function(id) {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    if (count > 0) { badge.textContent = count; badge.style.display = "flex"; }
+    else badge.style.display = "none";
+  });
 }
 
 let alertPopupTimeout = null;
@@ -4519,11 +4528,7 @@ if (currentUser && firebaseOk) {
   // Check if account is blocked before auto-login
   db.collection("users").doc(currentUser.id).get().then(doc => {
     if (doc.exists && doc.data().blocked === true) {
-      localStorage.removeItem("carolampra_user");
-      currentUser = null;
-      showScreen("student-auth");
-      switchTab("login");
-      showLoginErr("Sua conta foi bloqueada. Fale com o professor.");
+      showBlockedOverlay();
       document.documentElement.classList.add('boot-ready');
       return;
     }
